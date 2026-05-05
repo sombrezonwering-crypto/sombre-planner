@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sombre Intake - Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 550px; }
+        
+        /* Navigatie Balk */
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .nav-title { font-weight: bold; color: #2c3e50; font-size: 18px; }
+        .nav-btn { background: #e8f0fe; color: #1a73e8; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .nav-btn:hover { background: #d2e3fc; }
+
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h2 { color: #1a73e8; text-align: center; margin-top: 0; margin-bottom: 20px; }
+        
+        .scanner-zone { background: #e8f0fe; border: 2px dashed #1a73e8; padding: 20px; text-align: center; border-radius: 10px; margin-bottom: 25px; cursor: pointer; position: relative; transition: 0.3s; }
+        .scanner-zone:hover { background: #d2e3fc; }
+        .scanner-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        #scannerStatus { font-weight: bold; color: #1a73e8; margin-top: 10px; }
+        
+        label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 15px; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .row { display: flex; gap: 10px; }
+        #adresStatus { font-size: 11px; margin-top: 5px; font-weight: bold; height: 15px; }
+        
+        .product-builder { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-top: 5px; }
+        .product-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+        .p-aantal { width: 70px; }
+        .p-type { flex: 2; }
+        .p-bediening { flex: 2; }
+        .btn-remove { background: #ff4d4d; color: white; border: none; border-radius: 6px; width: 35px; height: 42px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .btn-add { background: #e3f2fd; color: #1a73e8; border: 1px dashed #1a73e8; padding: 10px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+
+        button.submit-btn { width: 100%; padding: 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
+        button.submit-btn:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Navigatie -->
+    <div class="nav-bar">
+        <div class="nav-title">📝 Intake Planner</div>
+        <a href="/magazijn" class="nav-btn">Magazijn 📦 ➔</a>
+    </div>
+
+    <!-- Intake Formulier -->
+    <div class="card">
+        <h2>Nieuwe Order Invoeren</h2>
+        
+        <div class="scanner-zone">
+            <span style="font-size: 24px;">📸</span><br>
+            <strong>Upload Screenshot Leverancier</strong><br>
+            <span style="font-size: 12px; color: #666;">Scant automatisch klantgegevens & instructies</span>
+            <input type="file" id="imageInput" accept="image/*" capture="environment">
+            <div id="scannerStatus"></div>
+        </div>
+
+        <form id="orderForm">
+            <label>Ordernummer (Zelf invoeren)</label>
+            <input type="text" name="ordernummer" placeholder="Bijv. 2024-001" required>
+
+            <label>Naam Klant</label>
+            <input type="text" id="klantNaam" name="naam" required>
+
+            <div class="row">
+                <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" maxlength="6" required></div>
+                <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
+            </div>
+            <div id="adresStatus">Adreszoeker: Wachten op invoer...</div>
+
+            <label>Straat & Woonplaats</label>
+            <input type="text" id="adres" name="straatEnWoonplaats" readonly required>
+
+            <label>Telefoonnummer</label>
+            <input type="tel" id="telefoon" name="telefoon" required>
+
+            <label>Producten (Bestellijst)</label>
+            <div class="product-builder">
+                <div id="productContainer"></div>
+                <button type="button" class="btn-add" onclick="voegProductRegelToe()">➕ Extra Product Toevoegen</button>
+            </div>
+
+            <label>Verwachte montagetijd</label>
+            <select name="montagetijd_minuten">
+                <option value="60">1 uur (Service / Reparatie)</option>
+                <option value="120" selected>2 uur (Standaard montage)</option>
+                <option value="240">4 uur (Halve dag)</option>
+                <option value="360">6 uur (Driekwart dag)</option>
+                <option value="480">8 uur (Volledige dag)</option>
+            </select>
+
+            <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="demontage" style="width:auto; margin:0;"> ⚠️ Demontage oud product nodig</label>
+            
+            <label>Montage Instructies & Opmerkingen</label>
+            <textarea id="opmerkingen" name="opmerkingen" rows="3" placeholder="Instructies of bijzonderheden..."></textarea>
+
+            <button type="submit" id="submitBtn" class="submit-btn">Opslaan & Plannen</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // VUL HIER JOUW GOOGLE WEB APP URL IN
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+
+    // OCR Scanner
+    document.getElementById('imageInput').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const statusDiv = document.getElementById('scannerStatus');
+        statusDiv.innerText = "⏳ Foto analyseren op tabel-layout...";
+        statusDiv.style.color = "#ff9800";
+
+        try {
+            const result = await Tesseract.recognize(file, 'nld');
+            const ruweTekst = result.data.text;
+
+            const telNaamRegex = /(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z\s]+)/;
+            const telNaamMatch = ruweTekst.match(telNaamRegex);
+            if (telNaamMatch) {
+                document.getElementById('telefoon').value = telNaamMatch[1];
+                document.getElementById('klantNaam').value = telNaamMatch[2].trim();
+            }
+
+            const emailStraatRegex = /[\w\.-]+@[\w\.-]+\.\w+\s+([A-Za-z\s]+?)\s+([0-9]+[A-Za-z]?)/;
+            const straatMatch = ruweTekst.match(emailStraatRegex);
+            if (straatMatch) document.getElementById('nr').value = straatMatch[2]; 
+
+            const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
+            if (postcodeMatch) document.getElementById('pc').value = postcodeMatch[0].replace(/\s/g, '').toUpperCase();
+
+            const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+(.*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/is);
+            if (instructieMatch && instructieMatch[1]) document.getElementById('opmerkingen').value = instructieMatch[1].trim();
+
+            statusDiv.innerText = "✅ Klantgegevens & Instructies gelezen!";
+            statusDiv.style.color = "green";
+
+            if (postcodeMatch && straatMatch) zoekAdres();
+
+        } catch (error) {
+            statusDiv.innerText = "❌ Fout bij scannen. Vul handmatig in.";
+            statusDiv.style.color = "red";
+        }
+    });
+
+    // PDOK Adreszoeker
+    let timeout = null;
+    const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
+
+    function zoekAdres() {
+        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase(), nr = nrIn.value.trim();
+        if (pc.length === 6 && nr.length >= 1) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
+                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(d => d.response.docs.length > 0 ? fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`) : Promise.reject())
+                .then(r => r.json()).then(d => {
+                    adIn.value = d.response.docs[0].weergavenaam; stIn.innerText = "✅ Adres Gevonden!"; stIn.style.color = "green";
+                }).catch(() => { stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; stIn.style.color = "red"; adIn.removeAttribute('readonly'); });
+            }, 500);
+        }
+    }
+    pcIn.addEventListener('keyup', zoekAdres); nrIn.addEventListener('keyup', zoekAdres);
+
+    // Producten Bouwer
+    const productContainer = document.getElementById('productContainer');
+    function voegProductRegelToe() {
+        const div = document.createElement('div'); div.className = 'product-row';
+        div.innerHTML = `<input type="number" class="p-aantal" value="1" min="1" required>
+            <select class="p-type" required>
+                <option value="Rolluik">Rolluik</option><option value="Screen">Screen</option>
+                <option value="Zonnescherm">Zonnescherm</option><option value="Overkapping">Overkapping</option>
+                <option value="Losse Motor / Onderdeel">Motor/Onderdeel (Service)</option>
+            </select>
+            <select class="p-bediening" required>
+                <option value="Solar">Solar</option><option value="Stroom (230V)">Stroom (230V)</option>
+                <option value="Handbediend">Handbediend</option><option value="N.v.t.">N.v.t.</option>
+            </select>
+            <button type="button" class="btn-remove" onclick="verwijderRegel(this)">✖</button>`;
+        productContainer.appendChild(div);
+    }
+    function verwijderRegel(btn) { if (productContainer.children.length > 1) btn.parentElement.remove(); else alert("Minimaal 1 product verplicht."); }
+    voegProductRegelToe();
+
+    // Formulier Verzenden
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "Bezig met plannen...";
+        const formData = new FormData(this); let dataObject = Object.fromEntries(formData.entries());
+        dataObject.demontage = formData.get('demontage') === 'on';
+        
+        const regels = document.querySelectorAll('.product-row');
+        dataObject.bestellijst = Array.from(regels).map(r => `${r.querySelector('.p-aantal').value}x ${r.querySelector('.p-type').value} (${r.querySelector('.p-bediening').value})`).join(', ');
+
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dataObject) })
+        .then(() => { 
+            alert("✅ Order succesvol verwerkt en gepland!"); this.reset(); productContainer.innerHTML = ""; voegProductRegelToe(); 
+            adIn.setAttribute('readonly', true); stIn.innerText = "Wachten op invoer..."; stIn.style.color = "#888"; 
+            document.getElementById('scannerStatus').innerText = "";
+            btn.disabled = false; btn.innerText = "Opslaan & Plannen"; 
+        });
+    });
+</script>
+</body>
+</html>
