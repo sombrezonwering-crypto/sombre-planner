@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zapply v25 BEAST MODE</title>
+    <style>
+        :root { --primary: #ff4757; --bg: #050a14; --card: #1e293b; --accent: #1db954; --rest: #ffa502; --text: #f8fafc; --gold: #f1c40f; }
+        body { font-family: 'Arial Black', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); touch-action: manipulation; overflow-x: hidden; }
+        .container { max-width: 450px; margin: auto; }
+        
+        /* Spotify & Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .spotify-link { background: #1db954; padding: 8px 15px; border-radius: 20px; text-decoration: none; color: black; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; font-weight: 900; }
+        
+        .dashboard { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; border-bottom: 5px solid var(--primary); transition: 0.3s; }
+        .dashboard.resting { border-bottom-color: var(--rest); background: #2c3e50; }
+        .dashboard.bonus { border-bottom-color: var(--gold); background: #3e3305; }
+        
+        #timer { font-size: 4.5rem; font-weight: 900; margin: 0; line-height: 1; }
+        
+        .visual-card { background: #0f172a; border-radius: 15px; padding: 12px; margin: 10px 0; border: 2px solid var(--primary); min-height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .ascii-art { font-family: monospace; background: #000; color: var(--accent); padding: 8px; border-radius: 8px; font-size: 10px; white-space: pre; line-height: 1.1; width: 100%; text-align: center; }
+
+        /* Input Controls */
+        .stepper-group { display: flex; justify-content: space-around; align-items: center; background: #0f172a; padding: 10px; border-radius: 15px; margin-bottom: 10px; }
+        .stepper-val { font-size: 1.8rem; font-weight: 900; min-width: 80px; text-align: center; }
+        .btn-step { background: #334155; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; border: none; font-weight: 900; cursor: pointer; }
+        .btn-step:active { background: #475569; transform: scale(0.95); }
+
+        .btn-main { width: 100%; padding: 20px; border-radius: 15px; border: none; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 10px; transition: 0.1s; cursor: pointer; }
+        .btn-log { background: var(--accent); color: white; box-shadow: 0 6px 0 #15833b; }
+        .btn-log:active { box-shadow: 0 2px 0 #15833b; transform: translateY(4px); }
+        .btn-skip { background: var(--rest); color: black; margin-top: 15px; font-size: 1.4rem; padding: 25px; box-shadow: 0 6px 0 #b37300; }
+        .btn-skip:active { box-shadow: 0 2px 0 #b37300; transform: translateY(4px); }
+        .btn-finish-ex { background: #475569; font-size: 0.8rem; padding: 10px; margin-top: 5px; color: white; }
+        
+        /* Rest Timer Controls */
+        #rest-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid var(--rest); text-align: center; }
+        #rest-display { font-size: 6rem; font-weight: 900; color: var(--rest); line-height: 1; text-shadow: 0 0 15px rgba(255, 165, 2, 0.4); margin: 20px 0; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div style="color: var(--primary); font-weight: 900;">ZAPPLY v25</div>
+        <a href="spotify:open" class="spotify-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.508 17.302c-.218.358-.684.474-1.042.255-2.887-1.764-6.521-2.164-10.803-1.184-.41.094-.817-.164-.911-.574-.094-.41.164-.817.574-.911 4.69-1.071 8.706-.615 11.927 1.353.358.218.474.684.255 1.042zm1.472-3.262c-.274.446-.856.588-1.302.314-3.303-2.03-8.337-2.617-12.245-1.429-.502.153-1.03-.131-1.183-.633-.153-.502.131-1.03.633-1.183 4.47-1.358 10.02-.705 13.782 1.606.446.274.588.856.314 1.302zm.127-3.414c-3.963-2.353-10.517-2.57-14.321-1.415-.608.184-1.248-.162-1.432-.77-.184-.608.162-1.248.77-1.432 4.385-1.332 11.607-1.077 16.172 1.631.547.325.727 1.033.402 1.58-.325.547-1.033.727-1.58.402z"/></svg>
+            SPOTIFY
+        </a>
+    </div>
+
+    <div class="dashboard" id="db-panel">
+        <div id="status-label" style="font-size:0.9rem; font-weight: 900; color: var(--accent);">BEAST MODE READY</div>
+        <div id="timer">15:00</div>
+        <button class="btn-main" style="background:#fff; color:#000;" onclick="startApp()" id="startBtn">START TRAINING</button>
+    </div>
+
+    <div class="visual-card">
+        <div id="visualContent" class="ascii-art">KIES OEFENING</div>
+        <div id="instruction" style="font-size: 0.8rem; margin-top: 5px; text-align: center;">Kies je eerste doelwit.</div>
+    </div>
+
+    <div id="input-ui" class="hidden">
+        
+        <!-- Workout Controls -->
+        <div id="workout-controls">
+            <div class="stepper-group">
+                <button class="btn-step" onclick="adj('w',-2)">-</button>
+                <div class="stepper-val" id="val-w">10 kg</div>
+                <button class="btn-step" onclick="adj('w',2)">+</button>
+            </div>
+            <div class="stepper-group">
+                <button class="btn-step" onclick="adj('r',-1)">-</button>
+                <div class="stepper-val" id="val-r">12 reps</div>
+                <button class="btn-step" onclick="adj('r',1)">+</button>
+            </div>
+            <select id="ex-select" onchange="updateEx()" style="width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 8px; font-weight: bold; font-size: 1rem; background: #334155; color: white; border: none;"></select>
+        </div>
+        
+        <!-- Rest UI -->
+        <div id="rest-container" class="hidden">
+            <div style="font-size: 1.2rem; font-weight: bold; color: var(--rest); letter-spacing: 2px;">HERSTEL FASE</div>
+            <div id="rest-display">45</div>
+            <button class="btn-main btn-skip" id="skipBtn" onclick="skipRest()">SKIP RUST - GO!</button>
+        </div>
+        
+        <button class="btn-main btn-log" id="logBtn" onclick="logSet()">SLA SET OP</button>
+        <button class="btn-main btn-finish-ex" id="finishExBtn" onclick="finishEx()">OEFENING VOLTOOID</button>
+    </div>
+</div>
+
+<script>
+    let timeLeft = 900, timerRunning = false, currentSet = 1, isResting = false;
+    let weight = 10, reps = 12, completedExCount = 0;
+    let restTimeRemaining = 0;
+
+    // DRILL INSTRUCTOR QUOTES
+    const quotesStart = [
+        "15 minuten op de klok! Geen genade! Rammen met die handel!",
+        "Luisteren pannenkoek! 15 minuten gas geven! Start!",
+        "Tijd loopt! Vanaf nu wordt er gezweet! Go go go!"
+    ];
+    const quotesRest = [
+        "Set klaar! 45 seconden ademhalen en niet janken!",
+        "Goed. 45 seconden rust. Blijf staan, niet zitten!",
+        "Zwaar? Maakt me niet uit! 45 seconden herstel!"
+    ];
+    const quotesGo = [
+        "Genoeg gerust! Bewegen! GO GO GO!",
+        "Klaar met huilen! Pak dat gewicht op! Nu!",
+        "Tijd is om! Terug naar je post! Rammen!"
+    ];
+    const quotesExDone = [
+        "Oefening voltooid! Meteen door naar de volgende, we hebben geen hele dag!",
+        "Klaar! Niet treuzelen, selecteer je volgende doel!",
+        "Goed gewerkt, maar we zijn nog niet klaar! Doorgaan!"
+    ];
+
+    function getRandomQuote(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    
+    // OEFENINGEN ARSENAAL
+    const exercises = {
+        "Push-Ups": { d: "Lichaam recht als een plank. Borst naar grond.", a: "   O____\n  /|    |\n  / \\___|" },
+        "Diamond Push-Ups": { d: "Handen in ruitvorm. Focus op triceps.", a: "   O____\n  /|\\   |\n  / \\___|" },
+        "DB Chest Press": { d: "Lig op rug. Druk DB's recht omhoog.", a: "  [O]   [O]\n    \\   /\n     -O-" },
+        "Chest Flyes": { d: "Armen wijd in boog. Boven borst samen.", a: "  [O] _  _ [O]\n     \\ (O) /" },
+        "Dips": { d: "Handen op bankje. Zak tot 90 graden.", a: "   O \n  /|\\\n  _|_" },
+        "Preacher Curls": { d: "Armen op steun. Isoleer de bicep.", a: "    /|\\_\n   [===]_ [O]" },
+        "Hammer Curls": { d: "Neutrale grip. Pomp die biceps op!", a: "   /|\\_\n  [||]_ [O]" },
+        "Skullcrushers": { d: "Lig op rug. Alleen onderarmen bewegen.", a: "  [O]\n   |\n  /|\\" },
+        "Pull-Ups": { d: "Kort en explosief omhoog. Kin over stang!", a: " ======\n  \\O/\n   |\n  / \\" },
+        "Barbell Rows": { d: "Rug recht, voorover gebogen. Trek naar navel.", a: "   O__\n  /|  [I]" },
+        "Overhead Press": { d: "Core strak, gewicht recht omhoog uitstoten.", a: " [O]_[O]\n  \\ O /\n    |\n   / \\" },
+        "Lateral Raises": { d: "Armen wijd, focus op zijkant schouders.", a: " [O] O [O]\n  \\ /|\\ /\n    / \\" },
+        "Squats": { d: "Voeten schouderbreedte. Zak diep door knieën.", a: "   O\n  /|\\\n _/ \\_" },
+        "Lunges": { d: "Stap naar voren. Knie net niet op de grond.", a: "   O\n  /|\n  / \\_" },
+        "Crunches": { d: "Span die core aan! Schouders van de vloer.", a: "    _O\n   /  \\__\n  -^-----" },
+        "Plank": { d: "Span buik en billen aan. Hou vast!", a: "  O-------\n  ||    ||" }
+    };
+    
+    // 5-DAGEN SCHEMA (2x per dag, max 3 oefeningen, 1x buik per dag)
+    const schedule = { 
+        1: { 
+            AM: ["Push-Ups", "DB Chest Press", "Squats"], 
+            PM: ["Pull-Ups", "Barbell Rows", "Plank"] // Buik in PM
+        },
+        2: { 
+            AM: ["Overhead Press", "Lateral Raises", "Crunches"], // Buik in AM
+            PM: ["Lunges", "Hammer Curls", "Dips"] 
+        },
+        3: { 
+            AM: ["Chest Flyes", "Diamond Push-Ups", "Plank"], // Buik in AM
+            PM: ["Squats", "Preacher Curls", "Skullcrushers"] 
+        },
+        4: { 
+            AM: ["Lunges", "Barbell Rows", "Pull-Ups"], 
+            PM: ["Push-Ups", "Overhead Press", "Crunches"] // Buik in PM
+        },
+        5: { 
+            AM: ["Dips", "DB Chest Press", "Plank"], // Buik in AM
+            PM: ["Squats", "Hammer Curls", "Lateral Raises"] 
+        }
+    };
+
+    function speak(t) { 
+        window.speechSynthesis.cancel(); 
+        const m = new SpeechSynthesisUtterance(t); 
+        m.lang = 'nl-NL'; m.pitch = 0.8; m.rate = 1.1; 
+        window.speechSynthesis.speak(m); 
+    }
+    
+    function adj(t, v) { if(t==='w'){weight+=v; if(weight<0) weight=0; document.getElementById('val-w').innerText = weight+' kg';} else {reps+=v; if(reps<0) reps=0; document.getElementById('val-r').innerText = reps+' reps';} }
+
+    function init() {
+        let day = new Date().getDay();
+        // Als het weekend is (0 = zondag, 6 = zaterdag), val terug op dag 1
+        if (day === 0 || day === 6) day = 1; 
+
+        const hour = new Date().getHours();
+        const sessionTime = hour < 14 ? "AM" : "PM"; // Ochtend tot 14:00, daarna Avond
+        const sessionNaam = sessionTime === "AM" ? "OCHTEND" : "AVOND";
+        
+        document.getElementById('status-label').innerText = `DAG ${day} - ${sessionNaam} SESSIE`;
+
+        const list = schedule[day][sessionTime];
+        const sel = document.getElementById('ex-select');
+        sel.innerHTML = '<option value="">-- KIES OEFENING --</option>';
+        list.forEach(e => sel.innerHTML += `<option value="${e}">${e}</option>`);
+    }
+
+    function updateEx() {
+        const ex = document.getElementById('ex-select').value;
+        if(!ex) return;
+        if(isResting) skipRest(); 
+        currentSet = 1;
+        document.getElementById('visualContent').innerText = exercises[ex].a;
+        document.getElementById('instruction').innerText = exercises[ex].d;
+        document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
+        speak(`Nieuwe missie: ${ex}. ${exercises[ex].d}. Niet opgeven nu!`);
+    }
+
+    function startApp() {
+        timerRunning = true; document.getElementById('startBtn').classList.add('hidden');
+        document.getElementById('input-ui').classList.remove('hidden');
+        speak(getRandomQuote(quotesStart));
+        const timer = setInterval(() => {
+            if(timeLeft > 0) { timeLeft--; updateClock(); } else { clearInterval(timer); finishSession(); }
+        }, 1000);
+    }
+
+    function updateClock() {
+        const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+        document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function logSet() {
+        if(!document.getElementById('ex-select').value) {
+            speak("Kies eerst een oefening, soldaat!");
+            return;
+        }
+        if(currentSet < 3) { startRest(); } else { finishEx(); }
+    }
+
+    function startRest() {
+        isResting = true; 
+        restTimeRemaining = 45;
+        
+        document.getElementById('workout-controls').classList.add('hidden');
+        document.getElementById('logBtn').classList.add('hidden');
+        document.getElementById('finishExBtn').classList.add('hidden');
+        
+        document.getElementById('db-panel').classList.add('resting');
+        document.getElementById('rest-container').classList.remove('hidden');
+        document.getElementById('rest-display').innerText = restTimeRemaining;
+
+        speak(getRandomQuote(quotesRest));
+        
+        window.restTimer = setInterval(() => {
+            restTimeRemaining--;
+            document.getElementById('rest-display').innerText = restTimeRemaining;
+            
+            if(restTimeRemaining <= 3 && restTimeRemaining > 0) speak(restTimeRemaining);
+            if(restTimeRemaining <= 0) skipRest();
+        }, 1000);
+    }
+
+    function skipRest() {
+        clearInterval(window.restTimer); isResting = false; currentSet++;
+        
+        document.getElementById('rest-container').classList.add('hidden'); 
+        document.getElementById('db-panel').classList.remove('resting');
+        
+        document.getElementById('workout-controls').classList.remove('hidden');
+        document.getElementById('logBtn').classList.remove('hidden');
+        document.getElementById('finishExBtn').classList.remove('hidden');
+        
+        document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
+        speak(getRandomQuote(quotesGo));
+    }
+
+    function finishEx() {
+        if(isResting) skipRest(); 
+        completedExCount++;
+        speak(getRandomQuote(quotesExDone));
+        
+        // Zodra je 3 oefeningen hebt gedaan, is de sessie klaar (max 3 oefeningen per sessie)
+        if(completedExCount >= 3) {
+            finishSession(true);
+            return;
+        }
+        
+        currentSet = 1;
+        document.getElementById('logBtn').innerText = "KIES VOLGENDE";
+        document.getElementById('ex-select').value = ""; 
+    }
+
+    function finishSession(isSuccess = false) {
+        if(isSuccess) {
+            speak("Alle 3 de doelen vernietigd! Sessie voltooid! Uitstekend werk, soldaat!");
+            document.body.style.background = "var(--accent)";
+            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center;'>MISSIE VOLTOOID!</h1><p style='text-align:center;'>Kom terug voor je volgende sessie.</p>";
+        } else {
+            speak("TIJD IS OM! Laat alles vallen! Goed gewerkt, soldaat! Inpakken en wegwezen!");
+            document.body.style.background = "red";
+            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center;'>TIJD IS OM</h1>";
+        }
+        timeLeft = 0;
+        updateClock();
+    }
+
+    init();
+</script>
+</body>
+</html>
