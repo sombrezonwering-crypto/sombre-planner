@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sombre Zonwering - iPad & Mobiel App 2026</title>
+    <style>
+        /* === APP LAYOUT CSS === */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f2f2f7;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        /* HEADER */
+        .header-box {
+            flex: 0 0 auto;
+            background: white;
+            padding: 15px;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        @media(min-width:768px){ .header-box { grid-template-columns: 1.5fr 1fr; } }
+
+        /* TABEL CONTAINER */
+        .table-wrap {
+            flex: 1 1 auto;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            background: white;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.02);
+        }
+
+        /* FOOTER */
+        .footer-box {
+            flex: 0 0 auto;
+            background: white;
+            padding: 10px;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* === DESKTOP / IPAD TABEL STIJLEN === */
+        table { width: 100%; border-collapse: collapse; min-width: 2450px; } 
+        th { background: #e5e5ea; height: 35px; text-align: left; padding: 5px; border: 1px solid #d1d1d6; font-size: 11px; font-weight: bold; position: sticky; top: 0; z-index: 2; }
+        td { padding: 4px; border: 1px solid #d1d1d6; vertical-align: middle; font-size: 11px; }
+        
+        input, select { 
+            width: 100%; height: 42px; font-size: 14px; 
+            border: 1px solid #c7c7cc; border-radius: 5px; 
+            background: #fff; padding: 0 8px; box-sizing: border-box; 
+            -webkit-appearance: none; appearance: none; cursor: pointer;
+        }
+        input:focus, select:focus { background: #fffdf0; border-color: #f39c12; outline: none; }
+        
+        .res { background: #eef7ff; font-weight: bold; text-align: center; border: 2px solid #007aff !important; color: #007aff; font-size: 14px; }
+        .res-error { background: #ffebee; color: #ff3b30; border-color: #ff3b30 !important; }
+        
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; color: white; cursor: pointer; text-transform: uppercase; }
+        .btn-send { background: #34c759; }
+        .btn-pdf { background: #ff3b30; }
+        .btn-reset { background: #8e8e93; }
+
+        /* === MOBIELE TELEFOON WEERGAVE (CARD LAYOUT) === */
+        @media (max-width: 1024px) {
+            html, body { height: auto; overflow: auto; }
+            #app-container { height: auto; display: block; }
+            .table-wrap { overflow: visible; background: transparent; border: none; box-shadow: none; padding: 0; }
+            table { min-width: 100% !important; border: none; display: block; }
+            thead { display: none; } 
+            tbody { display: block; }
+            
+            tr { 
+                display: block; 
+                background: white; 
+                margin-bottom: 20px; 
+                border: 2px solid #005a9c; 
+                border-radius: 12px; 
+                padding: 10px; 
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            }
+            
+            td { 
+                display: flex; 
+                flex-direction: column; 
+                border: none; 
+                border-bottom: 1px solid #f2f2f7; 
+                padding: 10px 5px; 
+                font-size: 14px; 
+            }
+            td:last-child { border-bottom: none; }
+            
+            td::before { 
+                content: attr(data-label); 
+                font-weight: bold; 
+                color: #2c3e50; 
+                margin-bottom: 5px; 
+                font-size: 13px; 
+                text-transform: uppercase;
+            }
+
+            td.res { background: #eef7ff; border: none !important; border-radius: 6px; margin-top: 5px; flex-direction: row; justify-content: space-between; align-items: center; padding: 15px;}
+            td.res::before { margin-bottom: 0; }
+
+            input, select { height: 48px; font-size: 16px; border: 1px solid #aaa; }
+        }
+
+        @media print { 
+            .no-print { display: none; } 
+            #app-container { height: auto; display: block; }
+            .table-wrap { overflow: visible; flex: none; border: none; } 
+            html, body { overflow: auto; background: white; }
+            .header-box { box-shadow: none; border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <form id="orderForm" style="display: contents;" onsubmit="event.preventDefault();">
+        
+        <div class="header-box">
+            <div>
+                <strong style="font-size: 14px; display:block; margin-bottom:5px;">Klantgegevens</strong>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+                    <input type="text" id="klant_naam" placeholder="Klantnaam / Referentie" required>
+                    <input type="tel" id="telefoon" placeholder="Telefoonnummer">
+                </div>
+                <input type="email" id="email" placeholder="E-mailadres" style="margin-bottom: 8px;">
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="pc" placeholder="1234AB" style="width:100px; text-transform: uppercase;">
+                    <input type="text" id="hn" placeholder="Nr" style="width:70px;">
+                    <input type="text" id="str" placeholder="Adres wordt gezocht..." readonly style="flex-grow:1; background:#f2f2f7;">
+                </div>
+            </div>
+            <div style="text-align:center; display: flex; flex-direction: column; justify-content: center;">
+                <h1 style="margin:0 0 5px 0; color:#f39c12; font-size:24px;">SOMBRE ZONWERING</h1>
+                <strong style="margin-bottom:10px; color:#2c3e50;">ORDER APP 2026</strong>
+                <input type="date" id="datum">
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="100">Product</th> <th width="100">Systeem Merk</th> <th width="90">Montage</th> <th width="65">Br. in</th> <th width="65">Ho. in</th>
+                        <th width="115">Kleur Bak</th> <th width="115">Vorm Bak</th> <th width="150">Doek / Lamel</th>
+                        <th width="120">Motor / Type</th> <th width="75">Motor Z.</th>
+                        <th width="65">Afst.</th> <th width="125">Gel. L</th> <th width="125">Gel. R</th> 
+                        <th width="85">Uitvul (mm)</th> <th width="200">Hoeklijn</th> <th width="110">Locatie</th>
+                        <th class="res" width="65">BEST.BR</th> <th class="res" width="65">BEST.HO</th> <th class="res" width="60">BAK</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="footer-box no-print">
+            <button type="submit" class="btn btn-send" id="btnSend">📧 ORDER VERZENDEN</button>
+            <button type="button" class="btn btn-pdf" onclick="window.print()">📄 PDF OPSLAAN</button>
+            <button type="button" class="btn btn-reset" onclick="location.reload()">🔄 ALLES WISSEN</button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    // ============================================================================
+    // 0. GENEREREN VAN DE TABEL RIJEN
+    // ============================================================================
+    const optKleurBak = '<option value="-">-</option><optgroup label="Standaard"><option>RAL 9001 - Crème</option><option>RAL 7016 - Antraciet</option><option>RAL 9005 - Zwart</option><option>RAL 7021 - Zwartgrijs</option></optgroup><optgroup label="Screens"><option>RAL 9010 - Wit</option></optgroup><optgroup label="Rolluiken"><option>RAL 9016 - Wit</option><option>RAL 7038 - Grijs</option></optgroup><optgroup label="Meerprijs"><option>RAL 6009 - Groen</option><option>RAL 5011 - Blauw</option><option>RAL 7039 - Kwartsgrijs</option></optgroup>';
+    
+    const optDoekLamel = '<option value="-">-</option><optgroup label="Rolluik"><option>RAL 9016 Wit</option><option>RAL 9001 Crème</option><option>RAL 7038 Grijs</option><option>RAL 7016 Antraciet</option><option>RAL 9005 Zwart</option><option>RAL 6009 Groen</option><option>RAL 5011 Blauw</option><option>RAL 7021 Zwartgrijs</option><option>RAL 7039 Kwartsgrijs</option></optgroup><optgroup label="Tibelly Uni"><option>T100 Wit</option><option>T103 Crème</option><option>T102 Beige</option><option>T121 L.Grijs</option><option>T122 Grijs</option><option>T367 Ardoise</option><option>T326 Antraciet</option><option>T368 Zwart</option><option>T119 Blauw</option><option>T120 Marine</option><option>T117 Bosgroen</option><option>T114 Bordeaux</option><option>T109 Okergeel</option></optgroup><optgroup label="Dickson"><option>ORC 0001 Ecru</option><option>ORC 8902 Beige</option><option>ORC 0613 Marron</option><option>ORC 6088 Gris</option><option>ORC 6196 Pierre</option><option>ORC 8203 Ardoise</option><option>ORC U171 Carbone</option><option>ORC 6028 Noir</option><option>ORC 0017 Bleu</option><option>ORC 8206 Bordeaux</option><option>ORC 6687 Foret</option></optgroup><optgroup label="Dickson MAX"><option>MAX2 U786 Etain</option><option>MAX2 0001 Ecru</option><option>MAX2 6196 Pierre</option><option>MAX2 6088 Gris</option><option>MAX2 8396 Souris</option><option>MAX2 U104 Flanelle</option><option>MAX2 U406 Acier</option><option>MAX2 U407 Platine</option><option>MAX2 7559 Taupe</option><option>MAX2 8203 Ardoise</option><option>MAX2 U171 Carbone</option><option>MAX2 U095 Basalte</option><option>MAX2 6028 Noir</option><option>MAX2 7133 Naturel</option><option>MAX2 7548 Ivoire</option><option>MAX2 0681 Dune</option><option>MAX2 6020 Grège</option><option>MAX2 U811 Hêtre</option><option>MAX2 8779 Bruyère</option><option>MAX2 U806 Orgeat</option><option>MAX2 U767 Tangerine</option><option>MAX2 U808 Magma</option><option>MAX2 3914 Rouge</option><option>MAX2 8206 Bordeaux</option><option>MAX2 U768 Ebène</option><option>MAX2 U793 Aloé</option><option>MAX2 6687 Forêt</option><option>MAX2 6022 Marine</option></optgroup><optgroup label="Sergé 3%"><option>101101 White</option><option>108101 Grey-White</option><option>108108 Grey</option><option>108111 Grey-D.Blue</option><option>108112 Grey-Sand</option><option>108118 Grey-Black</option><option>108126 Grey-Caramel</option><option>108167 Pacific</option><option>111111 D.Blue</option><option>112101 Sand-White</option><option>112103 Sand-Yellow</option><option>112112 Sand</option><option>112113 Sand-Bronze</option><option>113105 Bronze</option><option>113108 Bronze-Grey</option><option>113113 Bronze-Tang</option><option>113115 Bronze-Lime</option><option>116101 Linen-White</option><option>116108 Linen-Grey</option><option>116116 Linen</option><option>116122 Linen-Lich</option><option>117101 Pearl-White</option><option>117108 Pearl-Grey</option><option>117116 Pearl-Linen</option><option>117117 Pearl</option><option>118112 Black-Sand</option><option>118113 Black-Bronz</option><option>118116 Black-Linen</option><option>118118 Black</option><option>118181 Jamaica</option></optgroup><optgroup label="Privacy 1%"><option>108101 1%</option><option>108108 1%</option><option>108112 1%</option><option>108118 1%</option><option>117101 1%</option><option>117108 1%</option><option>117117 1%</option><option>118108 1%</option><option>118112 1%</option><option>118118 1%</option></optgroup><optgroup label="Lunar BO"><option>002002 White</option><option>002007 Wht-Pearl</option><option>007007 Pearl</option><option>001002 Grey-White</option><option>033001 Oyster</option><option>001001 Grey</option><option>001010 Grey-Char</option><option>010010 Charcoal</option></optgroup>';
+
+    let tbodyHTML = "";
+    for(let i=1; i<=10; i++) {
+        tbodyHTML += `
+        <tr data-id="${i}">
+            <td data-label="Product"><select id="p_${i}"><option value="rolluik">Rolluik</option><option value="screen">Zipscreen</option><option value="st 4200 solar">ST 4200 Solar</option><option value="gavia">Gavia</option><option value="gavia max">Gavia Max</option><option value="toscane">Toscane</option><option value="trentino">Trentino</option></select></td>
+            <td data-label="Systeem Merk"><select id="sys_merk_${i}"><option value="Heroal">Heroal</option><option value="Eigenmerk">Eigenmerk</option></select></td>
+            <td data-label="Montage soort"><select id="m_${i}"><option value="indag">In de dag</option><option value="opdag">Op de dag</option></select></td>
+            <td data-label="Invoer Breedte (mm)"><input type="text" inputmode="numeric" pattern="[0-9]*" id="b_${i}" placeholder="0"></td>
+            <td data-label="Invoer Hoogte (mm)"><input type="text" inputmode="numeric" pattern="[0-9]*" id="h_${i}" placeholder="0"></td>
+            <td data-label="Kleur Kast / Bak"><select id="kbak_${i}">${optKleurBak}</select></td>
+            <td data-label="Vorm Bak"><select id="kvorm_${i}"><option value="-">-</option><option value="Afgeschuind">Afgeschuind (45°)</option><option value="Recht">Recht (90°)</option><option value="Halfrond">Halfrond</option></select></td>
+            <td data-label="Kleur Doek / Lamel"><select id="kdoek_${i}">${optDoekLamel}</select></td>
+            <td data-label="Motor / Type"><select id="mot_typ_${i}">
+                <option value="-">-</option>
+                <option value="Somfy Solar">Somfy Solar</option>
+                <option value="Brel Solar">Brel Solar</option>
+                <option value="Somfy IO/RTS">Somfy IO / RTS</option>
+                <option value="Brel Radio">Brel Radio</option>
+                <option value="Bedraad">Bedraad (Schakelaar)</option>
+            </select></td>
+            <td data-label="Motor Kant"><select id="mot_${i}"><option value="-">-</option><option>Links</option><option>Rechts</option></select></td>
+            <td data-label="Afstandsbediening"><select id="afs_${i}"><option>Nee</option><option>Ja</option></select></td>
+            
+            <td data-label="Geleider Links"><select id="gell_${i}"><option value="-">-</option></select></td>
+            <td data-label="Geleider Rechts"><select id="gelr_${i}"><option value="-">-</option></select></td>
+            
+            <td data-label="Uitvullen (mm)"><input type="text" id="uit_${i}" placeholder="Bijv. 5"></td>
+            
+            <td data-label="Hoeklijn">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%;">
+                    <select id="htyp_${i}">
+                        <option value="Geen">Geen hoeklijn</option>
+                        <option value="30/20">30/20</option>
+                        <option value="40/20">40/20</option>
+                        <option value="70/20">70/20</option>
+                    </select>
+                    <select id="hkleur_${i}">
+                        ${optKleurBak}
+                    </select>
+                    <input type="number" id="hmaat_${i}" placeholder="Maat (mm)">
+                    <select id="haant_${i}">
+                        <option value="1">1x</option>
+                        <option value="2">2x</option>
+                        <option value="3">3x</option>
+                        <option value="4">4x</option>
+                    </select>
+                </div>
+            </td>
+
+            <td data-label="Locatie / Referentie"><input type="text" id="inf_${i}" placeholder="Locatie"></td>
+            
+            <td data-label="DEFINITIEVE BESTEL BREEDTE" class="res"><span id="rb_${i}">0</span><input type="hidden" id="hb_${i}"></td>
+            <td data-label="DEFINITIEVE BESTEL HOOGTE" class="res"><span id="rh_${i}">0</span><input type="hidden" id="hh_${i}"></td>
+            <td data-label="KAP / BAK MAAT" class="res" id="td_bak_${i}"><span id="rk_${i}">-</span><input type="hidden" id="hk_${i}"></td>
+        </tr>
+        `;
+    }
+    document.getElementById('tableBody').innerHTML = tbodyHTML;
+
+    // ============================================================================
+    // 1. HARTSLAG REKENMACHINE (Elke 400ms controleren en updaten)
+    // ============================================================================
+    setInterval(berekenAlles, 400);
+
+    function berekenAlles() {
+        for (var i = 1; i <= 10; i++) {
+            var pEl = document.getElementById('p_' + i);
+            var sysBrandEl = document.getElementById('sys_merk_' + i);
+            var motTypEl = document.getElementById('mot_typ_' + i);
+            var mEl = document.getElementById('m_' + i);
+            var bEl = document.getElementById('b_' + i);
+            var hEl = document.getElementById('h_' + i);
+
+            if (!pEl || !mEl || !bEl || !hEl) continue;
+
+            var p = pEl.value.toLowerCase();
+            var sysBrand = sysBrandEl.value; 
+            var isSolar = motTypEl.value.includes("Solar");
+            var isBrel = motTypEl.value.includes("Brel");
+            var isSomfy = motTypEl.value.includes("Somfy");
+            var m = mEl.value;
+            var bIn = parseInt(bEl.value, 10);
+            var hIn = parseInt(hEl.value, 10);
+
+            if (isNaN(bIn)) bIn = 0;
+            if (isNaN(hIn)) hIn = 0;
+
+            var bOut = 0;
+            var hOut = 0;
+            var bak = "-";
+            var bakError = false;
+
+            // --- BEREKEN BREEDTE ---
+            if (bIn > 0) {
+                if (m === 'indag') {
+                    bOut = bIn - 5;
+                } else {
+                    if (p === 'rolluik') {
+                        bOut = bIn + 110; 
+                    } else if (p === 'screen') {
+                        // Exacte 'Op de dag' toevoeging: Heroal = 75mm (2x37.5), Eigenmerk = 70mm (2x35)
+                        bOut = bIn + (sysBrand === 'Heroal' ? 75 : 70); 
+                    } else {
+                        bOut = bIn; 
+                    }
+                }
+            }
+
+            // --- VORM BAK DYNAMISCH UPDATEN ---
+            var kvormEl = document.getElementById('kvorm_' + i);
+            if (kvormEl) {
+                var curVorm = kvormEl.value;
+                var newVormOpts = '<option value="-">-</option><option value="Afgeschuind">Afgeschuind (45°)</option><option value="Recht">Recht (90°)</option>';
+                if (p === 'rolluik') {
+                    newVormOpts += '<option value="Halfrond">Halfrond</option>';
+                }
+                if (kvormEl.getAttribute('data-opts') !== newVormOpts) {
+                    kvormEl.innerHTML = newVormOpts;
+                    kvormEl.setAttribute('data-opts', newVormOpts);
+                    if (newVormOpts.includes('value="' + curVorm + '"')) kvormEl.value = curVorm;
+                }
+            }
+
+            // --- GELEIDERS DYNAMISCH UPDATEN ---
+            var gellEl = document.getElementById('gell_' + i);
+            var gelrEl = document.getElementById('gelr_' + i);
+            
+            if (gellEl && gelrEl) {
+                var curL = gellEl.value;
+                var curR = gelrEl.value;
+                var newOpts = "";
+
+                if (p === 'rolluik') {
+                    newOpts = '<option value="-">-</option><option value="HTF 53x22">HTF 53x22 (Vlak)</option><option value="LHTF 53x60">LHTF 53x60 (Met lip)</option><option value="HF 45x22">HF 45x22 (Smal)</option><option value="LHF 45x60">LHF 45x60 (Smal met lip)</option><option value="MHTF 86x22">MHTF 86x22 (Midden)</option><option value="MLHTF 86x60">MLHTF 86x60 (Midden lip)</option><option value="FHTF12">FHTF 12</option><option value="FHTF20">FHTF 20</option>';
+                } else if (p === 'screen') {
+                    if (sysBrand === 'Heroal') {
+                        newOpts = '<option value="-">-</option><option value="Standaard 35 x 37,5 mm">Standaard 35 x 37,5 mm</option><option value="LHTF">LHTF (Met lip)</option>';
+                    } else {
+                        newOpts = '<option value="-">-</option><option value="Standaard 35 mm">Standaard 35 mm</option><option value="LHTF">LHTF (Met lip)</option>';
+                    }
+                } else {
+                    newOpts = '<option value="-">-</option><option value="Standaard">Standaard</option>';
+                }
+
+                if (gellEl.getAttribute('data-opts') !== newOpts) {
+                    gellEl.innerHTML = newOpts;
+                    gelrEl.innerHTML = newOpts;
+                    gellEl.setAttribute('data-opts', newOpts);
+                    gelrEl.setAttribute('data-opts', newOpts);
+                    
+                    if (newOpts.includes('value="' + curL + '"')) gellEl.value = curL;
+                    if (newOpts.includes('value="' + curR + '"')) gelrEl.value = curR;
+                }
+            }
+
+            // --- BEREKEN BAKMAAT (INCL. GEAVANCEERDE OP-DE-DAG WISKUNDE & SOLAR LOGICA) ---
+            if (hIn > 0 && bIn > 0) {
+                
+                // === ROLLUIKEN LOGICA ===
+                if (p === 'rolluik') {
+                    let bakmaten, limits;
+                    if (sysBrand === 'Heroal') {
+                        bakmaten = [125, 137, 150, 165, 180, 205];
+                        limits = [1000, 1400, 1900, 2500, 3100, 4000];
+                    } else {
+                        bakmaten = [137, 150, 165, 180, 205];
+                        limits = [1550, 1950, 2550, 3150, 4000];
+                    }
+                    
+                    bak = 205; 
+                    for(let j = 0; j < bakmaten.length; j++) {
+                        let test_bak = bakmaten[j];
+                        let element_h = (m === 'opdag') ? hIn + test_bak : hIn;
+                        
+                        if (element_h <= limits[j]) {
+                            bak = test_bak;
+                            break; 
+                        }
+                    }
+                } 
+                
+                // === ZIPSCREENS LOGICA ===
+                else if (p === 'screen') {
+                    if (sysBrand === 'Heroal') {
+                        bak = "Te Groot!";
+                        bakError = true;
+
+                        if (bIn < 800) {
+                            bak = "Te Smal!";
+                        } else {
+                            // Check 95 kast
+                            let h95 = (m === 'opdag') ? hIn + 95 : hIn;
+                            let fit95 = (bIn <= 3000 && h95 >= 400 && h95 <= 1800);
+
+                            // Check 105 kast (Let op: < 5000)
+                            let h105 = (m === 'opdag') ? hIn + 105 : hIn;
+                            let fit105 = (bIn < 5000 && h105 <= 3400);
+
+                            // Check 125 kast
+                            let h125 = (m === 'opdag') ? hIn + 125 : hIn;
+                            let fit125_A = (bIn <= 6000 && h125 >= 1000 && h125 <= 3000);
+                            let fit125_B = (bIn <= 5000 && h125 <= 5000);
+
+                            if (fit95) {
+                                bak = 95; bakError = false;
+                            } else if (fit105) {
+                                bak = 105; bakError = false;
+                            } else if (fit125_A || fit125_B) {
+                                if (bIn < 1000) {
+                                    bak = "Min Br. 1000"; 
+                                } else {
+                                    bak = 125; bakError = false;
+                                }
+                            }
+
+                            // Solar limiet (Overschrijft alles indien groter dan 3000)
+                            if (!bakError && isSolar) {
+                                let hTest = (m === 'opdag') ? hIn + bak : hIn;
+                                if (hTest > 3000) {
+                                    bak = "Te Hoog (Solar)";
+                                    bakError = true;
+                                }
+                            }
+                        }
+                    } else {
+                        // Eigenmerk Screen
+                        let bakmaten = [];
+                        let limits = [];
+                        
+                        if (isSolar) {
+                            if (isBrel) { bakmaten = [98]; limits = [3000]; } 
+                            else if (isSomfy) { bakmaten = [115]; limits = [3000]; } 
+                            else { bakmaten = [115]; limits = [3000]; }
+                        } else {
+                            bakmaten = [90, 100, 125];
+                            limits = [2000, 3500, 6000];
+                        }
+
+                        bak = "Te Hoog!"; 
+                        bakError = true;
+
+                        for(let j = 0; j < bakmaten.length; j++) {
+                            let test_bak = bakmaten[j];
+                            let element_h = (m === 'opdag') ? hIn + test_bak : hIn;
+                            
+                            if (element_h <= limits[j]) { 
+                                bak = test_bak; 
+                                bakError = false;
+                                break; 
+                            }
+                        }
+                    }
+                } 
+                
+                // === OVERKAPPINGEN ===
+                else if (p === 'gavia' || p === 'gavia max' || p === 'toscane' || p === 'trentino' || p === 'st 4200 solar') {
+                    bak = "-"; 
+                }
+
+                // --- BEREKEN HOOGTE ---
+                if (m === 'opdag' && typeof bak === 'number') {
+                    hOut = hIn + bak;
+                } else {
+                    hOut = hIn; 
+                }
+            } else if (bIn > 0 && hIn === 0) {
+                // Wachten op invoer hoogte
+            }
+
+            if (typeof bak === 'number') bak = Math.round(bak * 10) / 10;
+
+            // --- SCHRIJF RESULTATEN BESTELMATEN ---
+            document.getElementById('rb_' + i).innerText = (bOut > 0 ? bOut : 0);
+            document.getElementById('hb_' + i).value = bOut;
+
+            document.getElementById('rh_' + i).innerText = (hOut > 0 ? hOut : 0);
+            document.getElementById('hh_' + i).value = hOut;
+
+            var rkEl = document.getElementById('rk_' + i);
+            var tdBak = document.getElementById('td_bak_' + i);
+            
+            rkEl.innerText = (typeof bak === 'number' ? bak + ' mm' : bak);
+            document.getElementById('hk_' + i).value = bak;
+
+            if (bakError) {
+                tdBak.classList.add("res-error");
+            } else {
+                tdBak.classList.remove("res-error");
+            }
+
+            // --- LOGICA HOEKLIJN MAAT (AUTO-FILL PLACEHOLDER) ---
+            var hmaatEl = document.getElementById('hmaat_' + i);
+            if (hmaatEl) {
+                if (bOut > 0) {
+                    hmaatEl.placeholder = bOut + " mm (Auto)";
+                } else {
+                    hmaatEl.placeholder = "Maat (mm)";
+                }
+            }
+        }
+    }
+
+    // ============================================================================
+    // 2. PDOK ADRES ZOEKEN (GEUPDATE VERSIE MET SPATIE FIX)
+    // ============================================================================
+    var pc = document.getElementById('pc');
+    var hn = document.getElementById('hn');
+    var str = document.getElementById('str');
+
+    function zoekAdres() {
+        var cleanPc = pc.value.replace(/\s+/g, ''); // Verwijdert onzichtbare spaties
+        var cleanHn = hn.value.trim();
+
+        if (cleanPc.length === 6 && cleanHn !== "") {
+            str.value = "Zoeken...";
+            var query = encodeURIComponent(cleanPc + ' ' + cleanHn);
+            var url = 'https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=' + query + '&fq=type:adres';
+            
+            fetch(url)
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.response.docs.length > 0) {
+                        var a = data.response.docs[0];
+                        str.value = a.straatnaam + ", " + a.woonplaatsnaam;
+                    } else {
+                        str.value = "Adres niet gevonden";
+                    }
+                })
+                .catch(function(err) {
+                    console.error(err);
+                    str.value = "Fout bij zoeken";
+                });
+        }
+    }
+    pc.addEventListener('input', zoekAdres);
+    hn.addEventListener('input', zoekAdres);
+
+    // ============================================================================
+    // 3. E-MAIL VERZENDEN VIA FORMSPREE
+    // ============================================================================
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        var btn = document.getElementById('btnSend');
+        
+        var naam = document.getElementById('klant_naam').value;
+        var tel = document.getElementById('telefoon').value;
+        var email = document.getElementById('email').value;
+        var pcVal = document.getElementById('pc').value;
+        var hnVal = document.getElementById('hn').value;
+        var strVal = document.getElementById('str').value;
+        var datum = document.getElementById('datum').value;
+
+        if (!naam) { alert("Vul minimaal een klantnaam in."); return; }
+
+        btn.innerText = "⏳ BEZIG MET VERZENDEN...";
+        btn.disabled = true;
+
+        var f = new FormData();
+        f.append("_subject", "Nieuwe Order: " + naam);
+        
+        var klantData = "Naam: " + naam + "\nTelefoon: " + tel + "\nAdres: " + strVal + " (" + pcVal + " " + hnVal + ")\nOrder Datum: " + datum;
+        f.append("1. KLANTGEGEVENS", klantData);
+
+        var lijst = "\n\n";
+        var hasItems = false;
+        
+        for (var i = 1; i <= 10; i++) {
+            var bOut = document.getElementById('hb_' + i).value;
+            
+            if (bOut && bOut !== "0") {
+                hasItems = true;
+                
+                var pEl = document.getElementById('p_' + i);
+                var pTxt = pEl.options[pEl.selectedIndex].text.toUpperCase();
+                
+                var sysMerk = document.getElementById('sys_merk_' + i).value;
+                var mEl = document.getElementById('m_' + i);
+                var mTxt = mEl.options[mEl.selectedIndex].text;
+                
+                var hOut = document.getElementById('hh_' + i).value;
+                var bak = document.getElementById('hk_' + i).value;
+
+                var kbak = document.getElementById('kbak_' + i).value;
+                var kvorm = document.getElementById('kvorm_' + i).value;
+                var kdoek = document.getElementById('kdoek_' + i).value;
+                
+                var motTyp = document.getElementById('mot_typ_' + i).value;
+                var mot = document.getElementById('mot_' + i).value;
+                var afs = document.getElementById('afs_' + i).value;
+                
+                var gell = document.getElementById('gell_' + i).value;
+                var gelr = document.getElementById('gelr_' + i).value;
+                var inf = document.getElementById('inf_' + i).value;
+
+                var uitvul = document.getElementById('uit_' + i).value;
+                var htyp = document.getElementById('htyp_' + i).value;
+                var hkleur = document.getElementById('hkleur_' + i).value;
+                var hmaat = document.getElementById('hmaat_' + i).value;
+                var haant = document.getElementById('haant_' + i).value;
+
+                lijst += "--- REGEL " + i + ": " + pTxt + " (" + mTxt + ") ---\n";
+                lijst += "Systeem     : " + sysMerk + "\n";
+                lijst += "Bestel Maten: " + bOut + "mm B x " + hOut + "mm H (Berekende Bak: " + bak + ")\n";
+                lijst += "Kleuren     : Bak: " + kbak + " | Vorm Bak: " + kvorm + " | Doek/Lamel: " + kdoek + "\n";
+                lijst += "Aansturing  : " + motTyp + " | Zijde: " + mot + " | Afst: " + afs + "\n";
+                lijst += "Geleiders   : L: " + gell + " | R: " + gelr + "\n";
+                
+                if (uitvul !== "") {
+                    lijst += "Uitvullen   : " + uitvul + " mm\n";
+                }
+
+                if (htyp !== "Geen") {
+                    var defMaat = (hmaat !== "") ? hmaat : bOut;
+                    lijst += "Hoeklijn    : Type: " + htyp + " | Kleur: " + hkleur + " | Maat: " + defMaat + " mm | Aantal: " + haant + "x\n";
+                }
+
+                if (inf !== "") {
+                    lijst += "Info/Loc.   : " + inf + "\n";
+                }
+                lijst += "\n";
+            }
+        }
+        
+        if (!hasItems) lijst = "GEEN MATEN INGEVULD";
+
+        var payload = {
+            email: email ? email : "geen-email@opgegeven.nl",
+            _subject: "Meetbon & Order: " + naam,
+            "1_KLANTGEGEVENS": klantData,
+            "2_BESTELLIJST": lijst
+        };
+
+        fetch("https://formspree.io/f/xkovrnqj", {
+            method: "POST",
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json' 
+            },
+            body: JSON.stringify(payload)
+        }).then(function(response) {
+            if (response.ok) {
+                alert("✅ Verzonden! Je kunt nu de PDF opslaan.");
+                btn.innerText = "✅ SUCCESVOL VERZONDEN";
+            } else {
+                return response.json().then(function(err) { throw new Error(err.error || 'Onbekende fout'); });
+            }
+        }).catch(function(error) {
+            alert("❌ Fout: " + error.message);
+            btn.disabled = false;
+            btn.innerText = "📧 OPNIEUW PROBEREN";
+        });
+    });
+</script>
+
+</body>
+</html>
