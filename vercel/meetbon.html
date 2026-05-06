@@ -51,7 +51,12 @@
             box-shadow: inset 0 0 5px rgba(0,0,0,0.02);
         }
 
-        /* FOOTER */
+        /* KNOPPEN & FOOTER */
+        .action-box {
+            flex: 0 0 auto;
+            margin-bottom: 10px;
+        }
+        
         .footer-box {
             flex: 0 0 auto;
             background: white;
@@ -80,9 +85,13 @@
         .res-error { background: #ffebee; color: #ff3b30; border-color: #ff3b30 !important; }
         
         .btn { width: 100%; padding: 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; color: white; cursor: pointer; text-transform: uppercase; }
+        .btn-add { background: #007aff; box-shadow: 0 4px 6px rgba(0,122,255,0.2); transition: 0.2s; }
+        .btn-add:active { transform: scale(0.98); }
         .btn-send { background: #34c759; }
         .btn-pdf { background: #ff3b30; }
         .btn-reset { background: #8e8e93; }
+
+        .btn-delete { background: #ff3b30; color: white; border: none; border-radius: 4px; width: 42px; height: 42px; font-weight: bold; cursor: pointer; font-size: 16px; margin-left: 5px;}
 
         /* === MOBIELE TELEFOON WEERGAVE (CARD LAYOUT) === */
         @media (max-width: 1024px) {
@@ -126,6 +135,7 @@
             td.res::before { margin-bottom: 0; }
 
             input, select { height: 48px; font-size: 16px; border: 1px solid #aaa; }
+            .btn-delete { height: 48px; width: 48px; }
         }
 
         @media print { 
@@ -167,7 +177,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="100">Product</th> <th width="100">Systeem Merk</th> <th width="90">Montage</th> <th width="65">Br. in</th> <th width="65">Ho. in</th>
+                        <th width="150">Product</th> <th width="100">Systeem Merk</th> <th width="90">Montage</th> <th width="65">Br. in</th> <th width="65">Ho. in</th>
                         <th width="115">Kleur Bak</th> <th width="115">Vorm Bak</th> <th width="150">Doek / Lamel</th>
                         <th width="120">Motor / Type</th> <th width="75">Motor Z.</th>
                         <th width="65">Afst.</th> <th width="125">Gel. L</th> <th width="125">Gel. R</th> 
@@ -176,14 +186,19 @@
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    </tbody>
+                    <!-- Rijen worden hier nu dynamisch ingeladen door de + knop -->
+                </tbody>
             </table>
+        </div>
+
+        <div class="action-box no-print">
+            <button type="button" class="btn btn-add" onclick="voegProductToe()">➕ NIEUW PRODUCT INMETEN</button>
         </div>
 
         <div class="footer-box no-print">
             <button type="submit" class="btn btn-send" id="btnSend">📧 ORDER VERZENDEN</button>
             <button type="button" class="btn btn-pdf" onclick="window.print()">📄 PDF OPSLAAN</button>
-            <button type="button" class="btn btn-reset" onclick="location.reload()">🔄 ALLES WISSEN</button>
+            <button type="button" class="btn btn-reset" onclick="wisAlles()">🔄 ALLES WISSEN</button>
         </div>
 
     </form>
@@ -191,17 +206,25 @@
 
 <script>
     // ============================================================================
-    // 0. GENEREREN VAN DE TABEL RIJEN
+    // 0. GENEREREN VAN DE TABEL RIJEN (SLIMME PLUS KNOP)
     // ============================================================================
     const optKleurBak = '<option value="-">-</option><optgroup label="Standaard"><option>RAL 9001 - Crème</option><option>RAL 7016 - Antraciet</option><option>RAL 9005 - Zwart</option><option>RAL 7021 - Zwartgrijs</option></optgroup><optgroup label="Screens"><option>RAL 9010 - Wit</option></optgroup><optgroup label="Rolluiken"><option>RAL 9016 - Wit</option><option>RAL 7038 - Grijs</option></optgroup><optgroup label="Meerprijs"><option>RAL 6009 - Groen</option><option>RAL 5011 - Blauw</option><option>RAL 7039 - Kwartsgrijs</option></optgroup>';
     
     const optDoekLamel = '<option value="-">-</option><optgroup label="Rolluik"><option>RAL 9016 Wit</option><option>RAL 9001 Crème</option><option>RAL 7038 Grijs</option><option>RAL 7016 Antraciet</option><option>RAL 9005 Zwart</option><option>RAL 6009 Groen</option><option>RAL 5011 Blauw</option><option>RAL 7021 Zwartgrijs</option><option>RAL 7039 Kwartsgrijs</option></optgroup><optgroup label="Tibelly Uni"><option>T100 Wit</option><option>T103 Crème</option><option>T102 Beige</option><option>T121 L.Grijs</option><option>T122 Grijs</option><option>T367 Ardoise</option><option>T326 Antraciet</option><option>T368 Zwart</option><option>T119 Blauw</option><option>T120 Marine</option><option>T117 Bosgroen</option><option>T114 Bordeaux</option><option>T109 Okergeel</option></optgroup><optgroup label="Dickson"><option>ORC 0001 Ecru</option><option>ORC 8902 Beige</option><option>ORC 0613 Marron</option><option>ORC 6088 Gris</option><option>ORC 6196 Pierre</option><option>ORC 8203 Ardoise</option><option>ORC U171 Carbone</option><option>ORC 6028 Noir</option><option>ORC 0017 Bleu</option><option>ORC 8206 Bordeaux</option><option>ORC 6687 Foret</option></optgroup><optgroup label="Dickson MAX"><option>MAX2 U786 Etain</option><option>MAX2 0001 Ecru</option><option>MAX2 6196 Pierre</option><option>MAX2 6088 Gris</option><option>MAX2 8396 Souris</option><option>MAX2 U104 Flanelle</option><option>MAX2 U406 Acier</option><option>MAX2 U407 Platine</option><option>MAX2 7559 Taupe</option><option>MAX2 8203 Ardoise</option><option>MAX2 U171 Carbone</option><option>MAX2 U095 Basalte</option><option>MAX2 6028 Noir</option><option>MAX2 7133 Naturel</option><option>MAX2 7548 Ivoire</option><option>MAX2 0681 Dune</option><option>MAX2 6020 Grège</option><option>MAX2 U811 Hêtre</option><option>MAX2 8779 Bruyère</option><option>MAX2 U806 Orgeat</option><option>MAX2 U767 Tangerine</option><option>MAX2 U808 Magma</option><option>MAX2 3914 Rouge</option><option>MAX2 8206 Bordeaux</option><option>MAX2 U768 Ebène</option><option>MAX2 U793 Aloé</option><option>MAX2 6687 Forêt</option><option>MAX2 6022 Marine</option></optgroup><optgroup label="Sergé 3%"><option>101101 White</option><option>108101 Grey-White</option><option>108108 Grey</option><option>108111 Grey-D.Blue</option><option>108112 Grey-Sand</option><option>108118 Grey-Black</option><option>108126 Grey-Caramel</option><option>108167 Pacific</option><option>111111 D.Blue</option><option>112101 Sand-White</option><option>112103 Sand-Yellow</option><option>112112 Sand</option><option>112113 Sand-Bronze</option><option>113105 Bronze</option><option>113108 Bronze-Grey</option><option>113113 Bronze-Tang</option><option>113115 Bronze-Lime</option><option>116101 Linen-White</option><option>116108 Linen-Grey</option><option>116116 Linen</option><option>116122 Linen-Lich</option><option>117101 Pearl-White</option><option>117108 Pearl-Grey</option><option>117116 Pearl-Linen</option><option>117117 Pearl</option><option>118112 Black-Sand</option><option>118113 Black-Bronz</option><option>118116 Black-Linen</option><option>118118 Black</option><option>118181 Jamaica</option></optgroup><optgroup label="Privacy 1%"><option>108101 1%</option><option>108108 1%</option><option>108112 1%</option><option>108118 1%</option><option>117101 1%</option><option>117108 1%</option><option>117117 1%</option><option>118108 1%</option><option>118112 1%</option><option>118118 1%</option></optgroup><optgroup label="Lunar BO"><option>002002 White</option><option>002007 Wht-Pearl</option><option>007007 Pearl</option><option>001002 Grey-White</option><option>033001 Oyster</option><option>001001 Grey</option><option>001010 Grey-Char</option><option>010010 Charcoal</option></optgroup>';
 
-    let tbodyHTML = "";
-    for(let i=1; i<=10; i++) {
-        tbodyHTML += `
-        <tr data-id="${i}">
-            <td data-label="Product"><select id="p_${i}"><option value="rolluik">Rolluik</option><option value="screen">Zipscreen</option><option value="st 4200 solar">ST 4200 Solar</option><option value="gavia">Gavia</option><option value="gavia max">Gavia Max</option><option value="toscane">Toscane</option><option value="trentino">Trentino</option></select></td>
+    let itemCount = 0;
+
+    function voegProductToe() {
+        itemCount++;
+        let i = itemCount;
+        let rowHTML = `
+        <tr id="row_${i}" data-id="${i}">
+            <td data-label="Product">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <select id="p_${i}" style="flex-grow:1;"><option value="rolluik">Rolluik</option><option value="screen">Zipscreen</option><option value="st 4200 solar">ST 4200 Solar</option><option value="gavia">Gavia</option><option value="gavia max">Gavia Max</option><option value="toscane">Toscane</option><option value="trentino">Trentino</option></select>
+                    <button type="button" class="btn-delete no-print" onclick="document.getElementById('row_${i}').remove()" title="Verwijder raam">X</button>
+                </div>
+            </td>
             <td data-label="Systeem Merk"><select id="sys_merk_${i}"><option value="Heroal">Heroal</option><option value="Eigenmerk">Eigenmerk</option></select></td>
             <td data-label="Montage soort"><select id="m_${i}"><option value="indag">In de dag</option><option value="opdag">Op de dag</option></select></td>
             <td data-label="Invoer Breedte (mm)"><input type="text" inputmode="numeric" pattern="[0-9]*" id="b_${i}" placeholder="0"></td>
@@ -253,8 +276,19 @@
             <td data-label="KAP / BAK MAAT" class="res" id="td_bak_${i}"><span id="rk_${i}">-</span><input type="hidden" id="hk_${i}"></td>
         </tr>
         `;
+        document.getElementById('tableBody').insertAdjacentHTML('beforeend', rowHTML);
     }
-    document.getElementById('tableBody').innerHTML = tbodyHTML;
+
+    // Laad automatisch 1 leeg product in als de app opent
+    window.onload = function() {
+        voegProductToe();
+    };
+
+    function wisAlles() {
+        if(confirm("Weet je zeker dat je alle gegevens en gemaakte regels wilt wissen?")) {
+            location.reload();
+        }
+    }
 
     // ============================================================================
     // 1. HARTSLAG REKENMACHINE (Elke 400ms controleren en updaten)
@@ -262,15 +296,15 @@
     setInterval(berekenAlles, 400);
 
     function berekenAlles() {
-        for (var i = 1; i <= 10; i++) {
+        for (var i = 1; i <= itemCount; i++) {
             var pEl = document.getElementById('p_' + i);
+            if (!pEl) continue; // Skip als de monteur dit raam heeft verwijderd
+
             var sysBrandEl = document.getElementById('sys_merk_' + i);
             var motTypEl = document.getElementById('mot_typ_' + i);
             var mEl = document.getElementById('m_' + i);
             var bEl = document.getElementById('b_' + i);
             var hEl = document.getElementById('h_' + i);
-
-            if (!pEl || !mEl || !bEl || !hEl) continue;
 
             var p = pEl.value.toLowerCase();
             var sysBrand = sysBrandEl.value; 
@@ -562,9 +596,13 @@
 
         var lijst = "\n\n";
         var hasItems = false;
+        var productIndex = 1; // Teller voor in de mail (1, 2, 3) onafhankelijk van verborgen/gewiste rijen
         
-        for (var i = 1; i <= 10; i++) {
-            var bOut = document.getElementById('hb_' + i).value;
+        for (var i = 1; i <= itemCount; i++) {
+            var hbEl = document.getElementById('hb_' + i);
+            if (!hbEl) continue; // Sla over als de monteur dit blok met de X knop heeft verwijderd
+
+            var bOut = hbEl.value;
             
             if (bOut && bOut !== "0") {
                 hasItems = true;
@@ -597,7 +635,7 @@
                 var hmaat = document.getElementById('hmaat_' + i).value;
                 var haant = document.getElementById('haant_' + i).value;
 
-                lijst += "--- REGEL " + i + ": " + pTxt + " (" + mTxt + ") ---\n";
+                lijst += "--- PRODUCT " + productIndex + ": " + pTxt + " (" + mTxt + ") ---\n";
                 lijst += "Systeem     : " + sysMerk + "\n";
                 lijst += "Bestel Maten: " + bOut + "mm B x " + hOut + "mm H (Berekende Bak: " + bak + ")\n";
                 lijst += "Kleuren     : Bak: " + kbak + " | Vorm Bak: " + kvorm + " | Doek/Lamel: " + kdoek + "\n";
@@ -617,6 +655,8 @@
                     lijst += "Info/Loc.   : " + inf + "\n";
                 }
                 lijst += "\n";
+                
+                productIndex++;
             }
         }
         
@@ -653,3 +693,13 @@
 
 </body>
 </html>
+   
+       
+       
+     
+            
+            
+                  
+            
+           
+        
