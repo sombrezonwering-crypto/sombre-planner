@@ -15,12 +15,19 @@
         
         .dashboard { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; border-bottom: 5px solid var(--primary); transition: 0.3s; }
         .dashboard.resting { border-bottom-color: var(--rest); background: #2c3e50; }
-        .dashboard.bonus { border-bottom-color: var(--gold); background: #3e3305; }
+        .dashboard.bonus { border-bottom-color: var(--gold); background: #3e3305; box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
         
         #timer { font-size: 4.5rem; font-weight: 900; margin: 0; line-height: 1; }
         
+        #prep-area { background: #0f172a; padding: 15px; border-radius: 10px; margin: 15px 0; border: 2px dashed var(--accent); }
+        #prep-list { font-size: 1rem; color: #fff; text-align: left; display: inline-block; margin-top: 10px; line-height: 1.6; }
+        .prep-eq-title { color: var(--gold); font-size: 0.9rem; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; }
+
         .visual-card { background: #0f172a; border-radius: 15px; padding: 12px; margin: 10px 0; border: 2px solid var(--primary); min-height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .ascii-art { font-family: monospace; background: #000; color: var(--accent); padding: 8px; border-radius: 8px; font-size: 10px; white-space: pre; line-height: 1.1; width: 100%; text-align: center; }
+        
+        #ex-title { font-size: 1.5rem; color: var(--accent); font-weight: 900; text-transform: uppercase; margin-bottom: 10px; text-align: center; }
+        #ex-eq { font-size: 0.8rem; color: var(--gold); font-weight: bold; margin-bottom: 5px; }
 
         /* Input Controls */
         .stepper-group { display: flex; justify-content: space-around; align-items: center; background: #0f172a; padding: 10px; border-radius: 15px; margin-bottom: 10px; }
@@ -55,11 +62,20 @@
 
     <div class="dashboard" id="db-panel">
         <div id="status-label" style="font-size:0.9rem; font-weight: 900; color: var(--accent);">BEAST MODE READY</div>
+        
+        <!-- Voorbereidingsoverzicht -->
+        <div id="prep-area">
+            <div style="color: var(--accent); font-size: 1.1rem; font-weight: 900;">PRE-WORKOUT BRIEFING</div>
+            <div id="prep-list"></div>
+        </div>
+        
         <div id="timer">15:00</div>
         <button class="btn-main" style="background:#fff; color:#000;" onclick="startApp()" id="startBtn">START TRAINING</button>
     </div>
 
-    <div class="visual-card">
+    <div class="visual-card" id="visual-card" style="display:none;">
+        <div id="ex-title">OEFENING NAAM</div>
+        <div id="ex-eq">GEWICHT KLAARZETTEN</div>
         <div id="visualContent" class="ascii-art">KIES OEFENING</div>
         <div id="instruction" style="font-size: 0.8rem; margin-top: 5px; text-align: center;">Kies je eerste doelwit.</div>
     </div>
@@ -78,7 +94,6 @@
                 <div class="stepper-val" id="val-r">12 reps</div>
                 <button class="btn-step" onclick="adj('r',1)">+</button>
             </div>
-            <select id="ex-select" onchange="updateEx()" style="width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 8px; font-weight: bold; font-size: 1rem; background: #334155; color: white; border: none;"></select>
         </div>
         
         <!-- Rest UI -->
@@ -89,81 +104,68 @@
         </div>
         
         <button class="btn-main btn-log" id="logBtn" onclick="logSet()">SLA SET OP</button>
-        <button class="btn-main btn-finish-ex" id="finishExBtn" onclick="finishEx()">OEFENING VOLTOOID</button>
+        <button class="btn-main btn-finish-ex" id="finishExBtn" onclick="finishExManually()">IK BEN KLAAR MET DEZE OEFENING</button>
     </div>
 </div>
 
 <script>
     let timeLeft = 900, timerRunning = false, currentSet = 1, isResting = false;
-    let weight = 10, reps = 12, completedExCount = 0;
+    let weight = 10, reps = 12;
     let restTimeRemaining = 0;
+    
+    let currentWorkoutList = [];
+    let currentExIndex = 0;
 
     // DRILL INSTRUCTOR QUOTES
     const quotesStart = [
         "15 minuten op de klok! Geen genade! Rammen met die handel!",
-        "Luisteren pannenkoek! 15 minuten gas geven! Start!",
-        "Tijd loopt! Vanaf nu wordt er gezweet! Go go go!"
+        "Materiaal gereed? 15 minuten gas geven! Start!"
     ];
     const quotesRest = [
         "Set klaar! 45 seconden ademhalen en niet janken!",
-        "Goed. 45 seconden rust. Blijf staan, niet zitten!",
-        "Zwaar? Maakt me niet uit! 45 seconden herstel!"
+        "Goed. 45 seconden rust. Blijf staan, niet zitten!"
     ];
     const quotesGo = [
         "Genoeg gerust! Bewegen! GO GO GO!",
-        "Klaar met huilen! Pak dat gewicht op! Nu!",
-        "Tijd is om! Terug naar je post! Rammen!"
+        "Klaar met huilen! Pak dat gewicht op! Nu!"
     ];
     const quotesExDone = [
         "Oefening voltooid! Meteen door naar de volgende, we hebben geen hele dag!",
-        "Klaar! Niet treuzelen, selecteer je volgende doel!",
-        "Goed gewerkt, maar we zijn nog niet klaar! Doorgaan!"
+        "Klaar! Volgende doelwit op je scherm! Uitvoeren!"
     ];
 
     function getRandomQuote(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
     
-    // OEFENINGEN ARSENAAL
+    // HET ULTIEME ARSENAAL (Halter, DBs, Dips, Lichaamsgewicht, Medicijnbal)
     const exercises = {
-        "Push-Ups": { d: "Lichaam recht als een plank. Borst naar grond.", a: "   O____\n  /|    |\n  / \\___|" },
-        "Diamond Push-Ups": { d: "Handen in ruitvorm. Focus op triceps.", a: "   O____\n  /|\\   |\n  / \\___|" },
-        "DB Chest Press": { d: "Lig op rug. Druk DB's recht omhoog.", a: "  [O]   [O]\n    \\   /\n     -O-" },
-        "Chest Flyes": { d: "Armen wijd in boog. Boven borst samen.", a: "  [O] _  _ [O]\n     \\ (O) /" },
-        "Dips": { d: "Handen op bankje. Zak tot 90 graden.", a: "   O \n  /|\\\n  _|_" },
-        "Preacher Curls": { d: "Armen op steun. Isoleer de bicep.", a: "    /|\\_\n   [===]_ [O]" },
-        "Hammer Curls": { d: "Neutrale grip. Pomp die biceps op!", a: "   /|\\_\n  [||]_ [O]" },
-        "Skullcrushers": { d: "Lig op rug. Alleen onderarmen bewegen.", a: "  [O]\n   |\n  /|\\" },
-        "Pull-Ups": { d: "Kort en explosief omhoog. Kin over stang!", a: " ======\n  \\O/\n   |\n  / \\" },
-        "Barbell Rows": { d: "Rug recht, voorover gebogen. Trek naar navel.", a: "   O__\n  /|  [I]" },
-        "Overhead Press": { d: "Core strak, gewicht recht omhoog uitstoten.", a: " [O]_[O]\n  \\ O /\n    |\n   / \\" },
-        "Lateral Raises": { d: "Armen wijd, focus op zijkant schouders.", a: " [O] O [O]\n  \\ /|\\ /\n    / \\" },
-        "Squats": { d: "Voeten schouderbreedte. Zak diep door knieën.", a: "   O\n  /|\\\n _/ \\_" },
-        "Lunges": { d: "Stap naar voren. Knie net niet op de grond.", a: "   O\n  /|\n  / \\_" },
-        "Crunches": { d: "Span die core aan! Schouders van de vloer.", a: "    _O\n   /  \\__\n  -^-----" },
-        "Plank": { d: "Span buik en billen aan. Hou vast!", a: "  O-------\n  ||    ||" }
+        "Push-Ups": { d: "Lichaam recht als een plank. Borst naar grond.", a: "   O____\n  /|    |\n  / \\___|", eq: "Lichaamsgewicht" },
+        "Diamond Push-Ups": { d: "Handen in ruitvorm. Focus op triceps.", a: "   O____\n  /|\\   |\n  / \\___|", eq: "Lichaamsgewicht" },
+        "Dips": { d: "Handen op stangen of bankje. Zak tot 90 graden.", a: "   O \n  /|\\\n  _|_", eq: "Dips / Lichaamsgewicht" },
+        "DB Chest Press": { d: "Lig op rug. Druk DB's recht omhoog.", a: "  [O]   [O]\n    \\   /\n     -O-", eq: "Dumbbells" },
+        "Chest Flyes": { d: "Armen wijd in boog. Boven borst samen.", a: "  [O] _  _ [O]\n     \\ (O) /", eq: "Dumbbells" },
+        "Barbell Rows": { d: "Rug recht, voorover gebogen. Trek halter naar navel.", a: "   O__\n  /|  [I]", eq: "Halter" },
+        "DB Rows": { d: "Voorover gebogen, rug recht. Trek DBs op.", a: "   O__\n  /|  [I]", eq: "Dumbbells" },
+        "Barbell Squats": { d: "Halter in nek, voeten schouderbreedte. Zak diep door.", a: "  [I]_[I]\n    O\n   /|\\\n  _/ \\_", eq: "Halter" },
+        "Barbell Overhead Press": { d: "Core strak, halter recht omhoog uitstoten.", a: " [I]_[I]\n  \\ O /\n    |\n   / \\", eq: "Halter" },
+        "Barbell Curls": { d: "Recht staan, ellebogen in de zij. Pomp de biceps.", a: "   /|\\_\n  [I]_[I]", eq: "Halter" },
+        "Hammer Curls": { d: "Neutrale grip. Pomp die biceps op!", a: "   /|\\_\n  [||]_ [O]", eq: "Dumbbells" },
+        "Skullcrushers": { d: "Lig op rug. Alleen onderarmen bewegen.", a: "  [O]\n   |\n  /|\\", eq: "Dumbbells of Halter" },
+        "Lateral Raises": { d: "Armen wijd, focus op zijkant schouders.", a: " [O] O [O]\n  \\ /|\\ /\n    / \\", eq: "Dumbbells" },
+        "Lunges": { d: "Stap naar voren. Knie net niet op de grond.", a: "   O\n  /|\n  / \\_", eq: "Dumbbells of Lichaamsgewicht" },
+        "Med Ball Squats": { d: "Hou de bal tegen je borst. Zak diep door.", a: "   O\n  /|\\\n _/ \\_", eq: "12 kg Medicijnbal" },
+        "Med Ball Slams": { d: "Smijt de bal met brute kracht op de grond!", a: "  \\O/\n   |\n  / \\  O", eq: "12 kg Medicijnbal" },
+        "Russian Twists": { d: "Zit in V-vorm, tik bal links en rechts aan.", a: "   _O_\n  /  \\\n -^---", eq: "12 kg Medicijnbal" },
+        "Crunches": { d: "Span die core aan! Schouders van de vloer.", a: "    _O\n   /  \\__\n  -^-----", eq: "Lichaamsgewicht" },
+        "Plank": { d: "Span buik en billen aan. Hou vast!", a: "  O-------\n  ||    ||", eq: "Lichaamsgewicht" }
     };
     
-    // 5-DAGEN SCHEMA (2x per dag, max 3 oefeningen, 1x buik per dag)
+    // 5-DAGEN SCHEMA (Aangepast op Halter, Dips en Medicijnbal. 1x buik per dag gegarandeerd)
     const schedule = { 
-        1: { 
-            AM: ["Push-Ups", "DB Chest Press", "Squats"], 
-            PM: ["Pull-Ups", "Barbell Rows", "Plank"] // Buik in PM
-        },
-        2: { 
-            AM: ["Overhead Press", "Lateral Raises", "Crunches"], // Buik in AM
-            PM: ["Lunges", "Hammer Curls", "Dips"] 
-        },
-        3: { 
-            AM: ["Chest Flyes", "Diamond Push-Ups", "Plank"], // Buik in AM
-            PM: ["Squats", "Preacher Curls", "Skullcrushers"] 
-        },
-        4: { 
-            AM: ["Lunges", "Barbell Rows", "Pull-Ups"], 
-            PM: ["Push-Ups", "Overhead Press", "Crunches"] // Buik in PM
-        },
-        5: { 
-            AM: ["Dips", "DB Chest Press", "Plank"], // Buik in AM
-            PM: ["Squats", "Hammer Curls", "Lateral Raises"] 
-        }
+        1: { AM: ["Push-Ups", "DB Chest Press", "Barbell Squats"], PM: ["Barbell Rows", "Hammer Curls", "Plank"] },
+        2: { AM: ["Barbell Overhead Press", "Lateral Raises", "Crunches"], PM: ["Lunges", "Dips", "Med Ball Slams"] },
+        3: { AM: ["Chest Flyes", "Diamond Push-Ups", "Plank"], PM: ["Med Ball Squats", "Barbell Curls", "DB Rows"] },
+        4: { AM: ["Lunges", "Barbell Rows", "Dips"], PM: ["Push-Ups", "Barbell Overhead Press", "Russian Twists"] },
+        5: { AM: ["DB Chest Press", "DB Rows", "Plank"], PM: ["Barbell Squats", "Barbell Curls", "Lateral Raises"] }
     };
 
     function speak(t) { 
@@ -177,39 +179,56 @@
 
     function init() {
         let day = new Date().getDay();
-        // Als het weekend is (0 = zondag, 6 = zaterdag), val terug op dag 1
-        if (day === 0 || day === 6) day = 1; 
+        if (day === 0 || day === 6) day = 1; // Weekend val terug op dag 1
 
         const hour = new Date().getHours();
-        const sessionTime = hour < 14 ? "AM" : "PM"; // Ochtend tot 14:00, daarna Avond
+        const sessionTime = hour < 14 ? "AM" : "PM";
         const sessionNaam = sessionTime === "AM" ? "OCHTEND" : "AVOND";
         
         document.getElementById('status-label').innerText = `DAG ${day} - ${sessionNaam} SESSIE`;
 
-        const list = schedule[day][sessionTime];
-        const sel = document.getElementById('ex-select');
-        sel.innerHTML = '<option value="">-- KIES OEFENING --</option>';
-        list.forEach(e => sel.innerHTML += `<option value="${e}">${e}</option>`);
-    }
-
-    function updateEx() {
-        const ex = document.getElementById('ex-select').value;
-        if(!ex) return;
-        if(isResting) skipRest(); 
-        currentSet = 1;
-        document.getElementById('visualContent').innerText = exercises[ex].a;
-        document.getElementById('instruction').innerText = exercises[ex].d;
-        document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
-        speak(`Nieuwe missie: ${ex}. ${exercises[ex].d}. Niet opgeven nu!`);
+        // Haal de lijst met 3 oefeningen op
+        currentWorkoutList = schedule[day][sessionTime];
+        
+        // Bereken benodigde materialen
+        const requiredEq = [...new Set(currentWorkoutList.map(ex => exercises[ex].eq))];
+        
+        // Genereer de Prep List HTML
+        let prepHtml = `<div class="prep-eq-title">BENODIGD MATERIAAL:<br><span style="color:#fff; font-weight:normal; font-size: 0.9rem;">${requiredEq.join(" &bull; ")}</span></div>`;
+        prepHtml += `<hr style="border: 1px solid #334155; margin: 10px 0;">`;
+        prepHtml += currentWorkoutList.map((ex, i) => `<strong>${i+1}.</strong> ${ex} <span style="font-size:0.8rem; color:var(--gold);">[${exercises[ex].eq}]</span>`).join("<br>");
+        
+        document.getElementById('prep-list').innerHTML = prepHtml;
     }
 
     function startApp() {
-        timerRunning = true; document.getElementById('startBtn').classList.add('hidden');
+        timerRunning = true; 
+        document.getElementById('startBtn').classList.add('hidden');
+        document.getElementById('prep-area').classList.add('hidden'); 
+        
+        document.getElementById('visual-card').style.display = 'flex';
         document.getElementById('input-ui').classList.remove('hidden');
+        
         speak(getRandomQuote(quotesStart));
+        
+        // Start met oefening 1
+        loadExercise(currentExIndex);
+
         const timer = setInterval(() => {
-            if(timeLeft > 0) { timeLeft--; updateClock(); } else { clearInterval(timer); finishSession(); }
+            if(timeLeft > 0) { timeLeft--; updateClock(); } else { clearInterval(timer); finishSession(false); }
         }, 1000);
+    }
+    
+    function loadExercise(index) {
+        const ex = currentWorkoutList[index];
+        document.getElementById('ex-title').innerText = `${index + 1}. ${ex}`;
+        document.getElementById('ex-eq').innerText = `BENODIGD: ${exercises[ex].eq.toUpperCase()}`;
+        document.getElementById('visualContent').innerText = exercises[ex].a;
+        document.getElementById('instruction').innerText = exercises[ex].d;
+        
+        currentSet = 1;
+        document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
+        speak(`Jouw missie: ${ex}. ${exercises[ex].d}.`);
     }
 
     function updateClock() {
@@ -218,11 +237,11 @@
     }
 
     function logSet() {
-        if(!document.getElementById('ex-select').value) {
-            speak("Kies eerst een oefening, soldaat!");
-            return;
+        if(currentSet < 3) { 
+            startRest(); 
+        } else { 
+            finishEx(); 
         }
-        if(currentSet < 3) { startRest(); } else { finishEx(); }
     }
 
     function startRest() {
@@ -262,31 +281,51 @@
         speak(getRandomQuote(quotesGo));
     }
 
-    function finishEx() {
+    function finishExManually() {
         if(isResting) skipRest(); 
-        completedExCount++;
-        speak(getRandomQuote(quotesExDone));
-        
-        // Zodra je 3 oefeningen hebt gedaan, is de sessie klaar (max 3 oefeningen per sessie)
-        if(completedExCount >= 3) {
-            finishSession(true);
-            return;
-        }
-        
-        currentSet = 1;
-        document.getElementById('logBtn').innerText = "KIES VOLGENDE";
-        document.getElementById('ex-select').value = ""; 
+        finishEx();
     }
 
-    function finishSession(isSuccess = false) {
+    function finishEx() {
+        currentExIndex++;
+        
+        if(currentExIndex < currentWorkoutList.length) {
+            speak(getRandomQuote(quotesExDone));
+            loadExercise(currentExIndex);
+        } 
+        else if(timeLeft > 60) {
+            activateBonus();
+        } 
+        else {
+            finishSession(true);
+        }
+    }
+
+    function activateBonus() {
+        document.getElementById('db-panel').classList.remove('resting');
+        document.getElementById('db-panel').classList.add('bonus');
+        document.getElementById('status-label').innerText = "GOUDEN BONUS RONDE!";
+        
+        speak("Alle doelen vernietigd, maar we hebben nog tijd! GOUDEN BONUS RONDE! Extra Core Training!");
+        
+        // Voeg een extra core oefening toe
+        const bonusOefening = currentWorkoutList.includes("Crunches") ? "Plank" : "Crunches";
+        currentWorkoutList.push(bonusOefening);
+        
+        loadExercise(currentExIndex);
+    }
+
+    function finishSession(isSuccess) {
         if(isSuccess) {
-            speak("Alle 3 de doelen vernietigd! Sessie voltooid! Uitstekend werk, soldaat!");
+            speak("Missie voltooid! Uitstekend werk, soldaat! Tot de volgende sessie!");
             document.body.style.background = "var(--accent)";
-            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center;'>MISSIE VOLTOOID!</h1><p style='text-align:center;'>Kom terug voor je volgende sessie.</p>";
+            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>MISSIE VOLTOOID!</h1><p style='text-align:center;'>Goed gewerkt. Rust nu uit.</p>";
+            document.getElementById('visual-card').style.display = 'none';
         } else {
-            speak("TIJD IS OM! Laat alles vallen! Goed gewerkt, soldaat! Inpakken en wegwezen!");
+            speak("TIJD IS OM! Laat alles vallen! Goed gewerkt, soldaat!");
             document.body.style.background = "red";
-            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center;'>TIJD IS OM</h1>";
+            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>TIJD IS OM</h1>";
+            document.getElementById('visual-card').style.display = 'none';
         }
         timeLeft = 0;
         updateClock();
@@ -296,3 +335,17 @@
 </script>
 </body>
 </html>
+        
+      
+   
+       
+  
+ 
+  
+     
+    
+     
+        
+  
+        
+    
