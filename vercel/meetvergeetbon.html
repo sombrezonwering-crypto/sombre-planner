@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sombre Master App - Volledige Versie 2026</title>
+    <style>
+        /* === BASIS LAYOUT === */
+        html, body { height: 100%; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f2f2f7; color: #1c1c1e; }
+        #app-container { display: flex; flex-direction: column; min-height: 100dvh; padding: 15px; box-sizing: border-box; max-width: 900px; margin: 0 auto; }
+
+        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #d1d1d6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: #005a9c; border-bottom: 2px solid #f39c12; padding-bottom: 8px; }
+
+        /* PRODUCT KAARTEN (ACCORDEON) */
+        .product-card { background: #fff; border: 2px solid #005a9c; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
+        .product-header { background: #005a9c; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; font-size: 15px; }
+        .product-body { padding: 15px; display: block; }
+        
+        .product-card.collapsed .product-body { display: none; }
+        .product-card.collapsed { border: 1px solid #d1d1d6; }
+        .product-card.collapsed .product-header { background: #eef2f5; color: #1c1c1e; }
+
+        /* FORM ELEMENTEN */
+        label { display: block; font-size: 11px; font-weight: 700; color: #555; margin-bottom: 4px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; height: 46px; font-size: 15px; border: 1px solid #c7c7cc; border-radius: 8px; padding: 0 10px; box-sizing: border-box; background: #fff; margin-bottom: 12px; -webkit-appearance: none; }
+        textarea { height: 90px; padding: 10px; resize: none; }
+        input:focus, select:focus { background: #fffdf0; border-color: #f39c12; outline: none; }
+        
+        .calc-preview { background: #eef7ff; padding: 15px; border-radius: 8px; border: 2px dashed #007aff; margin-bottom: 15px; color: #007aff; font-size: 14px; }
+        .calc-preview strong { font-size: 16px; display: block; margin-top: 5px; }
+
+        /* HOEKLIJNEN DYNAMISCH */
+        .hoeklijn-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr 40px; gap: 8px; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; }
+
+        /* KNOPPEN */
+        .btn { padding: 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-add { background: #007aff; color: white; width: 100%; margin-bottom: 25px; }
+        .btn-sub { background: #f39c12; color: white; padding: 8px 12px; font-size: 11px; margin-bottom: 15px; display: inline-block; width: auto; }
+        .btn-send { background: #34c759; color: white; width: 100%; font-size: 18px; margin-bottom: 10px; }
+        .btn-delete-sub { background: #ff3b30; color: white; height: 46px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* PRINTER PROOF STYLING */
+        @media print { 
+            .no-print { display: none !important; } 
+            #app-container { max-width: 100%; padding: 0; background: white; } 
+            .product-card.collapsed .product-body { display: block !important; } 
+            .product-card { border: 1px solid #000; page-break-inside: avoid; break-inside: avoid; margin-bottom: 20px; }
+            .card { box-shadow: none; border: 1px solid #000; page-break-inside: avoid; break-inside: avoid; }
+            .product-header { background: #f0f0f0 !important; color: #000 !important; border-bottom: 1px solid #000; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <form id="masterForm">
+        
+        <div class="card no-print">
+            <div class="card-title">📍 Projectgegevens</div>
+            <input type="text" id="klant_naam" placeholder="Klantnaam / Referentie" required>
+            <div class="grid-2">
+                <input type="text" id="pc" placeholder="Postcode (1234AB)" style="text-transform: uppercase;">
+                <input type="text" id="hn" placeholder="Huisnr">
+            </div>
+            <input type="text" id="str" placeholder="Adres (Wordt gezocht...)" readonly style="background:#f2f2f7;">
+            <div class="grid-2">
+                <input type="tel" id="telefoon" placeholder="Telefoonnummer">
+                <input type="date" id="datum">
+            </div>
+            <input type="email" id="email" placeholder="E-mail voor kopie bon">
+        </div>
+
+        <div id="productList"></div>
+
+        <button type="button" class="btn btn-add no-print" onclick="addNewProduct()">➕ NIEUW PRODUCT TOEVOEGEN</button>
+
+        <div class="card no-print">
+            <div class="card-title">⚠️ Montage Checklist & Bijzonderheden</div>
+            <div class="grid-2">
+                <div>
+                    <label>🪜 Klimmateriaal</label>
+                    <select id="chk_klim">
+                        <option>Standaard trap (tot 3m)</option>
+                        <option>Lange ladder nodig</option>
+                        <option>Rolsteiger nodig</option>
+                        <option>Hoogwerker nodig</option>
+                    </select>
+                </div>
+                <div>
+                    <label>🧱 Ondergrond Gevel</label>
+                    <select id="chk_muur">
+                        <option>Standaard metselwerk</option>
+                        <option>Hout / Rabat</option>
+                        <option>Kunststof kozijn</option>
+                        <option>Beton / Kalkzandsteen</option>
+                        <option>Isolatiegevel (Diepe pluggen!)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div>
+                    <label>🗑️ Demontage Oud Materiaal</label>
+                    <select id="chk_demo">
+                        <option value="Nee">Nee</option>
+                        <option value="Ja (Afvoeren)">Ja (In de bus laden & afvoeren)</option>
+                        <option value="Ja (Laten liggen)">Ja (Bij de klant laten liggen)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>⏱️ Geschatte Montagetijd</label>
+                    <input type="text" id="chk_tijd" placeholder="Bijv: 4 uur">
+                </div>
+            </div>
+            <label>📝 Instructies (Voor de monteur)</label>
+            <textarea id="chk_info" placeholder="Typ hier bijzonderheden over stroomvoorziening, obstakels of afwerking..."></textarea>
+        </div>
+
+        <div class="no-print" style="margin-bottom: 50px;">
+            <button type="submit" class="btn btn-send" id="btnSend">📧 WERK- & BESTELBON VERZENDEN</button>
+            <button type="button" class="btn" style="background:#ff3b30; color:white; width: 100%;" onclick="wisAlles()">🔄 ALLES WISSEN (NIEUWE BON)</button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    let pCount = 0;
+    const GROUP_ZONNESCHERM = ['gavia', 'gavia max', 'toscane', 'trentino', 'st 4200 solar', 'pergola zonwering'];
+    
+    // ORIGINELE KLEUREN & DOEKEN LIJSTEN
+    const optKleurBak = '<option value="-">-</option><optgroup label="Standaard"><option>RAL 9001 - Crème</option><option>RAL 7016 - Antraciet</option><option>RAL 9005 - Zwart</option><option>RAL 7021 - Zwartgrijs</option></optgroup><optgroup label="Screens"><option>RAL 9010 - Wit</option></optgroup><optgroup label="Rolluiken"><option>RAL 9016 - Wit</option><option>RAL 7038 - Grijs</option></optgroup><optgroup label="Meerprijs"><option>RAL 6009 - Groen</option><option>RAL 5011 - Blauw</option><option>RAL 7039 - Kwartsgrijs</option></optgroup>';
+    
+    const optDoekLamel = '<option value="-">-</option><optgroup label="Rolluik"><option>RAL 9016 Wit</option><option>RAL 9001 Crème</option><option>RAL 7038 Grijs</option><option>RAL 7016 Antraciet</option><option>RAL 9005 Zwart</option><option>RAL 6009 Groen</option><option>RAL 5011 Blauw</option><option>RAL 7021 Zwartgrijs</option><option>RAL 7039 Kwartsgrijs</option></optgroup><optgroup label="Tibelly Uni"><option>T100 Wit</option><option>T103 Crème</option><option>T102 Beige</option><option>T121 L.Grijs</option><option>T122 Grijs</option><option>T367 Ardoise</option><option>T326 Antraciet</option><option>T368 Zwart</option><option>T119 Blauw</option><option>T120 Marine</option><option>T117 Bosgroen</option><option>T114 Bordeaux</option><option>T109 Okergeel</option></optgroup><optgroup label="Dickson"><option>ORC 0001 Ecru</option><option>ORC 8902 Beige</option><option>ORC 0613 Marron</option><option>ORC 6088 Gris</option><option>ORC 6196 Pierre</option><option>ORC 8203 Ardoise</option><option>ORC U171 Carbone</option><option>ORC 6028 Noir</option><option>ORC 0017 Bleu</option><option>ORC 8206 Bordeaux</option><option>ORC 6687 Foret</option></optgroup><optgroup label="Dickson MAX"><option>MAX2 U786 Etain</option><option>MAX2 0001 Ecru</option><option>MAX2 6196 Pierre</option><option>MAX2 6088 Gris</option><option>MAX2 8396 Souris</option><option>MAX2 U104 Flanelle</option><option>MAX2 U406 Acier</option><option>MAX2 U407 Platine</option><option>MAX2 7559 Taupe</option><option>MAX2 8203 Ardoise</option><option>MAX2 U171 Carbone</option><option>MAX2 U095 Basalte</option><option>MAX2 6028 Noir</option><option>MAX2 7133 Naturel</option><option>MAX2 7548 Ivoire</option><option>MAX2 0681 Dune</option><option>MAX2 6020 Grège</option><option>MAX2 U811 Hêtre</option><option>MAX2 8779 Bruyère</option><option>MAX2 U806 Orgeat</option><option>MAX2 U767 Tangerine</option><option>MAX2 U808 Magma</option><option>MAX2 3914 Rouge</option><option>MAX2 8206 Bordeaux</option><option>MAX2 U768 Ebène</option><option>MAX2 U793 Aloé</option><option>MAX2 6687 Forêt</option><option>MAX2 6022 Marine</option></optgroup><optgroup label="Sergé 3%"><option>101101 White</option><option>108101 Grey-White</option><option>108108 Grey</option><option>108111 Grey-D.Blue</option><option>108112 Grey-Sand</option><option>108118 Grey-Black</option><option>108126 Grey-Caramel</option><option>108167 Pacific</option><option>111111 D.Blue</option><option>112101 Sand-White</option><option>112103 Sand-Yellow</option><option>112112 Sand</option><option>112113 Sand-Bronze</option><option>113105 Bronze</option><option>113108 Bronze-Grey</option><option>113113 Bronze-Tang</option><option>113115 Bronze-Lime</option><option>116101 Linen-White</option><option>116108 Linen-Grey</option><option>116116 Linen</option><option>116122 Linen-Lich</option><option>117101 Pearl-White</option><option>117108 Pearl-Grey</option><option>117116 Pearl-Linen</option><option>117117 Pearl</option><option>118112 Black-Sand</option><option>118113 Black-Bronz</option><option>118116 Black-Linen</option><option>118118 Black</option><option>118181 Jamaica</option></optgroup><optgroup label="Privacy 1%"><option>108101 1%</option><option>108108 1%</option><option>108112 1%</option><option>108118 1%</option><option>117101 1%</option><option>117108 1%</option><option>117117 1%</option><option>118108 1%</option><option>118112 1%</option><option>118118 1%</option></optgroup><optgroup label="Lunar BO"><option>002002 White</option><option>002007 Wht-Pearl</option><option>007007 Pearl</option><option>001002 Grey-White</option><option>033001 Oyster</option><option>001001 Grey</option><option>001010 Grey-Char</option><option>010010 Charcoal</option></optgroup>';
+
+    function addNewProduct() {
+        pCount++;
+        const id = pCount;
+        const html = `
+        <div class="product-card" id="card_${id}">
+            <div class="product-header" onclick="toggleCard(${id})">
+                <span id="title_${id}">Product ${id}</span>
+                <button type="button" class="btn-delete-sub" style="width:30px; height:30px; background:rgba(255,255,255,0.2);" onclick="removeCard(${id}, event)">X</button>
+            </div>
+            <div class="product-body" id="body_${id}">
+                <div class="grid-2">
+                    <div><label>Product</label>
+                    <select id="p_${id}" onchange="updateUI(${id})">
+                        <option value="">-- Kies --</option>
+                        <optgroup label="Standaard">
+                            <option value="rolluik">Rolluik</option>
+                            <option value="screen">Zipscreen</option>
+                        </optgroup>
+                        <optgroup label="Zonneschermen & Pergola's">
+                            <option value="gavia">Gavia</option>
+                            <option value="gavia max">Gavia Max</option>
+                            <option value="toscane">Toscane</option>
+                            <option value="trentino">Trentino</option>
+                            <option value="st 4200 solar">ST 4200 Solar</option>
+                            <option value="pergola zonwering">Pergola Zonwering</option>
+                        </optgroup>
+                    </select></div>
+                    <div><label>Merk</label>
+                    <select id="merk_${id}" onchange="updateUI(${id})"><option>Heroal</option><option>Eigenmerk</option></select></div>
+                </div>
+
+                <div id="montage_div_${id}">
+                    <label>Montage</label>
+                    <select id="m_${id}" onchange="updateCalculations(${id})"><option value="indag">In de dag</option><option value="opdag">Op de dag</option></select>
+                </div>
+
+                <div class="grid-2">
+                    <div><label>Strakke Breedte (mm)</label><input type="number" id="b_${id}" oninput="updateCalculations(${id})"></div>
+                    <div><label id="h_label_${id}">Strakke Hoogte (mm)</label><input type="number" id="h_${id}" oninput="updateCalculations(${id})"></div>
+                </div>
+
+                <div id="staanders_div_${id}" style="display:none;">
+                    <label style="color:#f39c12;">Afstand Staanders (mm)</label>
+                    <input type="number" id="staanders_${id}" placeholder="Verplichte maat voor Pergola">
+                </div>
+
+                <div class="calc-preview" id="preview_${id}">Voer maten in...</div>
+
+                <div class="grid-2">
+                    <div><label>Kleur Bak / Frame</label><select id="kbak_${id}">${optKleurBak}</select></div>
+                    <div><label>Doek / Lamel</label><select id="kdoek_${id}">${optDoekLamel}</select></div>
+                </div>
+
+                <div id="geleiders_div_${id}">
+                    <div class="grid-2">
+                        <div><label>Geleider Links</label><select id="gl_${id}"></select></div>
+                        <div><label>Geleider Rechts</label><select id="gr_${id}"></select></div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div><label>Motor</label><select id="mtyp_${id}"><option>Somfy RS100 io</option><option>Somfy Solar</option><option>Brel Solar</option><option>Bedraad</option></select></div>
+                    <div><label>Zender / Sensor</label><select id="afs_${id}"><option value="Nee">Nee</option><option value="M_Situo1">Bestellen (Situo 1)</option><option value="M_Situo5">Bestellen (Situo 5)</option><option value="Z_Situo1">Magazijn (Situo 1)</option><option value="Z_Situo5">Magazijn (Situo 5)</option></select></div>
+                </div>
+
+                <div id="hoeklijn_div_${id}" class="no-print">
+                    <label>Hoeklijnen & Klikgeleiders</label>
+                    <div id="hoeklijn_container_${id}"></div>
+                    <button type="button" class="btn btn-sub" onclick="addHoeklijn(${id})">➕ HOEKLIJN / KLIKGELEIDER TOEVOEGEN</button>
+                </div>
+
+                <div class="no-print" style="margin-bottom: 12px; border-left: 3px solid #ff3b30; padding-left: 10px;">
+                    <label style="color: #ff3b30;">⚒️ Maatwerk / Smid (Optioneel)</label>
+                    <input type="text" id="smid_${id}" placeholder="Bijv: Speciale muurbeugels, laswerk...">
+                </div>
+
+                <label>📍 Exacte Locatie / Referentie</label>
+                <input type="text" id="loc_${id}" placeholder="Bijv: Slaapkamer Voorzijde" oninput="updateTitle(${id})">
+            </div>
+        </div>`;
+        document.getElementById('productList').insertAdjacentHTML('beforeend', html);
+        updateUI(id);
+    }
+
+    function addHoeklijn(pId) {
+        const container = document.getElementById(`hoeklijn_container_${pId}`);
+        const hId = Date.now();
+        const html = `
+        <div class="hoeklijn-row" id="hrow_${hId}">
+            <select class="h-type"><option>30/20</option><option>40/20</option><option>70/20</option><option>Klikgeleider</option></select>
+            <input type="number" class="h-maat" placeholder="mm">
+            <select class="h-kleur">${optKleurBak}</select>
+            <select class="h-bron"><option value="Z">Magazijn</option><option value="M">Fabriek</option></select>
+            <button type="button" class="btn-delete-sub" onclick="this.parentElement.remove()">X</button>
+        </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function updateUI(id) {
+        const prod = document.getElementById('p_'+id).value;
+        const merk = document.getElementById('merk_'+id).value;
+        const isZ = GROUP_ZONNESCHERM.includes(prod);
+        
+        document.getElementById('montage_div_'+id).style.display = isZ ? 'none' : 'block';
+        document.getElementById('geleiders_div_'+id).style.display = isZ ? 'none' : 'block';
+        document.getElementById('hoeklijn_div_'+id).style.display = isZ ? 'none' : 'block';
+        document.getElementById('h_label_'+id).innerText = isZ ? 'Strakke Uitval (mm)' : 'Strakke Hoogte (mm)';
+        
+        document.getElementById('staanders_div_'+id).style.display = (prod === 'pergola zonwering') ? 'block' : 'none';
+
+        if (!isZ) {
+            let opt = '';
+            if(prod === 'rolluik') {
+                opt = '<option value="-">-</option><option value="HTF 53x22">HTF 53x22 (Vlak)</option><option value="LHTF 53x60">LHTF 53x60 (Met lip)</option><option value="HF 45x22">HF 45x22 (Smal)</option><option value="LHF 45x60">LHF 45x60 (Smal met lip)</option><option value="MHTF 86x22">MHTF 86x22 (Midden)</option><option value="MLHTF 86x60">MLHTF 86x60 (Midden lip)</option><option value="FHTF 12">FHTF 12</option><option value="FHTF 20">FHTF 20</option>';
+            } else {
+                opt = (merk === 'Heroal') 
+                    ? '<option value="-">-</option><option value="Heroal 37.5 mm">Heroal 37.5 mm</option><option value="LHTF">LHTF (Met lip)</option>' 
+                    : '<option value="-">-</option><option value="Standaard 35 mm">Standaard 35 mm</option><option value="LHTF">LHTF (Met lip)</option>';
+            }
+            document.getElementById('gl_'+id).innerHTML = opt;
+            document.getElementById('gr_'+id).innerHTML = opt;
+        }
+        updateCalculations(id);
+    }
+
+    function updateCalculations(id) {
+        let b = parseInt(document.getElementById('b_'+id).value) || 0;
+        let h = parseInt(document.getElementById('h_'+id).value) || 0;
+        let prod = document.getElementById('p_'+id).value;
+        let merk = document.getElementById('merk_'+id).value;
+        let mont = document.getElementById('m_'+id).value;
+        let prev = document.getElementById('preview_'+id);
+
+        if(!b || !h) { prev.innerHTML = "Voer de strakke maten in..."; return; }
+
+        let bO = b, hO = h, bak = "-";
+        if(!GROUP_ZONNESCHERM.includes(prod)) {
+            if(mont === 'indag') { bO = b - 5; }
+            else {
+                if(prod === 'rolluik') bO = b + 110;
+                else bO = b + (merk === 'Heroal' ? 75 : 70);
+            }
+            bak = (h < 1500) ? 150 : (h < 2500) ? 165 : 180;
+            if(mont === 'opdag') hO = h + bak;
+        } else {
+            bak = "N.v.t.";
+        }
+
+        prev.innerHTML = `Strak Invoermaat: ${b} x ${h} mm <br><strong>DEFINITIEVE BESTELMAAT: ${bO} x ${hO} mm</strong><span style="font-size:12px; font-weight:normal; display:block; color:#555;">(Bakmaat: ${bak} mm)</span>`;
+        
+        prev.dataset.bin = b; prev.dataset.hin = h;
+        prev.dataset.bout = bO; prev.dataset.hout = hO; prev.dataset.bak = bak;
+    }
+
+    function updateTitle(id) {
+        const pSel = document.getElementById('p_'+id);
+        const prod = pSel.options[pSel.selectedIndex].text || 'Product ' + id;
+        const loc = document.getElementById('loc_'+id).value;
+        document.getElementById('title_'+id).innerText = loc ? `${prod} - ${loc}` : prod;
+    }
+
+    function toggleCard(id) { document.getElementById('card_'+id).classList.toggle('collapsed'); }
+    function removeCard(id, e) { e.stopPropagation(); if(confirm('Verwijderen?')) document.getElementById('card_'+id).remove(); }
+    function wisAlles() { if(confirm('Weet je zeker dat je alle gegevens en de gemaakte bon wilt wissen?')) location.reload(); }
+
+    // ADRES ZOEKER
+    document.getElementById('pc').addEventListener('input', function() {
+        let pc = this.value.replace(/\s+/g, ''); let hn = document.getElementById('hn').value;
+        if(pc.length === 6 && hn) {
+            fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${pc} ${hn}&fq=type:adres`)
+            .then(r => r.json()).then(d => {
+                if(d.response.docs.length > 0) document.getElementById('str').value = d.response.docs[0].straatnaam + ", " + d.response.docs[0].woonplaatsnaam;
+            });
+        }
+    });
+
+    document.getElementById('masterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSend'); 
+        btn.disabled = true;
+        btn.innerText = "⏳ Bezig met verzenden...";
+
+        let bestelLijst = "", magazijnLijst = "";
+
+        for(let i=1; i<=pCount; i++) {
+            let card = document.getElementById('card_'+i); if(!card) continue;
+            let pSel = document.getElementById('p_'+i);
+            if(!pSel.value) continue;
+            
+            let loc = document.getElementById('loc_'+i).value || "Locatie Onbekend";
+            let p = pSel.options[pSel.selectedIndex].text;
+            let preview = document.getElementById('preview_'+i);
+            
+            let isZ = GROUP_ZONNESCHERM.includes(pSel.value);
+
+            bestelLijst += `===================================\nPRODUCT: ${loc} (${p})\n`;
+            
+            // Toon Invoermaat EN Bestelmaat
+            bestelLijst += `> Strak Invoermaat: ${preview.dataset.bin} x ${preview.dataset.hin} mm\n`;
+            bestelLijst += `> BESTELMAAT:       ${preview.dataset.bout} x ${preview.dataset.hout} mm\n`;
+
+            if(!isZ) {
+                bestelLijst += `> Bakmaat:          ${preview.dataset.bak} mm\n`;
+                bestelLijst += `> Geleiders:        L: ${document.getElementById('gl_'+i).value} | R: ${document.getElementById('gr_'+i).value}\n`;
+            } else if (pSel.value === 'pergola zonwering') {
+                bestelLijst += `> Afstand Staanders:${document.getElementById('staanders_'+i).value} mm\n`;
+            }
+            
+            bestelLijst += `> Kleur Bak/Frame:  ${document.getElementById('kbak_'+i).value}\n> Doek/Lamel:       ${document.getElementById('kdoek_'+i).value}\n> Motor:            ${document.getElementById('mtyp_'+i).value}\n`;
+            
+            let afs = document.getElementById('afs_'+i).value;
+            if(afs.startsWith('M_')) bestelLijst += `> Zender Bestellen: ${afs.split('_')[1]}\n`;
+            if(afs.startsWith('Z_')) magazijnLijst += `- Zender klaarleggen: ${afs.split('_')[1]} (Voor: ${loc})\n`;
+
+            // Hoeklijnen verzamelen
+            let hrows = card.querySelectorAll('.hoeklijn-row');
+            hrows.forEach(row => {
+                let txt = `${row.querySelector('.h-type').value} (${row.querySelector('.h-maat').value}mm, ${row.querySelector('.h-kleur').value})`;
+                if(row.querySelector('.h-bron').value === 'M') bestelLijst += `> Mee Bestellen:    ${txt}\n`;
+                else magazijnLijst += `- Uit Magazijn: ${txt} (voor ${loc})\n`;
+            });
+            
+            // Controle op Smid/Maatwerk (Extra Dik/Opvallend)
+            let smid = document.getElementById('smid_'+i).value;
+            if (smid) {
+                bestelLijst += `\n❗❗ MAATWERK / SMID: ${smid.toUpperCase()} ❗❗\n`;
+            }
+            
+            bestelLijst += `\n`;
+        }
+
+        const payload = {
+            _subject: "WERKBON SOMBRE: " + document.getElementById('klant_naam').value,
+            "1_KLANT": `Naam: ${document.getElementById('klant_naam').value}\nAdres: ${document.getElementById('str').value}`,
+            "2_BESTELLING": bestelLijst,
+            "3_MAGAZIJN_PAKLIJST": magazijnLijst || "Geen magazijn items benodigd.",
+            "4_CHECKLIST": `Klim: ${document.getElementById('chk_klim').value}\nOndergrond: ${document.getElementById('chk_muur').value}\nDemontage: ${document.getElementById('chk_demo').value}\nTijd: ${document.getElementById('chk_tijd').value}\n\nInfo:\n${document.getElementById('chk_info').value}`
+        };
+
+        fetch("https://formspree.io/f/xkovrnqj", { method: "POST", headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
+        .then(() => { 
+            alert("✅ Werk- en Bestelbon succesvol naar kantoor verzonden!\n\nDe ingevulde gegevens blijven staan. Je kunt ze nu nog aanpassen of een product toevoegen. Klik op 'WISSEN' als je met de volgende klant verder wilt."); 
+            btn.disabled = false;
+            btn.innerText = "📧 WERK- & BESTELBON VERZENDEN";
+        });
+    });
+
+    window.onload = addNewProduct;
+</script>
+
+</body>
+</html>
