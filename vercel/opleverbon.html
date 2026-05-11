@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sombre - Oplevering & Service</title>
+    <style>
+        /* === BASIS LAYOUT === */
+        html, body { height: 100%; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f2f2f7; color: #1c1c1e; }
+        #app-container { display: flex; flex-direction: column; min-height: 100dvh; padding: 15px; box-sizing: border-box; max-width: 600px; margin: 0 auto; }
+
+        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #d1d1d6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: #005a9c; border-bottom: 2px solid #005a9c; padding-bottom: 8px; }
+
+        /* FORM ELEMENTEN */
+        label { display: block; font-size: 12px; font-weight: 700; color: #555; margin-bottom: 5px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; height: 50px; font-size: 16px; border: 1px solid #c7c7cc; border-radius: 8px; padding: 0 12px; box-sizing: border-box; background: #fff; margin-bottom: 15px; -webkit-appearance: none; }
+        textarea { height: 100px; padding: 12px; resize: none; }
+        input:focus, select:focus, textarea:focus { background: #fffdf0; border-color: #f39c12; outline: none; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* STATUS KNOPPEN */
+        .status-container { display: flex; flex-direction: column; gap: 10px; }
+        .btn-status { width: 100%; padding: 20px; border: 2px solid #d1d1d6; border-radius: 12px; font-size: 16px; font-weight: bold; text-align: left; background: #fff; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 15px; color: #3a3a3c; }
+        
+        .btn-status.groen.active { border-color: #34c759; background: #e8f8ec; color: #248a3d; }
+        .btn-status.oranje.active { border-color: #ff9f0a; background: #fff4e5; color: #b26c00; }
+        .btn-status.rood.active { border-color: #ff3b30; background: #ffebea; color: #b8201a; }
+        
+        .emoji { font-size: 24px; }
+
+        /* SERVICE BLOK (VERBORGEN STANDAARD) */
+        #service-blok { display: none; background: #fffdf0; border: 2px solid #f39c12; margin-top: -10px; border-radius: 0 0 12px 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* VERZEND KNOP */
+        .btn-send { background: #007aff; color: white; width: 100%; padding: 18px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,122,255,0.3); transition: 0.2s; }
+        .btn-send:disabled { background: #8e8e93; box-shadow: none; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <form id="opleverForm">
+        
+        <div class="card">
+            <div class="card-title">📍 Waar ben je?</div>
+            <label>Klantnaam / Referentie</label>
+            <input type="text" id="klant_naam" placeholder="Bijv: Familie Jansen of Order #1234" required>
+            
+            <label>Postcode & Huisnummer</label>
+            <div class="grid-2">
+                <input type="text" id="pc" placeholder="1234AB" style="text-transform: uppercase;" required>
+                <input type="text" id="hn" placeholder="Huisnr" required>
+            </div>
+            <input type="text" id="str" placeholder="Adres (Wordt automatisch gezocht...)" readonly style="background:#f2f2f7;">
+        </div>
+
+        <div class="card" style="border: none; box-shadow: none; padding: 0; background: transparent;">
+            <div class="card-title" style="color: #1c1c1e; border-color: #1c1c1e;">📋 Status van de klus</div>
+            <div class="status-container">
+                <button type="button" class="btn-status groen" onclick="selectStatus('groen')">
+                    <span class="emoji">🟢</span> 100% KLAAR & OPGELEVERD
+                </button>
+                <button type="button" class="btn-status oranje" onclick="selectStatus('oranje')">
+                    <span class="emoji">🟠</span> DEELS KLAAR / SERVICE NODIG
+                </button>
+                <button type="button" class="btn-status rood" onclick="selectStatus('rood')">
+                    <span class="emoji">🔴</span> NIET GEMONTEERD / AFGEBROKEN
+                </button>
+            </div>
+        </div>
+
+        <div id="service-blok">
+            <h3 id="service-titel" style="margin-top: 0; color: #ff9f0a; font-size: 16px;">⚠️ Service Rapportage</h3>
+            
+            <label>Reden van melding</label>
+            <select id="reden">
+                <option value="">-- Kies de oorzaak --</option>
+                <option>Onderdeel ontbreekt / defect</option>
+                <option>Product beschadigd (Fabriek/Transport)</option>
+                <option>Verkeerde maat geleverd / ingemeten</option>
+                <option>Klant was niet thuis / geen stroom</option>
+                <option>Slecht weer / gevaarlijk om te werken</option>
+                <option>Anders (Zie toelichting)</option>
+            </select>
+
+            <label>Wat moet kantoor NIEUW bestellen/regelen?</label>
+            <textarea id="bestellen" placeholder="Bijv: Nieuwe kap voor rolluik links, RAL 9001. Of: 1x afstandsbediening Situo 5."></textarea>
+
+            <label>Tijdelijke oplossing / Gemaakte afspraak</label>
+            <textarea id="oplossing" placeholder="Bijv: Rolluik hangt al wel, noodkabeltje naar binnen gelegd. Komen terug voor de zender."></textarea>
+
+            <label>Voorstel Nieuwe Afspraak met de klant</label>
+            <input type="date" id="nieuwe_datum">
+        </div>
+
+        <button type="submit" class="btn-send" id="btnSend">📤 MELDING VERZENDEN NAAR KANTOOR</button>
+
+    </form>
+</div>
+
+<script>
+    let gekozenStatus = '';
+
+    // PDOK POSTCODE ZOEKER
+    document.getElementById('pc').addEventListener('input', zoekAdres);
+    document.getElementById('hn').addEventListener('input', zoekAdres);
+
+    function zoekAdres() {
+        let pc = document.getElementById('pc').value.replace(/\s+/g, ''); 
+        let hn = document.getElementById('hn').value;
+        if(pc.length === 6 && hn) {
+            fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${pc} ${hn}&fq=type:adres`)
+            .then(r => r.json()).then(d => {
+                if(d.response.docs.length > 0) {
+                    document.getElementById('str').value = d.response.docs[0].straatnaam + ", " + d.response.docs[0].woonplaatsnaam;
+                }
+            });
+        }
+    }
+
+    // STATUS KNOPPEN LOGICA
+    function selectStatus(status) {
+        gekozenStatus = status;
+        
+        // Reset alle knoppen
+        document.querySelectorAll('.btn-status').forEach(btn => btn.classList.remove('active'));
+        
+        // Activeer de gekozen knop
+        document.querySelector(`.btn-status.${status}`).classList.add('active');
+
+        const serviceBlok = document.getElementById('service-blok');
+        const serviceTitel = document.getElementById('service-titel');
+        const redenSelect = document.getElementById('reden');
+
+        if (status === 'groen') {
+            serviceBlok.style.display = 'none';
+            redenSelect.required = false;
+        } else {
+            serviceBlok.style.display = 'block';
+            redenSelect.required = true;
+            
+            if (status === 'oranje') {
+                serviceTitel.innerHTML = '🟠 Service Nodig (Deels Opgeleverd)';
+                serviceTitel.style.color = '#ff9f0a';
+                serviceBlok.style.borderColor = '#ff9f0a';
+            } else if (status === 'rood') {
+                serviceTitel.innerHTML = '🔴 Probleem Melding (Niet Gemonteerd)';
+                serviceTitel.style.color = '#ff3b30';
+                serviceBlok.style.borderColor = '#ff3b30';
+            }
+        }
+    }
+
+    // FORMULIER VERZENDEN
+    document.getElementById('opleverForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!gekozenStatus) {
+            alert("Kies eerst een status (Groen, Oranje of Rood)!");
+            return;
+        }
+
+        const btn = document.getElementById('btnSend');
+        btn.disabled = true;
+        btn.innerText = "⏳ Bezig met verzenden...";
+
+        let klantNaam = document.getElementById('klant_naam').value;
+        let adres = document.getElementById('str').value || document.getElementById('pc').value;
+        
+        // Bouw de email payload op basis van de status
+        let payload = {};
+        let subject = "";
+
+        if (gekozenStatus === 'groen') {
+            subject = "🟢 OPGELEVERD: " + klantNaam;
+            payload = {
+                _subject: subject,
+                "KLANT": `${klantNaam} (${adres})`,
+                "STATUS": "🟢 100% KLAAR EN OPGELEVERD",
+                "MELDING": "Geen bijzonderheden. De klus is succesvol afgerond en de factuur mag verstuurd worden."
+            };
+        } else {
+            let statusTekst = (gekozenStatus === 'oranje') ? "🟠 DEELS KLAAR / SERVICE NODIG" : "🔴 NIET GEMONTEERD / AFGEBROKEN";
+            subject = (gekozenStatus === 'oranje') ? "🟠 SERVICE: " + klantNaam : "🔴 ALARM: " + klantNaam;
+            
+            payload = {
+                _subject: subject,
+                "1_KLANT": `${klantNaam} (${adres})`,
+                "2_STATUS": statusTekst,
+                "3_REDEN_VAN_MELDING": document.getElementById('reden').value,
+                "4_KANTOOR_MOET_BESTELLEN": document.getElementById('bestellen').value || "Niets ingevuld",
+                "5_TIJDELIJKE_OPLOSSING_AFSPRAAK": document.getElementById('oplossing').value || "Niets ingevuld",
+                "6_VOORSTEL_NIEUWE_DATUM": document.getElementById('nieuwe_datum').value || "Nog niet afgesproken"
+            };
+        }
+
+        // Gebruik hetzelfde Formspree endpoint (verander deze link evt. als je een aparte mailbox wilt)
+        fetch("https://formspree.io/f/xkovrnqj", { 
+            method: "POST", 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        })
+        .then(res => {
+            if(res.ok) {
+                alert("✅ Melding succesvol verstuurd naar kantoor!");
+                location.reload(); // Reset formulier
+            } else {
+                alert("❌ Fout bij verzenden. Controleer je internetverbinding en probeer het opnieuw.");
+                btn.disabled = false;
+                btn.innerText = "📤 MELDING VERZENDEN NAAR KANTOOR";
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
