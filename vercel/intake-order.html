@@ -9,7 +9,6 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { width: 100%; max-width: 550px; }
         
-        /* Navigatie Balk */
         .nav-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .nav-title { font-weight: bold; color: #2c3e50; font-size: 18px; }
         .nav-btn { background: #e8f0fe; color: #1a73e8; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
@@ -43,13 +42,11 @@
 <body>
 
 <div class="container">
-    <!-- Navigatie -->
     <div class="nav-bar">
         <div class="nav-title">📝 Intake Planner</div>
         <a href="/magazijn" class="nav-btn">Magazijn 📦 ➔</a>
     </div>
 
-    <!-- Intake Formulier -->
     <div class="card">
         <h2>Nieuwe Order Invoeren</h2>
         
@@ -97,12 +94,10 @@
 
             <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="demontage" style="width:auto; margin:0;"> ⚠️ Demontage oud product nodig</label>
             
-            <!-- NIEUW: Klantwens en Spoed -->
             <label>Gewenste Datum (Klantwens)</label>
             <input type="text" name="gewenste_datum" placeholder="Bijv. 12-06-2026 (Leeg laten indien geen wens)">
 
-            <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0;"> 🔥 Spoedklus (Negeer 4-weken regel)</label>
-            <!-- EINDE NIEUW -->
+            <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0;"> 🔥 Spoedklus (Negeer 3-weken regel)</label>
 
             <label>Montage Instructies & Opmerkingen</label>
             <textarea id="opmerkingen" name="opmerkingen" rows="3" placeholder="Instructies of bijzonderheden..."></textarea>
@@ -116,7 +111,6 @@
     // VUL HIER JOUW GOOGLE WEB APP URL IN
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
-    // OCR Scanner
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -157,26 +151,38 @@
         }
     });
 
-    // PDOK Adreszoeker
+    // PDOK Adreszoeker (VERBETERDE VERSIE)
     let timeout = null;
     const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
 
     function zoekAdres() {
-        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase(), nr = nrIn.value.trim();
+        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
+        const nr = nrIn.value.trim();
         if (pc.length === 6 && nr.length >= 1) {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
                 stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
-                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
+                // De directe API request die niet hapert:
+                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/free?q=${pc}%20${nr}`)
                 .then(r => r.ok ? r.json() : Promise.reject())
-                .then(d => d.response.docs.length > 0 ? fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`) : Promise.reject())
-                .then(r => r.json()).then(d => {
-                    adIn.value = d.response.docs[0].weergavenaam; stIn.innerText = "✅ Adres Gevonden!"; stIn.style.color = "green";
-                }).catch(() => { stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; stIn.style.color = "red"; adIn.removeAttribute('readonly'); });
+                .then(d => {
+                    if(d.response && d.response.docs.length > 0) {
+                        adIn.value = d.response.docs[0].weergavenaam; 
+                        stIn.innerText = "✅ Adres Gevonden!"; 
+                        stIn.style.color = "green";
+                    } else {
+                        throw new Error("Niet gevonden");
+                    }
+                }).catch(() => { 
+                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
+                    stIn.style.color = "red"; 
+                    adIn.removeAttribute('readonly'); 
+                });
             }, 500);
         }
     }
-    pcIn.addEventListener('keyup', zoekAdres); nrIn.addEventListener('keyup', zoekAdres);
+    pcIn.addEventListener('keyup', zoekAdres); 
+    nrIn.addEventListener('keyup', zoekAdres);
 
     // Producten Bouwer
     const productContainer = document.getElementById('productContainer');
@@ -204,7 +210,6 @@
         const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "Bezig met plannen...";
         const formData = new FormData(this); let dataObject = Object.fromEntries(formData.entries());
         
-        // NIEUW: Checkboxes correct meesturen
         dataObject.demontage = formData.get('demontage') === 'on';
         dataObject.spoed = formData.get('spoed') === 'on';
         
@@ -222,3 +227,21 @@
 </script>
 </body>
 </html>
+        
+       
+       
+        
+      
+         
+          
+            
+
+            
+   
+       
+
+           
+   
+              
+   
+ 
