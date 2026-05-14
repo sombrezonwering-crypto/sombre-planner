@@ -62,8 +62,8 @@
         </div>
 
         <form id="orderForm">
-            <label>Ordernummer</label>
-            <input type="text" name="ordernummer" required>
+            <label>Ordernummer (Zelf invoeren)</label>
+            <input type="text" name="ordernummer" placeholder="Bijv. 2024-001" required>
 
             <label>Naam Klant</label>
             <input type="text" id="klantNaam" name="naam" required>
@@ -72,10 +72,9 @@
                 <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" placeholder="1234 AB" required></div>
                 <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
             </div>
-            <!-- AdresStatus is terug! -->
+            
             <div id="adresStatus">Adreszoeker: Wachten op invoer...</div>
 
-            <!-- Readonly is weer toegevoegd, wordt verwijderd als adres niet gevonden wordt -->
             <label>Straat & Woonplaats</label>
             <input type="text" id="adres" name="straatEnWoonplaats" readonly required>
 
@@ -88,7 +87,6 @@
                 <button type="button" class="btn-add" onclick="voegProductRegelToe()">➕ Extra Product Toevoegen</button>
             </div>
 
-            <!-- Nieuwe: Automatische Tijd Berekening (Zoals je vroeg) -->
             <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
                 <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkHoogwerker" style="width:auto; margin:0;"> 🏗️ Hoogwerker nodig (+60 min)</label>
                 <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkExtraTijd" style="width:auto; margin:0;"> ⏱️ Extra tijd marge nodig (+60 min)</label>
@@ -115,7 +113,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
     // ==========================================
-    // 1. DE VERTROUWDE ADRESZOEKER
+    // 1. DE WERKENDEN ADRESZOEKER (v3_1) VAN JOU!
     // ==========================================
     let timeout = null;
     const pcIn = document.getElementById('pc');
@@ -124,46 +122,39 @@
     const stIn = document.getElementById('adresStatus');
 
     function zoekAdres() {
-        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
-        const nr = nrIn.value.trim();
+        let pc = pcIn.value.replace(/\s+/g, '').toUpperCase(); 
+        let nr = nrIn.value.trim();
         
-        if (pc.length === 6 && nr.length >= 1) {
+        if(pc.length === 6 && nr.length >= 1) {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
                 stIn.innerText = "⏳ Zoeken..."; 
                 stIn.style.color = "#1a73e8";
                 
-                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
-                .then(r => r.ok ? r.json() : Promise.reject())
+                // Jouw exact werkende API regel
+                fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${pc} ${nr}&fq=type:adres`)
+                .then(r => r.json())
                 .then(d => {
-                    if (d.response && d.response.docs.length > 0) {
-                        return fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`);
+                    if(d.response.docs.length > 0) {
+                        adIn.value = d.response.docs[0].straatnaam + ", " + d.response.docs[0].woonplaatsnaam;
+                        stIn.innerText = "✅ Adres Gevonden!"; 
+                        stIn.style.color = "green";
                     } else {
                         throw new Error("Niet gevonden");
                     }
                 })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.response && d.response.docs.length > 0) {
-                        adIn.value = d.response.docs[0].weergavenaam; 
-                        stIn.innerText = "✅ Adres Gevonden!"; 
-                        stIn.style.color = "green";
-                    } else {
-                        throw new Error("Geen weergavenaam");
-                    }
-                })
-                .catch(() => { 
+                .catch(() => {
                     stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
                     stIn.style.color = "red"; 
-                    adIn.removeAttribute('readonly'); 
+                    adIn.removeAttribute('readonly');
                 });
             }, 500);
-        } else if (pc.length < 6) {
+        } else {
             stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
             stIn.style.color = "#888";
         }
     }
-    
+
     pcIn.addEventListener('input', zoekAdres); 
     nrIn.addEventListener('input', zoekAdres);
 
@@ -185,8 +176,7 @@
             const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
             if (postcodeMatch) {
                 document.getElementById('pc').value = postcodeMatch[0].toUpperCase();
-                // Activeer de adreszoeker automatisch!
-                document.getElementById('pc').dispatchEvent(new Event('input'));
+                document.getElementById('pc').dispatchEvent(new Event('input')); // Start de adreszoeker
             }
             
             const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+([\s\S]*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/i);
@@ -215,10 +205,9 @@
             else if (type === "Overkapping") { minPerProduct = 480; }
             else if (type === "Losse Motor / Onderdeel") { minPerProduct = 60; }
             else { 
-                // Rolluik of Screen
                 if (bediening === "Solar") minPerProduct = 45;
                 else if (bediening === "Stroom (230V)") minPerProduct = 60;
-                else minPerProduct = 45; // Handbediend
+                else minPerProduct = 45; 
             }
             totaalMinuten += (aantal * minPerProduct);
         });
