@@ -66,7 +66,6 @@
             <input type="text" id="klantNaam" name="naam" required>
 
             <div class="row">
-                <!-- OPLOSSING: maxlength verwijderd zodat postcodes mét spatie gewoon getypt en geplakt kunnen worden -->
                 <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" placeholder="1234 AB" required></div>
                 <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
             </div>
@@ -109,7 +108,6 @@
 </div>
 
 <script>
-    // VUL HIER JOUW GOOGLE WEB APP URL IN
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
     document.getElementById('imageInput').addEventListener('change', async function(e) {
@@ -140,7 +138,7 @@
                 document.getElementById('pc').value = postcodeMatch[0].toUpperCase();
             }
 
-            const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+(.*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/is);
+            const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+([\s\S]*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/i);
             if (instructieMatch && instructieMatch[1]) document.getElementById('opmerkingen').value = instructieMatch[1].trim();
 
             statusDiv.innerText = "✅ Klantgegevens & Instructies gelezen!";
@@ -154,34 +152,22 @@
         }
     });
 
-    // PDOK Adreszoeker
+    // PDOK Adreszoeker (Exact jouw originele, werkende code)
     let timeout = null;
     const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
 
     function zoekAdres() {
-        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
-        const nr = nrIn.value.trim();
-        
-        // Zodra de postcode 6 tekens heeft zonder spaties, ga direct zoeken
+        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase(), nr = nrIn.value.trim();
         if (pc.length === 6 && nr.length >= 1) {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
                 stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
-                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/free?q=${pc}%20${nr}`)
+                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
                 .then(r => r.ok ? r.json() : Promise.reject())
-                .then(d => {
-                    if(d.response && d.response.docs.length > 0) {
-                        adIn.value = d.response.docs[0].weergavenaam; 
-                        stIn.innerText = "✅ Adres Gevonden!"; 
-                        stIn.style.color = "green";
-                    } else {
-                        throw new Error("Niet gevonden");
-                    }
-                }).catch(() => { 
-                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
-                    stIn.style.color = "red"; 
-                    adIn.removeAttribute('readonly'); 
-                });
+                .then(d => d.response.docs.length > 0 ? fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`) : Promise.reject())
+                .then(r => r.json()).then(d => {
+                    adIn.value = d.response.docs[0].weergavenaam; stIn.innerText = "✅ Adres Gevonden!"; stIn.style.color = "green";
+                }).catch(() => { stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; stIn.style.color = "red"; adIn.removeAttribute('readonly'); });
             }, 500);
         } else if (pc.length < 6) {
             stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
@@ -189,8 +175,10 @@
         }
     }
     
-    // OPLOSSING: 'input' in plaats van 'keyup' registreert ook als je iets plakt met je muis!
+    // Dubbel afgevangen, reageert nu direct op alles
+    pcIn.addEventListener('keyup', zoekAdres); 
     pcIn.addEventListener('input', zoekAdres); 
+    nrIn.addEventListener('keyup', zoekAdres);
     nrIn.addEventListener('input', zoekAdres);
 
     // Producten Bouwer
@@ -236,8 +224,20 @@
 </script>
 </body>
 </html>
+       
+       
+           
+       
+          
+
+           
         
-        
+          
+
+    
+          
+               
+         
        
           
                
