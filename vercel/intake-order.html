@@ -26,7 +26,6 @@
         label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 15px; }
         input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; }
-        #adresStatus { font-size: 11px; margin-top: 5px; font-weight: bold; height: 15px; }
         
         .product-builder { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-top: 5px; }
         .product-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
@@ -70,10 +69,10 @@
                 <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" placeholder="1234 AB" required></div>
                 <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
             </div>
-            <div id="adresStatus">Adreszoeker: Wachten op invoer...</div>
 
+            <!-- Handmatige invoer mogelijk gemaakt (readonly weggehaald) -->
             <label>Straat & Woonplaats</label>
-            <input type="text" id="adres" name="straatEnWoonplaats" readonly required>
+            <input type="text" id="adres" name="straatEnWoonplaats" placeholder="Bijv. Dorpsstraat 1, Zeewolde" required>
 
             <label>Telefoonnummer</label>
             <input type="tel" id="telefoon" name="telefoon" required>
@@ -113,63 +112,7 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
     // ==========================================
-    // 1. ADRESZOEKER (Exact de werkende, originele code)
-    // ==========================================
-    let timeout = null;
-    const pcIn = document.getElementById('pc');
-    const nrIn = document.getElementById('nr');
-    const adIn = document.getElementById('adres');
-    const stIn = document.getElementById('adresStatus');
-
-    function zoekAdres() {
-        // Haalt spaties weg zodat "1234 AB" ook werkt
-        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
-        const nr = nrIn.value.trim();
-        
-        if (pc.length === 6 && nr.length >= 1) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                stIn.innerText = "⏳ Zoeken..."; 
-                stIn.style.color = "#1a73e8";
-                
-                // Originele 2-staps methode zonder speciale headers!
-                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(d => {
-                    if (d.response && d.response.docs.length > 0) {
-                        return fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`);
-                    } else {
-                        throw new Error("Niet gevonden");
-                    }
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.response && d.response.docs.length > 0) {
-                        adIn.value = d.response.docs[0].weergavenaam; 
-                        stIn.innerText = "✅ Adres Gevonden!"; 
-                        stIn.style.color = "green";
-                    } else {
-                        throw new Error("Geen weergavenaam");
-                    }
-                })
-                .catch(() => { 
-                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
-                    stIn.style.color = "red"; 
-                    adIn.removeAttribute('readonly'); 
-                });
-            }, 500);
-        } else if (pc.length < 6) {
-            stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
-            stIn.style.color = "#888";
-        }
-    }
-    
-    // Zorgt ervoor dat zowel plakken (met muis) als typen (toetsenbord) direct werkt
-    pcIn.addEventListener('input', zoekAdres); 
-    nrIn.addEventListener('input', zoekAdres);
-
-    // ==========================================
-    // 2. FOTOSCANNER LOGICA
+    // 1. FOTOSCANNER LOGICA
     // ==========================================
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0];
@@ -197,7 +140,6 @@
             const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
             if (postcodeMatch) {
                 document.getElementById('pc').value = postcodeMatch[0].toUpperCase();
-                document.getElementById('pc').dispatchEvent(new Event('input'));
             }
 
             const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+([\s\S]*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/i);
@@ -213,7 +155,7 @@
     });
 
     // ==========================================
-    // 3. PRODUCTEN BOUWER
+    // 2. PRODUCTEN BOUWER
     // ==========================================
     const productContainer = document.getElementById('productContainer');
     function voegProductRegelToe() {
@@ -235,7 +177,7 @@
     voegProductRegelToe();
 
     // ==========================================
-    // 4. FORMULIER VERZENDEN NAAR GOOGLE SHEETS
+    // 3. FORMULIER VERZENDEN NAAR GOOGLE SHEETS
     // ==========================================
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -254,9 +196,6 @@
             this.reset(); 
             productContainer.innerHTML = ""; 
             voegProductRegelToe(); 
-            document.getElementById('adres').setAttribute('readonly', true); 
-            document.getElementById('adresStatus').innerText = "Wachten op invoer..."; 
-            document.getElementById('adresStatus').style.color = "#888"; 
             document.getElementById('scannerStatus').innerText = "";
             btn.disabled = false; btn.innerText = "Opslaan & Plannen"; 
         })
