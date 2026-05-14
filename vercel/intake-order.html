@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sombre Intake - Planner</title>
+    <!-- Tesseract Scanner -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
@@ -108,8 +109,63 @@
 </div>
 
 <script>
+    // VUL HIER JE GOOGLE SCRIPT URL IN
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
+    // ==========================================
+    // 1. ADRESZOEKER (GEÏSOLEERD & KOGELVRIJ)
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", function() {
+        const pcIn = document.getElementById('pc');
+        const nrIn = document.getElementById('nr');
+        const adIn = document.getElementById('adres');
+        const stIn = document.getElementById('adresStatus');
+        let timeout = null;
+
+        async function zoekAdres() {
+            const pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
+            const nr = nrIn.value.trim();
+            
+            if (pc.length === 6 && nr.length >= 1) {
+                clearTimeout(timeout);
+                timeout = setTimeout(async () => {
+                    stIn.innerText = "⏳ Zoeken..."; 
+                    stIn.style.color = "#1a73e8";
+                    
+                    try {
+                        // 1 API call in plaats van 2 voor maximale stabiliteit
+                        const response = await fetch(`https://api.pdok.nl/bzk/locatieserver/v3/free?q=${pc}%20${nr}`);
+                        if (!response.ok) throw new Error("API Fout");
+                        
+                        const data = await response.json();
+                        if (data.response && data.response.docs.length > 0) {
+                            adIn.value = data.response.docs[0].weergavenaam; 
+                            stIn.innerText = "✅ Adres Gevonden!"; 
+                            stIn.style.color = "green";
+                        } else {
+                            throw new Error("Niet gevonden");
+                        }
+                    } catch (error) {
+                        console.error("PDOK Zoeker Fout:", error);
+                        stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
+                        stIn.style.color = "red"; 
+                        adIn.removeAttribute('readonly'); 
+                    }
+                }, 500);
+            } else {
+                stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
+                stIn.style.color = "#888";
+            }
+        }
+
+        // Koppel de acties (werkt bij typen en plakken)
+        pcIn.addEventListener('input', zoekAdres);
+        nrIn.addEventListener('input', zoekAdres);
+    });
+
+    // ==========================================
+    // 2. FOTOSCANNER LOGICA
+    // ==========================================
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -136,6 +192,8 @@
             const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
             if (postcodeMatch) {
                 document.getElementById('pc').value = postcodeMatch[0].toUpperCase();
+                // Simuleer een 'input' event zodat de adreszoeker meteen wakker wordt
+                document.getElementById('pc').dispatchEvent(new Event('input'));
             }
 
             const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+([\s\S]*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/i);
@@ -144,44 +202,16 @@
             statusDiv.innerText = "✅ Klantgegevens & Instructies gelezen!";
             statusDiv.style.color = "green";
 
-            if (postcodeMatch && straatMatch) zoekAdres();
-
         } catch (error) {
+            console.error("Scanner Fout:", error);
             statusDiv.innerText = "❌ Fout bij scannen. Vul handmatig in.";
             statusDiv.style.color = "red";
         }
     });
 
-    // PDOK Adreszoeker (Exact jouw originele, werkende code)
-    let timeout = null;
-    const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
-
-    function zoekAdres() {
-        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase(), nr = nrIn.value.trim();
-        if (pc.length === 6 && nr.length >= 1) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
-                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(d => d.response.docs.length > 0 ? fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`) : Promise.reject())
-                .then(r => r.json()).then(d => {
-                    adIn.value = d.response.docs[0].weergavenaam; stIn.innerText = "✅ Adres Gevonden!"; stIn.style.color = "green";
-                }).catch(() => { stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; stIn.style.color = "red"; adIn.removeAttribute('readonly'); });
-            }, 500);
-        } else if (pc.length < 6) {
-            stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
-            stIn.style.color = "#888";
-        }
-    }
-    
-    // Dubbel afgevangen, reageert nu direct op alles
-    pcIn.addEventListener('keyup', zoekAdres); 
-    pcIn.addEventListener('input', zoekAdres); 
-    nrIn.addEventListener('keyup', zoekAdres);
-    nrIn.addEventListener('input', zoekAdres);
-
-    // Producten Bouwer
+    // ==========================================
+    // 3. PRODUCTEN BOUWER
+    // ==========================================
     const productContainer = document.getElementById('productContainer');
     function voegProductRegelToe() {
         const div = document.createElement('div'); div.className = 'product-row';
@@ -201,7 +231,9 @@
     function verwijderRegel(btn) { if (productContainer.children.length > 1) btn.parentElement.remove(); else alert("Minimaal 1 product verplicht."); }
     voegProductRegelToe();
 
-    // Formulier Verzenden
+    // ==========================================
+    // 4. FORMULIER VERZENDEN NAAR GOOGLE SHEETS
+    // ==========================================
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "Bezig met plannen...";
@@ -215,53 +247,35 @@
 
         fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dataObject) })
         .then(() => { 
-            alert("✅ Order succesvol verwerkt en gepland!"); this.reset(); productContainer.innerHTML = ""; voegProductRegelToe(); 
-            adIn.setAttribute('readonly', true); stIn.innerText = "Wachten op invoer..."; stIn.style.color = "#888"; 
+            alert("✅ Order succesvol verwerkt en gepland!"); 
+            this.reset(); 
+            productContainer.innerHTML = ""; 
+            voegProductRegelToe(); 
+            document.getElementById('adres').setAttribute('readonly', true); 
+            document.getElementById('adresStatus').innerText = "Wachten op invoer..."; 
+            document.getElementById('adresStatus').style.color = "#888"; 
             document.getElementById('scannerStatus').innerText = "";
             btn.disabled = false; btn.innerText = "Opslaan & Plannen"; 
+        })
+        .catch(err => {
+            console.error("Verzend Fout:", err);
+            alert("❌ Fout bij opslaan. Probeer opnieuw.");
+            btn.disabled = false; btn.innerText = "Opslaan & Plannen";
         });
     });
 </script>
 </body>
 </html>
-       
-       
-           
-       
-          
+        
+     
+            
 
            
+
         
           
-
-    
           
-               
          
-       
-          
-               
             
-
-   
     
-           
-        
-
-       
-       
-        
-      
-         
-          
-            
-
-            
-   
-       
-
-           
-   
-              
-   
- 
+  
