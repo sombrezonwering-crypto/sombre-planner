@@ -26,6 +26,7 @@
         label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 15px; }
         input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; }
+        #adresStatus { font-size: 11px; margin-top: 5px; font-weight: bold; height: 15px; }
         
         .product-builder { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-top: 5px; }
         .product-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
@@ -35,6 +36,8 @@
         .btn-remove { background: #ff4d4d; color: white; border: none; border-radius: 6px; width: 35px; height: 42px; cursor: pointer; font-weight: bold; margin-top: 5px; }
         .btn-add { background: #e3f2fd; color: #1a73e8; border: 1px dashed #1a73e8; padding: 10px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
 
+        .time-box { background: #d4edda; color: #155724; padding: 10px; border-radius: 8px; margin-top: 15px; font-weight: bold; text-align: center; border: 1px solid #c3e6cb; }
+        
         button.submit-btn { width: 100%; padding: 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
         button.submit-btn:disabled { background: #ccc; }
     </style>
@@ -44,7 +47,7 @@
 <div class="container">
     <div class="nav-bar">
         <div class="nav-title">📝 Intake Planner</div>
-        <a href="/vercel/magazijn.html" class="nav-btn">Magazijn 📦 ➔</a>
+        <a href="magazijn.html" class="nav-btn">Magazijn 📦 ➔</a>
     </div>
 
     <div class="card">
@@ -59,8 +62,8 @@
         </div>
 
         <form id="orderForm">
-            <label>Ordernummer (Zelf invoeren)</label>
-            <input type="text" name="ordernummer" placeholder="Bijv. 2024-001" required>
+            <label>Ordernummer</label>
+            <input type="text" name="ordernummer" required>
 
             <label>Naam Klant</label>
             <input type="text" id="klantNaam" name="naam" required>
@@ -69,10 +72,12 @@
                 <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" placeholder="1234 AB" required></div>
                 <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
             </div>
+            <!-- AdresStatus is terug! -->
+            <div id="adresStatus">Adreszoeker: Wachten op invoer...</div>
 
-            <!-- Handmatige invoer mogelijk gemaakt (readonly weggehaald) -->
+            <!-- Readonly is weer toegevoegd, wordt verwijderd als adres niet gevonden wordt -->
             <label>Straat & Woonplaats</label>
-            <input type="text" id="adres" name="straatEnWoonplaats" placeholder="Bijv. Dorpsstraat 1, Zeewolde" required>
+            <input type="text" id="adres" name="straatEnWoonplaats" readonly required>
 
             <label>Telefoonnummer</label>
             <input type="tel" id="telefoon" name="telefoon" required>
@@ -83,21 +88,19 @@
                 <button type="button" class="btn-add" onclick="voegProductRegelToe()">➕ Extra Product Toevoegen</button>
             </div>
 
-            <label>Verwachte montagetijd</label>
-            <select name="montagetijd_minuten">
-                <option value="60">1 uur (Service / Reparatie)</option>
-                <option value="120" selected>2 uur (Standaard montage)</option>
-                <option value="240">4 uur (Halve dag)</option>
-                <option value="360">6 uur (Driekwart dag)</option>
-                <option value="480">8 uur (Volledige dag)</option>
-            </select>
-
-            <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="demontage" style="width:auto; margin:0;"> ⚠️ Demontage oud product nodig</label>
+            <!-- Nieuwe: Automatische Tijd Berekening (Zoals je vroeg) -->
+            <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkHoogwerker" style="width:auto; margin:0;"> 🏗️ Hoogwerker nodig (+60 min)</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkExtraTijd" style="width:auto; margin:0;"> ⏱️ Extra tijd marge nodig (+60 min)</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="demontage" style="width:auto; margin:0;"> ⚠️ Demontage oud product</label>
+                <div class="time-box" id="timeDisplay">Berekende Montagetijd: 0 minuten</div>
+                <input type="hidden" name="montagetijd_minuten" id="berekendeTijd" value="0">
+            </div>
             
-            <label>Gewenste Datum (Klantwens)</label>
-            <input type="text" name="gewenste_datum" placeholder="Bijv. 12-06-2026 (Leeg laten indien geen wens)">
+            <label>Gewenste Datum (Override Regio)</label>
+            <input type="text" name="gewenste_datum" placeholder="Bijv. 12-06-2026 (Breekt de regels!)">
 
-            <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0;"> 🔥 Spoedklus (Negeer 3-weken regel)</label>
+            <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0;"> 🔥 Spoedklus (Plannen mag vanaf morgen!)</label>
 
             <label>Montage Instructies & Opmerkingen</label>
             <textarea id="opmerkingen" name="opmerkingen" rows="3" placeholder="Instructies of bijzonderheden..."></textarea>
@@ -112,72 +115,149 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
     // ==========================================
-    // 1. FOTOSCANNER LOGICA
+    // 1. DE VERTROUWDE ADRESZOEKER
+    // ==========================================
+    let timeout = null;
+    const pcIn = document.getElementById('pc');
+    const nrIn = document.getElementById('nr');
+    const adIn = document.getElementById('adres');
+    const stIn = document.getElementById('adresStatus');
+
+    function zoekAdres() {
+        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
+        const nr = nrIn.value.trim();
+        
+        if (pc.length === 6 && nr.length >= 1) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                stIn.innerText = "⏳ Zoeken..."; 
+                stIn.style.color = "#1a73e8";
+                
+                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(d => {
+                    if (d.response && d.response.docs.length > 0) {
+                        return fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`);
+                    } else {
+                        throw new Error("Niet gevonden");
+                    }
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.response && d.response.docs.length > 0) {
+                        adIn.value = d.response.docs[0].weergavenaam; 
+                        stIn.innerText = "✅ Adres Gevonden!"; 
+                        stIn.style.color = "green";
+                    } else {
+                        throw new Error("Geen weergavenaam");
+                    }
+                })
+                .catch(() => { 
+                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
+                    stIn.style.color = "red"; 
+                    adIn.removeAttribute('readonly'); 
+                });
+            }, 500);
+        } else if (pc.length < 6) {
+            stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
+            stIn.style.color = "#888";
+        }
+    }
+    
+    pcIn.addEventListener('input', zoekAdres); 
+    nrIn.addEventListener('input', zoekAdres);
+
+    // ==========================================
+    // 2. FOTOSCANNER LOGICA
     // ==========================================
     document.getElementById('imageInput').addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const statusDiv = document.getElementById('scannerStatus');
-        statusDiv.innerText = "⏳ Foto analyseren op tabel-layout...";
-        statusDiv.style.color = "#ff9800";
-
+        const file = e.target.files[0]; if (!file) return;
+        const statusDiv = document.getElementById('scannerStatus'); statusDiv.innerText = "⏳ Foto scannen..."; statusDiv.style.color = "#ff9800";
         try {
-            const result = await Tesseract.recognize(file, 'nld');
-            const ruweTekst = result.data.text;
-
-            const telNaamRegex = /(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z\s]+)/;
-            const telNaamMatch = ruweTekst.match(telNaamRegex);
-            if (telNaamMatch) {
-                document.getElementById('telefoon').value = telNaamMatch[1];
-                document.getElementById('klantNaam').value = telNaamMatch[2].trim();
-            }
-
-            const emailStraatRegex = /[\w\.-]+@[\w\.-]+\.\w+\s+([A-Za-z\s]+?)\s+([0-9]+[A-Za-z]?)/;
-            const straatMatch = ruweTekst.match(emailStraatRegex);
+            const result = await Tesseract.recognize(file, 'nld'); const ruweTekst = result.data.text;
+            
+            const telNaamMatch = ruweTekst.match(/(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z\s]+)/);
+            if (telNaamMatch) { document.getElementById('telefoon').value = telNaamMatch[1]; document.getElementById('klantNaam').value = telNaamMatch[2].trim(); }
+            
+            const straatMatch = ruweTekst.match(/[\w\.-]+@[\w\.-]+\.\w+\s+([A-Za-z\s]+?)\s+([0-9]+[A-Za-z]?)/);
             if (straatMatch) document.getElementById('nr').value = straatMatch[2]; 
-
+            
             const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
             if (postcodeMatch) {
                 document.getElementById('pc').value = postcodeMatch[0].toUpperCase();
+                // Activeer de adreszoeker automatisch!
+                document.getElementById('pc').dispatchEvent(new Event('input'));
             }
-
+            
             const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+([\s\S]*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/i);
             if (instructieMatch && instructieMatch[1]) document.getElementById('opmerkingen').value = instructieMatch[1].trim();
-
-            statusDiv.innerText = "✅ Klantgegevens & Instructies gelezen!";
-            statusDiv.style.color = "green";
-
-        } catch (error) {
-            statusDiv.innerText = "❌ Fout bij scannen. Vul handmatig in.";
-            statusDiv.style.color = "red";
-        }
+            
+            statusDiv.innerText = "✅ Klantgegevens gelezen!"; statusDiv.style.color = "green";
+        } catch (error) { statusDiv.innerText = "❌ Scannen mislukt."; statusDiv.style.color = "red"; }
     });
 
     // ==========================================
-    // 2. PRODUCTEN BOUWER
+    // 3. PRODUCTEN & AUTOMATISCHE TIJD
     // ==========================================
     const productContainer = document.getElementById('productContainer');
+    
+    function berekenTijd() {
+        let totaalMinuten = 0;
+        const regels = document.querySelectorAll('.product-row');
+        
+        regels.forEach(regel => {
+            const aantal = parseInt(regel.querySelector('.p-aantal').value) || 1;
+            const type = regel.querySelector('.p-type').value;
+            const bediening = regel.querySelector('.p-bediening').value;
+            
+            let minPerProduct = 0;
+            if (type === "Zonnescherm") { minPerProduct = 120; }
+            else if (type === "Overkapping") { minPerProduct = 480; }
+            else if (type === "Losse Motor / Onderdeel") { minPerProduct = 60; }
+            else { 
+                // Rolluik of Screen
+                if (bediening === "Solar") minPerProduct = 45;
+                else if (bediening === "Stroom (230V)") minPerProduct = 60;
+                else minPerProduct = 45; // Handbediend
+            }
+            totaalMinuten += (aantal * minPerProduct);
+        });
+
+        if (document.getElementById('chkHoogwerker').checked) totaalMinuten += 60;
+        if (document.getElementById('chkExtraTijd').checked) totaalMinuten += 60;
+
+        document.getElementById('timeDisplay').innerText = `Berekende Montagetijd: ${totaalMinuten} minuten (${(totaalMinuten/60).toFixed(1)} uur)`;
+        document.getElementById('berekendeTijd').value = totaalMinuten;
+    }
+
     function voegProductRegelToe() {
         const div = document.createElement('div'); div.className = 'product-row';
-        div.innerHTML = `<input type="number" class="p-aantal" value="1" min="1" required>
-            <select class="p-type" required>
+        div.innerHTML = `<input type="number" class="p-aantal" value="1" min="1" required onchange="berekenTijd()">
+            <select class="p-type" required onchange="berekenTijd()">
                 <option value="Rolluik">Rolluik</option><option value="Screen">Screen</option>
                 <option value="Zonnescherm">Zonnescherm</option><option value="Overkapping">Overkapping</option>
                 <option value="Losse Motor / Onderdeel">Motor/Onderdeel (Service)</option>
             </select>
-            <select class="p-bediening" required>
+            <select class="p-bediening" required onchange="berekenTijd()">
                 <option value="Solar">Solar</option><option value="Stroom (230V)">Stroom (230V)</option>
                 <option value="Handbediend">Handbediend</option><option value="N.v.t.">N.v.t.</option>
             </select>
             <button type="button" class="btn-remove" onclick="verwijderRegel(this)">✖</button>`;
         productContainer.appendChild(div);
+        berekenTijd();
     }
-    function verwijderRegel(btn) { if (productContainer.children.length > 1) btn.parentElement.remove(); else alert("Minimaal 1 product verplicht."); }
+    
+    function verwijderRegel(btn) { 
+        if (productContainer.children.length > 1) { btn.parentElement.remove(); berekenTijd(); } 
+    }
+    
+    document.getElementById('chkHoogwerker').addEventListener('change', berekenTijd);
+    document.getElementById('chkExtraTijd').addEventListener('change', berekenTijd);
+
     voegProductRegelToe();
 
     // ==========================================
-    // 3. FORMULIER VERZENDEN NAAR GOOGLE SHEETS
+    // 4. VERZENDEN
     // ==========================================
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -187,21 +267,26 @@
         dataObject.demontage = formData.get('demontage') === 'on';
         dataObject.spoed = formData.get('spoed') === 'on';
         
+        let extraOps = [];
+        if(document.getElementById('chkHoogwerker').checked) extraOps.push("Hoogwerker");
+        if(document.getElementById('chkExtraTijd').checked) extraOps.push("Extra Tijd");
+        if(extraOps.length > 0) dataObject.opmerkingen = `[${extraOps.join(' + ')}] ` + (dataObject.opmerkingen || "");
+
         const regels = document.querySelectorAll('.product-row');
         dataObject.bestellijst = Array.from(regels).map(r => `${r.querySelector('.p-aantal').value}x ${r.querySelector('.p-type').value} (${r.querySelector('.p-bediening').value})`).join(', ');
 
         fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dataObject) })
         .then(() => { 
-            alert("✅ Order succesvol verwerkt en gepland!"); 
+            alert("✅ Order gepland!"); 
             this.reset(); 
             productContainer.innerHTML = ""; 
             voegProductRegelToe(); 
-            document.getElementById('scannerStatus').innerText = "";
+            document.getElementById('adres').setAttribute('readonly', true);
+            document.getElementById('adresStatus').innerText = "Wachten op invoer...";
+            document.getElementById('adresStatus').style.color = "#888";
             btn.disabled = false; btn.innerText = "Opslaan & Plannen"; 
-        })
-        .catch(err => {
-            alert("❌ Fout bij opslaan. Probeer opnieuw.");
-            btn.disabled = false; btn.innerText = "Opslaan & Plannen";
+        }).catch(err => {
+            alert("❌ Fout bij opslaan."); btn.disabled = false; btn.innerText = "Opslaan & Plannen";
         });
     });
 </script>
