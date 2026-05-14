@@ -66,7 +66,8 @@
             <input type="text" id="klantNaam" name="naam" required>
 
             <div class="row">
-                <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" maxlength="6" required></div>
+                <!-- OPLOSSING: maxlength verwijderd zodat postcodes mét spatie gewoon getypt en geplakt kunnen worden -->
+                <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" placeholder="1234 AB" required></div>
                 <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
             </div>
             <div id="adresStatus">Adreszoeker: Wachten op invoer...</div>
@@ -135,7 +136,9 @@
             if (straatMatch) document.getElementById('nr').value = straatMatch[2]; 
 
             const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
-            if (postcodeMatch) document.getElementById('pc').value = postcodeMatch[0].replace(/\s/g, '').toUpperCase();
+            if (postcodeMatch) {
+                document.getElementById('pc').value = postcodeMatch[0].toUpperCase();
+            }
 
             const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+(.*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/is);
             if (instructieMatch && instructieMatch[1]) document.getElementById('opmerkingen').value = instructieMatch[1].trim();
@@ -151,18 +154,19 @@
         }
     });
 
-    // PDOK Adreszoeker (VERBETERDE VERSIE)
+    // PDOK Adreszoeker
     let timeout = null;
     const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
 
     function zoekAdres() {
         const pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
         const nr = nrIn.value.trim();
+        
+        // Zodra de postcode 6 tekens heeft zonder spaties, ga direct zoeken
         if (pc.length === 6 && nr.length >= 1) {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
                 stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
-                // De directe API request die niet hapert:
                 fetch(`https://api.pdok.nl/bzk/locatieserver/v3/free?q=${pc}%20${nr}`)
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(d => {
@@ -179,10 +183,15 @@
                     adIn.removeAttribute('readonly'); 
                 });
             }, 500);
+        } else if (pc.length < 6) {
+            stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
+            stIn.style.color = "#888";
         }
     }
-    pcIn.addEventListener('keyup', zoekAdres); 
-    nrIn.addEventListener('keyup', zoekAdres);
+    
+    // OPLOSSING: 'input' in plaats van 'keyup' registreert ook als je iets plakt met je muis!
+    pcIn.addEventListener('input', zoekAdres); 
+    nrIn.addEventListener('input', zoekAdres);
 
     // Producten Bouwer
     const productContainer = document.getElementById('productContainer');
@@ -228,6 +237,17 @@
 </body>
 </html>
         
+        
+       
+          
+               
+            
+
+   
+    
+           
+        
+
        
        
         
