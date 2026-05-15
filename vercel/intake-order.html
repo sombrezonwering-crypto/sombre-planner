@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sombre Intake - Planner</title>
-    <!-- Tesseract Scanner -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
@@ -13,13 +12,11 @@
         .nav-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .nav-title { font-weight: bold; color: #2c3e50; font-size: 18px; }
         .nav-btn { background: #e8f0fe; color: #1a73e8; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
-        .nav-btn:hover { background: #d2e3fc; }
 
         .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         h2 { color: #1a73e8; text-align: center; margin-top: 0; margin-bottom: 20px; }
         
-        .scanner-zone { background: #e8f0fe; border: 2px dashed #1a73e8; padding: 20px; text-align: center; border-radius: 10px; margin-bottom: 25px; cursor: pointer; position: relative; transition: 0.3s; }
-        .scanner-zone:hover { background: #d2e3fc; }
+        .scanner-zone { background: #e8f0fe; border: 2px dashed #1a73e8; padding: 20px; text-align: center; border-radius: 10px; margin-bottom: 25px; cursor: pointer; position: relative; }
         .scanner-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         #scannerStatus { font-weight: bold; color: #1a73e8; margin-top: 10px; }
         
@@ -39,7 +36,6 @@
         .time-box { background: #d4edda; color: #155724; padding: 10px; border-radius: 8px; margin-top: 15px; font-weight: bold; text-align: center; border: 1px solid #c3e6cb; }
         
         button.submit-btn { width: 100%; padding: 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
-        button.submit-btn:disabled { background: #ccc; }
     </style>
 </head>
 <body>
@@ -56,14 +52,14 @@
         <div class="scanner-zone">
             <span style="font-size: 24px;">📸</span><br>
             <strong>Upload Screenshot Leverancier</strong><br>
-            <span style="font-size: 12px; color: #666;">Scant automatisch klantgegevens & instructies</span>
+            <span style="font-size: 12px; color: #666;">Scant automatisch klantgegevens</span>
             <input type="file" id="imageInput" accept="image/*" capture="environment">
             <div id="scannerStatus"></div>
         </div>
 
         <form id="orderForm">
             <label>Ordernummer (Zelf invoeren)</label>
-            <input type="text" name="ordernummer" placeholder="Bijv. 2024-001" required>
+            <input type="text" name="ordernummer" required>
 
             <label>Naam Klant</label>
             <input type="text" id="klantNaam" name="naam" required>
@@ -72,7 +68,6 @@
                 <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" placeholder="1234 AB" required></div>
                 <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
             </div>
-            
             <div id="adresStatus">Adreszoeker: Wachten op invoer...</div>
 
             <label>Straat & Woonplaats</label>
@@ -96,7 +91,18 @@
             </div>
             
             <label>Gewenste Datum (Override Regio)</label>
-            <input type="text" name="gewenste_datum" placeholder="Bijv. 12-06-2026 (Breekt de regels!)">
+            <input type="text" name="gewenste_datum" placeholder="Bijv. 12-06-2026 (Leeglaten voor auto-planning)">
+
+            <label>Voorkeur / Tijdstip</label>
+            <div class="row">
+                <select name="tijd_voorkeur" id="tijd_voorkeur" onchange="toggleTijdVak()" style="flex: 2;">
+                    <option value="Geen">Geen voorkeur (Automatisch)</option>
+                    <option value="Ochtend">☀️ Ochtend (Bovenaan de dag)</option>
+                    <option value="Middag">🌤️ Middag (Onderaan de dag)</option>
+                    <option value="Vast">⏰ Vaste tijd (Klant/Kantoor eis)</option>
+                </select>
+                <input type="time" name="vaste_tijd" id="vaste_tijd" style="display:none; flex: 1;">
+            </div>
 
             <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0;"> 🔥 Spoedklus (Plannen mag vanaf morgen!)</label>
 
@@ -112,109 +118,68 @@
     // VUL HIER JOUW GOOGLE WEB APP URL IN
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
-    // ==========================================
-    // 1. DE WERKENDEN ADRESZOEKER (v3_1) VAN JOU!
-    // ==========================================
+    function toggleTijdVak() {
+        const voorkeur = document.getElementById('tijd_voorkeur').value;
+        document.getElementById('vaste_tijd').style.display = (voorkeur === 'Vast') ? 'block' : 'none';
+        if(voorkeur === 'Vast') document.getElementById('vaste_tijd').required = true;
+        else document.getElementById('vaste_tijd').required = false;
+    }
+
     let timeout = null;
-    const pcIn = document.getElementById('pc');
-    const nrIn = document.getElementById('nr');
-    const adIn = document.getElementById('adres');
-    const stIn = document.getElementById('adresStatus');
+    const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
 
     function zoekAdres() {
-        let pc = pcIn.value.replace(/\s+/g, '').toUpperCase(); 
-        let nr = nrIn.value.trim();
-        
+        let pc = pcIn.value.replace(/\s+/g, '').toUpperCase(), nr = nrIn.value.trim();
         if(pc.length === 6 && nr.length >= 1) {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
-                stIn.innerText = "⏳ Zoeken..."; 
-                stIn.style.color = "#1a73e8";
-                
-                // Jouw exact werkende API regel
+                stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
                 fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${pc} ${nr}&fq=type:adres`)
-                .then(r => r.json())
-                .then(d => {
+                .then(r => r.json()).then(d => {
                     if(d.response.docs.length > 0) {
                         adIn.value = d.response.docs[0].straatnaam + ", " + d.response.docs[0].woonplaatsnaam;
-                        stIn.innerText = "✅ Adres Gevonden!"; 
-                        stIn.style.color = "green";
-                    } else {
-                        throw new Error("Niet gevonden");
-                    }
-                })
-                .catch(() => {
-                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
-                    stIn.style.color = "red"; 
-                    adIn.removeAttribute('readonly');
+                        stIn.innerText = "✅ Adres Gevonden!"; stIn.style.color = "green";
+                    } else throw new Error("Niet gevonden");
+                }).catch(() => {
+                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; stIn.style.color = "red"; adIn.removeAttribute('readonly');
                 });
             }, 500);
-        } else {
-            stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
-            stIn.style.color = "#888";
-        }
+        } else { stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; stIn.style.color = "#888"; }
     }
+    pcIn.addEventListener('input', zoekAdres); nrIn.addEventListener('input', zoekAdres);
 
-    pcIn.addEventListener('input', zoekAdres); 
-    nrIn.addEventListener('input', zoekAdres);
-
-    // ==========================================
-    // 2. FOTOSCANNER LOGICA
-    // ==========================================
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0]; if (!file) return;
         const statusDiv = document.getElementById('scannerStatus'); statusDiv.innerText = "⏳ Foto scannen..."; statusDiv.style.color = "#ff9800";
         try {
             const result = await Tesseract.recognize(file, 'nld'); const ruweTekst = result.data.text;
-            
             const telNaamMatch = ruweTekst.match(/(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z\s]+)/);
             if (telNaamMatch) { document.getElementById('telefoon').value = telNaamMatch[1]; document.getElementById('klantNaam').value = telNaamMatch[2].trim(); }
-            
             const straatMatch = ruweTekst.match(/[\w\.-]+@[\w\.-]+\.\w+\s+([A-Za-z\s]+?)\s+([0-9]+[A-Za-z]?)/);
             if (straatMatch) document.getElementById('nr').value = straatMatch[2]; 
-            
             const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
-            if (postcodeMatch) {
-                document.getElementById('pc').value = postcodeMatch[0].toUpperCase();
-                document.getElementById('pc').dispatchEvent(new Event('input')); // Start de adreszoeker
-            }
-            
+            if (postcodeMatch) { document.getElementById('pc').value = postcodeMatch[0].toUpperCase(); document.getElementById('pc').dispatchEvent(new Event('input')); }
             const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+([\s\S]*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/i);
             if (instructieMatch && instructieMatch[1]) document.getElementById('opmerkingen').value = instructieMatch[1].trim();
-            
             statusDiv.innerText = "✅ Klantgegevens gelezen!"; statusDiv.style.color = "green";
         } catch (error) { statusDiv.innerText = "❌ Scannen mislukt."; statusDiv.style.color = "red"; }
     });
 
-    // ==========================================
-    // 3. PRODUCTEN & AUTOMATISCHE TIJD
-    // ==========================================
     const productContainer = document.getElementById('productContainer');
-    
     function berekenTijd() {
         let totaalMinuten = 0;
-        const regels = document.querySelectorAll('.product-row');
-        
-        regels.forEach(regel => {
+        document.querySelectorAll('.product-row').forEach(regel => {
             const aantal = parseInt(regel.querySelector('.p-aantal').value) || 1;
-            const type = regel.querySelector('.p-type').value;
-            const bediening = regel.querySelector('.p-bediening').value;
-            
+            const type = regel.querySelector('.p-type').value, bediening = regel.querySelector('.p-bediening').value;
             let minPerProduct = 0;
-            if (type === "Zonnescherm") { minPerProduct = 120; }
-            else if (type === "Overkapping") { minPerProduct = 480; }
-            else if (type === "Losse Motor / Onderdeel") { minPerProduct = 60; }
-            else { 
-                if (bediening === "Solar") minPerProduct = 45;
-                else if (bediening === "Stroom (230V)") minPerProduct = 60;
-                else minPerProduct = 45; 
-            }
+            if (type === "Zonnescherm") minPerProduct = 120;
+            else if (type === "Overkapping") minPerProduct = 480;
+            else if (type === "Losse Motor / Onderdeel") minPerProduct = 60;
+            else minPerProduct = (bediening === "Solar") ? 45 : (bediening === "Stroom (230V)" ? 60 : 45);
             totaalMinuten += (aantal * minPerProduct);
         });
-
         if (document.getElementById('chkHoogwerker').checked) totaalMinuten += 60;
         if (document.getElementById('chkExtraTijd').checked) totaalMinuten += 60;
-
         document.getElementById('timeDisplay').innerText = `Berekende Montagetijd: ${totaalMinuten} minuten (${(totaalMinuten/60).toFixed(1)} uur)`;
         document.getElementById('berekendeTijd').value = totaalMinuten;
     }
@@ -222,39 +187,20 @@
     function voegProductRegelToe() {
         const div = document.createElement('div'); div.className = 'product-row';
         div.innerHTML = `<input type="number" class="p-aantal" value="1" min="1" required onchange="berekenTijd()">
-            <select class="p-type" required onchange="berekenTijd()">
-                <option value="Rolluik">Rolluik</option><option value="Screen">Screen</option>
-                <option value="Zonnescherm">Zonnescherm</option><option value="Overkapping">Overkapping</option>
-                <option value="Losse Motor / Onderdeel">Motor/Onderdeel (Service)</option>
-            </select>
-            <select class="p-bediening" required onchange="berekenTijd()">
-                <option value="Solar">Solar</option><option value="Stroom (230V)">Stroom (230V)</option>
-                <option value="Handbediend">Handbediend</option><option value="N.v.t.">N.v.t.</option>
-            </select>
+            <select class="p-type" required onchange="berekenTijd()"><option>Rolluik</option><option>Screen</option><option>Zonnescherm</option><option>Overkapping</option><option>Losse Motor / Onderdeel</option></select>
+            <select class="p-bediening" required onchange="berekenTijd()"><option>Solar</option><option>Stroom (230V)</option><option>Handbediend</option><option>N.v.t.</option></select>
             <button type="button" class="btn-remove" onclick="verwijderRegel(this)">✖</button>`;
-        productContainer.appendChild(div);
-        berekenTijd();
+        productContainer.appendChild(div); berekenTijd();
     }
-    
-    function verwijderRegel(btn) { 
-        if (productContainer.children.length > 1) { btn.parentElement.remove(); berekenTijd(); } 
-    }
-    
-    document.getElementById('chkHoogwerker').addEventListener('change', berekenTijd);
-    document.getElementById('chkExtraTijd').addEventListener('change', berekenTijd);
-
+    function verwijderRegel(btn) { if (productContainer.children.length > 1) { btn.parentElement.remove(); berekenTijd(); } }
+    document.getElementById('chkHoogwerker').addEventListener('change', berekenTijd); document.getElementById('chkExtraTijd').addEventListener('change', berekenTijd);
     voegProductRegelToe();
 
-    // ==========================================
-    // 4. VERZENDEN
-    // ==========================================
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "Bezig met plannen...";
         const formData = new FormData(this); let dataObject = Object.fromEntries(formData.entries());
-        
-        dataObject.demontage = formData.get('demontage') === 'on';
-        dataObject.spoed = formData.get('spoed') === 'on';
+        dataObject.demontage = formData.get('demontage') === 'on'; dataObject.spoed = formData.get('spoed') === 'on';
         
         let extraOps = [];
         if(document.getElementById('chkHoogwerker').checked) extraOps.push("Hoogwerker");
@@ -266,17 +212,10 @@
 
         fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dataObject) })
         .then(() => { 
-            alert("✅ Order gepland!"); 
-            this.reset(); 
-            productContainer.innerHTML = ""; 
-            voegProductRegelToe(); 
-            document.getElementById('adres').setAttribute('readonly', true);
-            document.getElementById('adresStatus').innerText = "Wachten op invoer...";
-            document.getElementById('adresStatus').style.color = "#888";
+            alert("✅ Order gepland!"); this.reset(); productContainer.innerHTML = ""; voegProductRegelToe(); toggleTijdVak();
+            document.getElementById('adres').setAttribute('readonly', true); document.getElementById('adresStatus').innerText = "Wachten op invoer...";
             btn.disabled = false; btn.innerText = "Opslaan & Plannen"; 
-        }).catch(err => {
-            alert("❌ Fout bij opslaan."); btn.disabled = false; btn.innerText = "Opslaan & Plannen";
-        });
+        }).catch(err => { alert("❌ Fout bij opslaan."); btn.disabled = false; btn.innerText = "Opslaan & Plannen"; });
     });
 </script>
 </body>
