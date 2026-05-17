@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magazijn & Planning App - Sombre</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { width: 100%; max-width: 550px; }
@@ -12,8 +13,14 @@
         .nav-title { font-weight: bold; color: #2c3e50; font-size: 18px; }
         .nav-btn { background: #e8f0fe; color: #1a73e8; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
 
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        
+        /* Aangepaste layout voor zoekbalk mét camera knop */
+        .search-container { display: flex; gap: 10px; margin-bottom: 10px; }
+        .search-bar { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .btn-camera { background: #e8f0fe; color: #1a73e8; border: 2px dashed #1a73e8; border-radius: 8px; width: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; position: relative; transition: 0.3s; }
+        .btn-camera:hover { background: #d2e3fc; }
+        .btn-camera input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        #scannerStatus { font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 20px; min-height: 15px; }
+
         .order-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid #1a73e8; }
         .order-title { font-weight: bold; font-size: 16px; color: #2c3e50; margin-bottom: 5px; }
         .order-products { font-size: 14px; color: #555; background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
@@ -36,15 +43,56 @@
         <a href="intake-order.html" class="nav-btn">📝 Intake ➔</a>
     </div>
 
-    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Zoek op klant of ordernummer..." onkeyup="filterOrders()">
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Typ ordernr of scan label..." onkeyup="filterOrders()">
+        <div class="btn-camera" title="Scan doos label">
+            📸
+            <input type="file" id="magazijnScanner" accept="image/*" capture="environment">
+        </div>
+    </div>
+    <div id="scannerStatus"></div>
 
-    <div id="loading" style="text-align: center; color: #666; font-weight: bold; margin-top: 20px;">⏳ Orders laden uit systeem...</div>
+    <div id="loading" style="text-align: center; color: #666; font-weight: bold; margin-top: 10px;">⏳ Orders laden uit systeem...</div>
     <div id="orderLijst"></div>
 </div>
 
 <script>
     // VUL HIER JOUW EIGEN GOOGLE WEB APP URL IN !!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+
+    // 📸 SCANNER LOGICA VOOR MAGAZIJN LABELS
+    document.getElementById('magazijnScanner').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const statusLabel = document.getElementById('scannerStatus');
+        statusLabel.innerText = "⏳ Label scannen... (Even geduld)";
+        statusLabel.style.color = "#ff9800";
+
+        try {
+            const result = await Tesseract.recognize(file, 'nld');
+            const tekst = result.data.text;
+
+            // Zoek naar 'Referentie:' of 'Ref.:' en pak de cijfers die erachter staan (bijv. 62430)
+            const refMatch = tekst.match(/(?:Referentie|Ref\.?)[\s:]*(\d{4,6})/i);
+            
+            if (refMatch && refMatch[1]) {
+                const orderNr = refMatch[1];
+                document.getElementById('searchInput').value = orderNr; // Vul zoekbalk in
+                filterOrders(); // Filter de lijst direct!
+                
+                statusLabel.innerText = `✅ Doos herkend: Order ${orderNr}`;
+                statusLabel.style.color = "green";
+            } else {
+                statusLabel.innerText = "⚠️ Geen referentienummer kunnen lezen op dit label.";
+                statusLabel.style.color = "#ff3b30";
+                console.log("Gelezen tekst magazijnlabel:", tekst);
+            }
+        } catch (error) {
+            statusLabel.innerText = "❌ Fout bij scannen van afbeelding.";
+            statusLabel.style.color = "red";
+        }
+    });
 
     function laadOrders() {
         document.getElementById("loading").style.display = "block";
@@ -59,20 +107,18 @@
                     html = "<div style='text-align:center; color:#555; background:white; padding:20px; border-radius:12px;'>🎉 Geen wachtende orders gevonden!</div>";
                 } else {
                     data.forEach(order => {
-                        let isBinnen = order.status.includes("Binnen"); // True als het Producten Binnen of Deels Binnen is
+                        let isBinnen = order.status.includes("Binnen"); 
                         let badge = isBinnen ? `<span style='color: #28a745; font-size: 12px; font-weight: bold;'> (${order.status})</span>` : "";
                         
                         let knoppen = "";
                         if (!isBinnen) {
-                            // FASE 1: MAGZAIJN KNOPPEN
                             knoppen = `
                                 <button class="btn-green" onclick="actieUitvoeren('${order.ordernummer}', 'markBinnen', this)">✅ Alles Binnen</button>
                                 <button class="btn-yellow" onclick="actieUitvoeren('${order.ordernummer}', 'markPartial', this)">⚠️ Deellevering</button>
                             `;
                         } else {
-                            // FASE 2: KANTOOR KNOPPEN (Klant Akkoord & Herplan)
                             knoppen = `
-                                <button class="btn-blue" onclick="actieUitvoeren('${order.ordernummer}', 'reschedule', this)">🔄 Herplan Vroeger</button>
+                                <button class="btn-blue" onclick="actieUitvoeren('${order.ordernummer}', 'reschedule', this)">🔄 Herplan</button>
                                 <button class="btn-green" onclick="actieUitvoeren('${order.ordernummer}', 'markGreen', this)">✅ Klant Akkoord</button>
                             `;
                         }
@@ -88,6 +134,7 @@
                     });
                 }
                 document.getElementById("orderLijst").innerHTML = html;
+                filterOrders(); // Zorg dat een eventuele zoekopdracht na het laden blijft staan
             }).catch(err => {
                 document.getElementById("loading").innerHTML = "❌ Fout bij ophalen. Check je internetverbinding.";
             });
@@ -96,7 +143,6 @@
     function actieUitvoeren(ordernummer, actieScript, knopElement) {
         let locatieInfo = "";
         
-        // Specifieke vragen per actie
         if (actieScript === 'markBinnen') {
             locatieInfo = prompt("In welk vak (of vakken) heb je de spullen gelegd?\n(Bijv: RS-14 of Z-03)");
             if (locatieInfo === null) return; 
@@ -111,7 +157,6 @@
             if (!confirm("Is de klant akkoord met de datum? Deze order wordt nu definitief gemaakt en verdwijnt uit deze lijst!")) return;
         }
 
-        // Knop beveiligen
         let origineleTekst = knopElement.innerText;
         knopElement.innerText = "⏳ Bezig...";
         knopElement.disabled = true;
@@ -120,6 +165,11 @@
             .then(r => r.json())
             .then(res => {
                 alert("✅ Systeem succesvol geüpdatet!");
+                // Zoekbalk leegmaken na succesvolle magazijn inboeking, zodat ze de volgende doos kunnen scannen
+                if(actieScript === 'markBinnen' || actieScript === 'markPartial') {
+                    document.getElementById('searchInput').value = "";
+                    document.getElementById('scannerStatus').innerText = "";
+                }
                 laadOrders(); 
             }).catch(err => {
                 alert("❌ Er ging iets mis. Check je verbinding.");
