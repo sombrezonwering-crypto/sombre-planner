@@ -105,7 +105,7 @@
                     <option value="Middag">🌤️ Middag (Onderaan de dag)</option>
                     <option value="Vast">⏰ Vaste tijd (Klant/Kantoor eis)</option>
                 </select>
-                <input type="time" name="vaste_tijd" id="vaste_tijd" style="display:none; flex: 1;">
+                <input type="time" name="vaste_tijd" id="vaste_tijd" style="display:none; flex: 1;" title="Vul specifieke tijd in (optioneel)">
             </div>
 
             <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0;"> 🔥 Spoedklus (Plannen mag vanaf morgen!)</label>
@@ -119,14 +119,21 @@
 </div>
 
 <script>
-    // VUL HIER JOUW GOOGLE WEB APP URL IN
+    // VUL HIER JOUW GOOGLE WEB APP URL IN !!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
+    // DE FIX: Tijd input logica aangepast
     function toggleTijdVak() {
         const voorkeur = document.getElementById('tijd_voorkeur').value;
-        document.getElementById('vaste_tijd').style.display = (voorkeur === 'Vast') ? 'block' : 'none';
-        if(voorkeur === 'Vast') document.getElementById('vaste_tijd').required = true;
-        else document.getElementById('vaste_tijd').required = false;
+        const tijdInput = document.getElementById('vaste_tijd');
+        if (voorkeur !== 'Geen') {
+            tijdInput.style.display = 'block';
+            tijdInput.required = (voorkeur === 'Vast'); // Alleen echt verplicht bij 'Vast'
+        } else {
+            tijdInput.style.display = 'none';
+            tijdInput.value = '';
+            tijdInput.required = false;
+        }
     }
 
     let timeout = null;
@@ -181,7 +188,6 @@
             if (type === "Zonnescherm") minPerProduct = 120;
             else if (type === "Overkapping") minPerProduct = 480;
             else if (type === "Losse Motor / Onderdeel") minPerProduct = 60;
-            // NIEUW: De afvang voor de service minuten
             else if (type === "Service: Vervangen / Terugplaatsen") minPerProduct = parseInt(bediening);
             else minPerProduct = (bediening === "Solar") ? 45 : (bediening === "Stroom (230V)" ? 60 : 45);
             
@@ -202,7 +208,6 @@
         productContainer.appendChild(div); berekenTijd();
     }
 
-    // NIEUW: Functie voor de Service Regel
     function voegServiceRegelToe() {
         const div = document.createElement('div'); div.className = 'product-row';
         div.innerHTML = `<input type="number" class="p-aantal" value="1" min="1" required onchange="berekenTijd()">
