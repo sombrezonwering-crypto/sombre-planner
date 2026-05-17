@@ -3,158 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sombre Magazijn - Control</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <title>Magazijn App - Sombre</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #eef2f5; padding: 20px; color: #333; margin: 0; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 650px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 550px; }
         
-        /* Navigatie Balk */
         .nav-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .nav-title { font-weight: bold; color: #2c3e50; font-size: 18px; }
         .nav-btn { background: #e8f0fe; color: #1a73e8; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
         .nav-btn:hover { background: #d2e3fc; }
 
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 25px; }
-        h3 { border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 0; color: #1a73e8; }
+        .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         
-        .input-group { display: flex; gap: 10px; margin-bottom: 10px; position: relative; }
-        input[type="text"] { flex: 1; padding: 14px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-        .btn-camera { background: #e8f0fe; color: #1a73e8; border: 2px dashed #1a73e8; padding: 0 20px; border-radius: 8px; font-size: 20px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
-        .btn-camera:hover { background: #d2e3fc; }
-        .btn-camera input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .order-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid #1a73e8; }
+        .order-title { font-weight: bold; font-size: 16px; color: #2c3e50; margin-bottom: 5px; }
+        .order-products { font-size: 14px; color: #555; background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
         
-        #magazijnStatus { font-size: 13px; font-weight: bold; color: #1a73e8; margin-bottom: 10px; display: block; }
-
-        .btn-yellow { background: #ffc107; color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; font-size: 15px; }
-        .btn-yellow:hover { background: #e0a800; }
-        .btn-green { background: #28a745; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; }
-        .btn-green:hover { background: #218838; }
-        .btn-blue { background: #17a2b8; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; flex: 1; transition: 0.2s; }
-        .btn-blue:hover { background: #138496; }
-        
-        .order-item { background: #f8f9fa; border-left: 5px solid #ccc; padding: 18px; margin-bottom: 12px; border-radius: 8px; }
-        .order-item.geel { border-color: #ffc107; background: #fffdf5; }
-        .meta-text { font-size: 13px; color: #666; margin-bottom: 12px; background: #eee; padding: 6px 10px; border-radius: 4px; display: inline-block; }
-        .button-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn-green { flex: 1; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; font-size: 14px;}
+        .btn-yellow { flex: 1; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; font-size: 14px;}
+        .btn-green:hover { background: #c3e6cb; }
+        .btn-yellow:hover { background: #ffeeba; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Navigatie -->
     <div class="nav-bar">
-        <a href="/" class="nav-btn">⬅ Intake Planner</a>
-        <div class="nav-title">Magazijn Control 📦</div>
+        <div class="nav-title">📦 Magazijn App</div>
+        <a href="intake-order.html" class="nav-btn">📝 Intake ➔</a>
     </div>
 
-    <div class="card">
-        <h3>1. Producten Binnen (Magazijn)</h3>
-        <p style="font-size: 14px; color: #555;">Maak een foto van de werkbon, gebruik een handscanner, of typ het ordernummer in.</p>
-        
-        <div class="input-group">
-            <input type="text" id="refInvoer" placeholder="Bijv. 2024-001">
-            <div class="btn-camera" title="Scan werkbon met camera">
-                📸
-                <input type="file" id="magazijnScanner" accept="image/*" capture="environment">
-            </div>
-        </div>
-        <span id="magazijnStatus"></span>
+    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Zoek op klant of ordernummer..." onkeyup="filterOrders()">
 
-        <button class="btn-yellow" onclick="stuurActie('markYellow')">Markeer als Binnen (Geel)</button>
-    </div>
-
-    <div class="card">
-        <h3>2. Wacht op Klant Akkoord</h3>
-        <div id="wachtLijst" style="text-align: center; color: #888; font-style: italic;">Orders ophalen uit systeem...</div>
-    </div>
+    <div id="loading" style="text-align: center; color: #666; font-weight: bold; margin-top: 20px;">⏳ Orders laden uit systeem...</div>
+    <div id="orderLijst"></div>
 </div>
 
 <script>
-    // VUL HIER JOUW GOOGLE WEB APP URL IN
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec"; 
+    // Jouw correcte Google Apps Script URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
-    // Camera Scanner Logica
-    document.getElementById('magazijnScanner').addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    function laadOrders() {
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("orderLijst").innerHTML = "";
 
-        const statusLabel = document.getElementById('magazijnStatus');
-        statusLabel.innerText = "⏳ Foto analyseren... Zoeken naar ordernummer...";
-        statusLabel.style.color = "#ff9800";
-
-        try {
-            const result = await Tesseract.recognize(file, 'nld');
-            const tekst = result.data.text;
-            
-            const orderRegex = /\b(202[0-9]-[0-9]{3,5})\b/i; 
-            const match = tekst.match(orderRegex);
-
-            if (match) {
-                document.getElementById('refInvoer').value = match[1];
-                statusLabel.innerText = "✅ Ordernummer gevonden!";
-                statusLabel.style.color = "green";
-            } else {
-                statusLabel.innerText = "⚠️ Geen ordernummer gevonden. Vul handmatig in.";
-                statusLabel.style.color = "red";
-            }
-        } catch (error) {
-            statusLabel.innerText = "❌ Fout bij scannen van afbeelding.";
-            statusLabel.style.color = "red";
-        }
-    });
-
-    // Acties & Wachtlijst
-    function stuurActie(actie, handmatigNr = null) {
-        const ordernr = handmatigNr || document.getElementById('refInvoer').value;
-        if (!ordernr) return alert("Vul eerst een ordernummer in.");
-
-        let msg = actie === 'markYellow' ? `Zijn de producten binnen voor order ${ordernr}?` :
-                  actie === 'markGreen' ? `Is de klant akkoord met de datum voor order ${ordernr}? Maak definitief!` :
-                  `Wil je order ${ordernr} met prioriteit naar voren herplannen?`;
-
-        if (!confirm(msg)) return;
-
-        document.getElementById('magazijnStatus').innerText = "⏳ Bezig met bijwerken...";
-        document.getElementById('magazijnStatus').style.color = "#1a73e8";
-
-        fetch(`${SCRIPT_URL}?action=${actie}&ordernummer=${ordernr}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                alert(actie === 'reschedule' ? `Succes: ${data.bericht}` : "Succesvol bijgewerkt in de planning!");
-                if (actie === 'markYellow') {
-                    document.getElementById('refInvoer').value = "";
-                    document.getElementById('magazijnStatus').innerText = "";
+        fetch(SCRIPT_URL + "?action=getOrders")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("loading").style.display = "none";
+                let html = "";
+                if(data.length === 0) {
+                    html = "<div style='text-align:center; color:#555; background:white; padding:20px; border-radius:12px;'>🎉 Geen wachtende orders gevonden!</div>";
+                } else {
+                    data.forEach(order => {
+                        let badge = order.status.includes("Deels") ? "<span style='color: #d35400; font-size: 12px; font-weight: bold;'> (Deellevering)</span>" : "";
+                        
+                        html += `
+                        <div class="order-card" data-zoek="${order.naam.toLowerCase()} ${order.ordernummer}">
+                            <div class="order-title">ORD: ${order.ordernummer} - ${order.naam} ${badge}</div>
+                            <div class="order-products">📦 <b>Besteld:</b><br>${order.producten || "Geen producten gevonden"}</div>
+                            <div class="btn-group">
+                                <button class="btn-green" onclick="actieUitvoeren('${order.ordernummer}', 'alles', this)">✅ Alles Binnen</button>
+                                <button class="btn-yellow" onclick="actieUitvoeren('${order.ordernummer}', 'deels', this)">⚠️ Deellevering</button>
+                            </div>
+                        </div>`;
+                    });
                 }
-                laadWachtlijst();
-            } else { alert("Fout: " + data.message); }
-        })
-        .catch(err => alert("Verbindingsfout met Google Sheets."));
-    }
-
-    function laadWachtlijst() {
-        const div = document.getElementById('wachtLijst');
-        fetch(SCRIPT_URL + "?action=getOrders").then(r => r.json()).then(data => {
-            div.innerHTML = "";
-            if (data.length === 0) return div.innerHTML = "Geen openstaande orders. Alles is groen!";
-
-            data.forEach(o => {
-                const isGeel = o.status.includes("Binnen");
-                div.innerHTML += `
-                    <div class="order-item ${isGeel ? 'geel' : ''}">
-                        <strong style="font-size: 16px;">${o.ordernummer} - ${o.naam}</strong><br>
-                        <div class="meta-text">Huidige info: ${o.datumBericht || o.status}</div>
-                        <div class="button-group">
-                            <button class="btn-blue" onclick="stuurActie('reschedule', '${o.ordernummer}')">🔄 Herplan Vroeger</button>
-                            <button class="btn-green" onclick="stuurActie('markGreen', '${o.ordernummer}')">✅ Klant Akkoord</button>
-                        </div>
-                    </div>`;
+                document.getElementById("orderLijst").innerHTML = html;
+            }).catch(err => {
+                document.getElementById("loading").innerHTML = "❌ Fout bij ophalen. Check je internetverbinding.";
             });
-        }).catch(err => div.innerHTML = "Fout bij laden van orders.");
     }
 
-    laadWachtlijst();
+    function actieUitvoeren(ordernummer, type, knopElement) {
+        let locatieInfo = "";
+        let actieScript = "";
+
+        if (type === 'alles') {
+            locatieInfo = prompt("In welk vak (of vakken) heb je de spullen gelegd?\n(Bijv: RS-14 of Z-03)");
+            if (locatieInfo === null) return; // Gebruiker drukte op Annuleren
+            if (locatieInfo.trim() === "") locatieInfo = "Vak onbekend";
+            actieScript = "markGreen";
+        } else {
+            locatieInfo = prompt("⚠️ Deellevering:\nWat heb je al binnen, en wat mis je nog? (Noteer ook het vaknummer)");
+            if (locatieInfo === null) return; // Gebruiker drukte op Annuleren
+            if (locatieInfo.trim() === "") locatieInfo = "Deellevering zonder notitie";
+            actieScript = "markPartial";
+        }
+
+        // Knop tekst veranderen en uitschakelen om dubbel klikken te voorkomen
+        let origineleTekst = knopElement.innerText;
+        knopElement.innerText = "⏳ Bezig...";
+        knopElement.disabled = true;
+        
+        fetch(`${SCRIPT_URL}?action=${actieScript}&ordernummer=${ordernummer}&locatieInfo=${encodeURIComponent(locatieInfo)}`)
+            .then(r => r.json())
+            .then(res => {
+                alert("✅ Magazijn succesvol geüpdatet! Kantoor heeft bericht.");
+                laadOrders(); // Lijst verversen (de verwerkte order verdwijnt nu uit het scherm)
+            }).catch(err => {
+                alert("❌ Er ging iets mis. Check je verbinding.");
+                knopElement.innerText = origineleTekst;
+                knopElement.disabled = false;
+            });
+    }
+
+    function filterOrders() {
+        let input = document.getElementById("searchInput").value.toLowerCase();
+        let cards = document.querySelectorAll(".order-card");
+        cards.forEach(card => {
+            if (card.getAttribute("data-zoek").includes(input)) {
+                card.style.display = "block";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    }
+
+    // Direct laden bij het openen van de pagina
+    laadOrders();
 </script>
 </body>
 </html>
