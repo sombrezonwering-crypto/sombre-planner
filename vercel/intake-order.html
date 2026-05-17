@@ -122,13 +122,12 @@
     // VUL HIER JOUW GOOGLE WEB APP URL IN !!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
-    // DE FIX: Tijd input logica aangepast
     function toggleTijdVak() {
         const voorkeur = document.getElementById('tijd_voorkeur').value;
         const tijdInput = document.getElementById('vaste_tijd');
         if (voorkeur !== 'Geen') {
             tijdInput.style.display = 'block';
-            tijdInput.required = (voorkeur === 'Vast'); // Alleen echt verplicht bij 'Vast'
+            tijdInput.required = (voorkeur === 'Vast'); 
         } else {
             tijdInput.style.display = 'none';
             tijdInput.value = '';
@@ -159,21 +158,75 @@
     }
     pcIn.addEventListener('input', zoekAdres); nrIn.addEventListener('input', zoekAdres);
 
+    // DE NIEUWE SLIMMERE SCANNER!
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0]; if (!file) return;
-        const statusDiv = document.getElementById('scannerStatus'); statusDiv.innerText = "⏳ Foto scannen..."; statusDiv.style.color = "#ff9800";
+        const statusDiv = document.getElementById('scannerStatus'); 
+        statusDiv.innerText = "⏳ Foto scannen en ontcijferen (Kan even duren)..."; 
+        statusDiv.style.color = "#ff9800";
+        
         try {
-            const result = await Tesseract.recognize(file, 'nld'); const ruweTekst = result.data.text;
-            const telNaamMatch = ruweTekst.match(/(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z\s]+)/);
-            if (telNaamMatch) { document.getElementById('telefoon').value = telNaamMatch[1]; document.getElementById('klantNaam').value = telNaamMatch[2].trim(); }
-            const straatMatch = ruweTekst.match(/[\w\.-]+@[\w\.-]+\.\w+\s+([A-Za-z\s]+?)\s+([0-9]+[A-Za-z]?)/);
-            if (straatMatch) document.getElementById('nr').value = straatMatch[2]; 
-            const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
-            if (postcodeMatch) { document.getElementById('pc').value = postcodeMatch[0].toUpperCase(); document.getElementById('pc').dispatchEvent(new Event('input')); }
-            const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+([\s\S]*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/i);
-            if (instructieMatch && instructieMatch[1]) document.getElementById('opmerkingen').value = instructieMatch[1].trim();
-            statusDiv.innerText = "✅ Klantgegevens gelezen!"; statusDiv.style.color = "green";
-        } catch (error) { statusDiv.innerText = "❌ Scannen mislukt."; statusDiv.style.color = "red"; }
+            const result = await Tesseract.recognize(file, 'nld'); 
+            const ruweTekst = result.data.text;
+            let veldenGevonden = 0;
+
+            // 1. Montageinstructies
+            const instructieMatch = ruweTekst.match(/Montageinstructie[\s\S]*?\n([\s\S]*?)(?=\nJouw klantgegevens|Jouw klantgegevens)/i);
+            if (instructieMatch && instructieMatch[1]) { 
+                document.getElementById('opmerkingen').value = instructieMatch[1].trim(); 
+                veldenGevonden++; 
+            }
+
+            // 2. Telefoonnummer
+            const telefoonMatch = ruweTekst.match(/(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})/);
+            if (telefoonMatch) { 
+                document.getElementById('telefoon').value = telefoonMatch[1].replace(/\s+/g, ''); 
+                veldenGevonden++; 
+            }
+
+            // 3. Postcode
+            const pcMatch = ruweTekst.match(/\b([1-9][0-9]{3}\s?[A-Za-z]{2})\b/i);
+            if (pcMatch) { 
+                document.getElementById('pc').value = pcMatch[1].toUpperCase().replace(/\s+/g, ''); 
+                veldenGevonden++; 
+            }
+
+            // 4. Huisnummer
+            const emailStreetNrMatch = ruweTekst.match(/@[\w\.-]+\.\w+\s+[A-Za-z\s]+\s+([0-9]{1,5}[a-zA-Z]?)/);
+            if (emailStreetNrMatch) { 
+                document.getElementById('nr').value = emailStreetNrMatch[1]; 
+                veldenGevonden++; 
+            } else {
+                const fallbackNr = ruweTekst.match(/\b([0-9]{1,4}[A-Za-z]?)\s*[\r\n]+\s*[1-9][0-9]{3}\s?[A-Za-z]{2}/);
+                if (fallbackNr) {
+                    document.getElementById('nr').value = fallbackNr[1];
+                    veldenGevonden++;
+                }
+            }
+
+            // 5. Naam
+            const naamMatch = ruweTekst.match(/(?:06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z]+)\s+([A-Za-z\s]+)/);
+            if (naamMatch && !naamMatch[2].includes("@")) { 
+                document.getElementById('klantNaam').value = naamMatch[1] + " " + naamMatch[2].trim(); 
+                veldenGevonden++; 
+            }
+
+            if (veldenGevonden > 0) {
+                statusDiv.innerText = `✅ ${veldenGevonden} velden gevonden en ingevuld! Check of het klopt.`; 
+                statusDiv.style.color = "green";
+                if(document.getElementById('pc').value && document.getElementById('nr').value) {
+                    document.getElementById('pc').dispatchEvent(new Event('input'));
+                }
+            } else {
+                statusDiv.innerText = "⚠️ Tekst wel gelezen, maar de logica niet begrepen. Vul zelf aan."; 
+                statusDiv.style.color = "#ff3b30";
+                console.log("Ruwe Tesseract tekst was:\n", ruweTekst);
+            }
+            
+        } catch (error) { 
+            statusDiv.innerText = "❌ Scannen mislukt."; 
+            statusDiv.style.color = "red"; 
+        }
     });
 
     const productContainer = document.getElementById('productContainer');
