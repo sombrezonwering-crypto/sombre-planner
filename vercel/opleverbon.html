@@ -45,16 +45,25 @@
     <form id="opleverForm">
         
         <div class="card">
+            <div class="card-title">📅 Kies Vandaag de Klus</div>
+            <label>Actieve Geplande Orders</label>
+            <select id="select_order" onchange="vulKlusGegevens()" required>
+                <option value="">⏳ Laden van actieve klussen...</option>
+            </select>
+            <input type="hidden" id="order_nr">
+        </div>
+        
+        <div class="card">
             <div class="card-title">📍 Waar ben je?</div>
-            <label>Klantnaam / Referentie</label>
-            <input type="text" id="klant_naam" placeholder="Bijv: Familie Jansen of Order #1234" required>
+            <label>Klantnaam</label>
+            <input type="text" id="klant_naam" placeholder="Klantnaam" readonly style="background:#f2f2f7;" required>
             
             <label>Postcode & Huisnummer</label>
             <div class="grid-2">
-                <input type="text" id="pc" placeholder="1234AB" style="text-transform: uppercase;" required>
-                <input type="text" id="hn" placeholder="Huisnr" required>
+                <input type="text" id="pc" placeholder="1234AB" style="text-transform: uppercase; background:#f2f2f7;" readonly required>
+                <input type="text" id="hn" placeholder="Huisnr" readonly style="background:#f2f2f7;" required>
             </div>
-            <input type="text" id="str" placeholder="Adres (Wordt automatisch gezocht...)" readonly style="background:#f2f2f7;">
+            <input type="text" id="str" placeholder="Adres..." readonly style="background:#f2f2f7;">
         </div>
 
         <div class="card" style="border: none; box-shadow: none; padding: 0; background: transparent;">
@@ -102,33 +111,58 @@
 </div>
 
 <script>
+    // VUL HIER JOUW EIGEN GOOGLE WEB APP URL IN !!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+
     let gekozenStatus = '';
+    let alleActieveOrders = [];
 
-    // PDOK POSTCODE ZOEKER
-    document.getElementById('pc').addEventListener('input', zoekAdres);
-    document.getElementById('hn').addEventListener('input', zoekAdres);
-
-    function zoekAdres() {
-        let pc = document.getElementById('pc').value.replace(/\s+/g, ''); 
-        let hn = document.getElementById('hn').value;
-        if(pc.length === 6 && hn) {
-            fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${pc} ${hn}&fq=type:adres`)
-            .then(r => r.json()).then(d => {
-                if(d.response.docs.length > 0) {
-                    document.getElementById('str').value = d.response.docs[0].straatnaam + ", " + d.response.docs[0].woonplaatsnaam;
+    // AUTOMATISCH KLUSSEN INLADEN UIT PLANNING
+    function laadActieveKlussen() {
+        fetch(SCRIPT_URL + "?action=getMonteurOrders")
+            .then(res => res.json())
+            .then(data => {
+                alleActieveOrders = data;
+                let select = document.getElementById('select_order');
+                select.innerHTML = '<option value="">-- Kies de klant voor vandaag --</option>';
+                
+                if(data.length === 0) {
+                    select.innerHTML = '<option value="">🎉 Alle geplande klussen zijn al afgemeld!</option>';
+                    return;
                 }
+                
+                data.forEach((order, index) => {
+                    select.innerHTML += `<option value="${index}">ORD: ${order.ordernummer} - ${order.naam}</option>`;
+                });
+            }).catch(err => {
+                document.getElementById('select_order').innerHTML = '<option value="">❌ Fout bij laden planning...</option>';
             });
+    }
+
+    // AUTO-FILL LOGICA ALS DE MONTEUR DE KLANT KIEST
+    function vulKlusGegevens() {
+        let selectVal = document.getElementById('select_order').value;
+        if(selectVal === "") {
+            document.getElementById('order_nr').value = "";
+            document.getElementById('klant_naam').value = "";
+            document.getElementById('pc').value = "";
+            document.getElementById('hn').value = "";
+            document.getElementById('str').value = "";
+            return;
         }
+        
+        let gekozenOrder = alleActieveOrders[selectVal];
+        document.getElementById('order_nr').value = gekozenOrder.ordernummer;
+        document.getElementById('klant_naam').value = gekozenOrder.naam;
+        document.getElementById('pc').value = gekozenOrder.postcode;
+        document.getElementById('hn').value = gekozenOrder.huisnummer;
+        document.getElementById('str').value = gekozenOrder.adres;
     }
 
     // STATUS KNOPPEN LOGICA
     function selectStatus(status) {
         gekozenStatus = status;
-        
-        // Reset alle knoppen
         document.querySelectorAll('.btn-status').forEach(btn => btn.classList.remove('active'));
-        
-        // Activeer de gekozen knop
         document.querySelector(`.btn-status.${status}`).classList.add('active');
 
         const serviceBlok = document.getElementById('service-blok');
@@ -154,10 +188,16 @@
         }
     }
 
-    // FORMULIER VERZENDEN
+    // CODES DIRECT RECHTSTREEKS NAAR GOOGLE SHEETS STUREN
     document.getElementById('opleverForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        let ordernummer = document.getElementById('order_nr').value;
+        if (!ordernummer) {
+            alert("Kies eerst bovenaan een geplande klus!");
+            return;
+        }
+
         if (!gekozenStatus) {
             alert("Kies eerst een status (Groen, Oranje of Rood)!");
             return;
@@ -165,55 +205,40 @@
 
         const btn = document.getElementById('btnSend');
         btn.disabled = true;
-        btn.innerText = "⏳ Bezig met verzenden...";
+        btn.innerText = "⏳ Bezig met verwerken in agenda...";
 
-        let klantNaam = document.getElementById('klant_naam').value;
-        let adres = document.getElementById('str').value || document.getElementById('pc').value;
-        
-        // Bouw de email payload op basis van de status
-        let payload = {};
-        let subject = "";
+        let actieScript = "";
+        let notitieInfo = "";
 
         if (gekozenStatus === 'groen') {
-            subject = "🟢 OPGELEVERD: " + klantNaam;
-            payload = {
-                _subject: subject,
-                "KLANT": `${klantNaam} (${adres})`,
-                "STATUS": "🟢 100% KLAAR EN OPGELEVERD",
-                "MELDING": "Geen bijzonderheden. De klus is succesvol afgerond en de factuur mag verstuurd worden."
-            };
+            actieScript = "markOpgeleverd";
         } else {
-            let statusTekst = (gekozenStatus === 'oranje') ? "🟠 DEELS KLAAR / SERVICE NODIG" : "🔴 NIET GEMONTEERD / AFGEBROKEN";
-            subject = (gekozenStatus === 'oranje') ? "🟠 SERVICE: " + klantNaam : "🔴 ALARM: " + klantNaam;
+            actieScript = gekozenStatus === 'oranje' ? "markService" : "markAfgebroken";
             
-            payload = {
-                _subject: subject,
-                "1_KLANT": `${klantNaam} (${adres})`,
-                "2_STATUS": statusTekst,
-                "3_REDEN_VAN_MELDING": document.getElementById('reden').value,
-                "4_KANTOOR_MOET_BESTELLEN": document.getElementById('bestellen').value || "Niets ingevuld",
-                "5_TIJDELIJKE_OPLOSSING_AFSPRAAK": document.getElementById('oplossing').value || "Niets ingevuld",
-                "6_VOORSTEL_NIEUWE_DATUM": document.getElementById('nieuwe_datum').value || "Nog niet afgesproken"
-            };
+            // Verzamel alle invoer van de monteur in een duidelijke notitie voor op het kalenderblokje
+            let reden = document.getElementById('reden').value;
+            let bestellen = document.getElementById('bestellen').value || "Niets ingevuld";
+            let oplossing = document.getElementById('oplossing').value || "Niets ingevuld";
+            let datum = document.getElementById('nieuwe_datum').value || "Geen datum afgesproken";
+            
+            notitieInfo = `⚠️ REDEN: ${reden}\n📦 BESTELLEN: ${bestellen}\n🔧 AFSPRAAK: ${oplossing}\n📅 NIEUWE DATUM: ${datum}`;
         }
-
-        // Gebruik hetzelfde Formspree endpoint (verander deze link evt. als je een aparte mailbox wilt)
-        fetch("https://formspree.io/f/xkovrnqj", { 
-            method: "POST", 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify(payload) 
-        })
-        .then(res => {
-            if(res.ok) {
-                alert("✅ Melding succesvol verstuurd naar kantoor!");
-                location.reload(); // Reset formulier
-            } else {
-                alert("❌ Fout bij verzenden. Controleer je internetverbinding en probeer het opnieuw.");
-                btn.disabled = false;
-                btn.innerText = "📤 MELDING VERZENDEN NAAR KANTOOR";
-            }
+        
+        // Stuur keihard door naar Google Sheets!
+        fetch(`${SCRIPT_URL}?action=${actieScript}&ordernummer=${ordernummer}&notitie=${encodeURIComponent(notitieInfo)}`)
+        .then(res => res.json())
+        .then(data => {
+            alert("✅ Status succesvol verwerkt! Agenda op kantoor is direct bijgewerkt.");
+            location.reload(); 
+        }).catch(err => {
+            alert("❌ Er ging iets mis met de verbinding. Probeer het opnieuw.");
+            btn.disabled = false;
+            btn.innerText = "📤 MELDING VERZENDEN NAAR KANTOOR";
         });
     });
+
+    // Start direct met inladen van geplande orders
+    laadActieveKlussen();
 </script>
 
 </body>
