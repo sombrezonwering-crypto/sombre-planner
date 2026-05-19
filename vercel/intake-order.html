@@ -23,7 +23,8 @@
         #scannerStatus { font-weight: bold; color: #1a73e8; margin-top: 10px; }
         
         label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 15px; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        input, select, textarea { width: 100%; height: 50px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; padding: 0 12px; background: #fff; margin-top: 5px; }
+        textarea { height: 100px; padding: 12px; resize: none; }
         .row { display: flex; gap: 10px; }
         #adresStatus { font-size: 11px; margin-top: 5px; font-weight: bold; height: 15px; }
         
@@ -87,15 +88,18 @@
             </div>
 
             <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkHoogwerker" style="width:auto; margin:0;"> 🏗️ Hoogwerker nodig (+60 min)</label>
-                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkExtraTijd" style="width:auto; margin:0;"> ⏱️ Extra tijd marge nodig (+60 min)</label>
-                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="demontage" style="width:auto; margin:0;"> ⚠️ Demontage oud product</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkHoogwerker" style="width:auto; margin:0; height:auto;"> 🏗️ Hoogwerker nodig (+60 min)</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkExtraTijd" style="width:auto; margin:0; height:auto;"> ⏱️ Extra tijd marge nodig (+60 min)</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="demontage" style="width:auto; margin:0; height:auto;"> ⚠️ Demontage oud product</label>
                 <div class="time-box" id="timeDisplay">Berekende Montagetijd: 0 minuten</div>
                 <input type="hidden" name="montagetijd_minuten" id="berekendeTijd" value="0">
             </div>
             
-            <label>Gewenste Datum (Override Regio)</label>
+            <label>Gewenste Datum (Override Regio & Max 3 Klussen Limiet)</label>
             <input type="text" name="gewenste_datum" placeholder="Bijv. 12-06-2026 (Leeglaten voor auto-planning)">
+
+            <label>Afwijkende Reistijd (minuten - optioneel)</label>
+            <input type="number" name="afwijkende_reistijd" id="afwijkende_reistijd" placeholder="Leeglaten voor automatische regio-reistijd">
 
             <label>Voorkeur / Tijdstip</label>
             <div class="row">
@@ -105,10 +109,10 @@
                     <option value="Middag">🌤️ Middag (Onderaan de dag)</option>
                     <option value="Vast">⏰ Vaste tijd (Klant/Kantoor eis)</option>
                 </select>
-                <input type="time" name="vaste_tijd" id="vaste_tijd" style="display:none; flex: 1;" title="Vul specifieke tijd in (optioneel)">
+                <input type="time" name="vaste_tijd" id="vaste_tijd" style="display:none; flex: 1; height: 50px;" title="Vul specifieke tijd in (optioneel)">
             </div>
 
-            <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0;"> 🔥 Spoedklus (Plannen mag vanaf morgen!)</label>
+            <label style="display:flex; align-items:center; gap:8px; margin-top:10px;"><input type="checkbox" name="spoed" style="width:auto; margin:0; height:auto;"> 🔥 Spoedklus (Plannen mag vanaf morgen!)</label>
 
             <label>Montage Instructies & Opmerkingen</label>
             <textarea id="opmerkingen" name="opmerkingen" rows="3" placeholder="Instructies of bijzonderheden..."></textarea>
@@ -119,7 +123,6 @@
 </div>
 
 <script>
-    // VUL HIER JOUW GOOGLE WEB APP URL IN !!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
     function toggleTijdVak() {
@@ -158,7 +161,6 @@
     }
     pcIn.addEventListener('input', zoekAdres); nrIn.addEventListener('input', zoekAdres);
 
-    // DE NIEUWE SLIMMERE SCANNER!
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0]; if (!file) return;
         const statusDiv = document.getElementById('scannerStatus'); 
@@ -170,28 +172,24 @@
             const ruweTekst = result.data.text;
             let veldenGevonden = 0;
 
-            // 1. Montageinstructies
             const instructieMatch = ruweTekst.match(/Montageinstructie[\s\S]*?\n([\s\S]*?)(?=\nJouw klantgegevens|Jouw klantgegevens)/i);
             if (instructieMatch && instructieMatch[1]) { 
                 document.getElementById('opmerkingen').value = instructieMatch[1].trim(); 
                 veldenGevonden++; 
             }
 
-            // 2. Telefoonnummer
             const telefoonMatch = ruweTekst.match(/(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})/);
             if (telefoonMatch) { 
                 document.getElementById('telefoon').value = telefoonMatch[1].replace(/\s+/g, ''); 
                 veldenGevonden++; 
             }
 
-            // 3. Postcode
             const pcMatch = ruweTekst.match(/\b([1-9][0-9]{3}\s?[A-Za-z]{2})\b/i);
             if (pcMatch) { 
                 document.getElementById('pc').value = pcMatch[1].toUpperCase().replace(/\s+/g, ''); 
                 veldenGevonden++; 
             }
 
-            // 4. Huisnummer
             const emailStreetNrMatch = ruweTekst.match(/@[\w\.-]+\.\w+\s+[A-Za-z\s]+\s+([0-9]{1,5}[a-zA-Z]?)/);
             if (emailStreetNrMatch) { 
                 document.getElementById('nr').value = emailStreetNrMatch[1]; 
@@ -204,7 +202,6 @@
                 }
             }
 
-            // 5. Naam
             const naamMatch = ruweTekst.match(/(?:06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z]+)\s+([A-Za-z\s]+)/);
             if (naamMatch && !naamMatch[2].includes("@")) { 
                 document.getElementById('klantNaam').value = naamMatch[1] + " " + naamMatch[2].trim(); 
@@ -220,7 +217,6 @@
             } else {
                 statusDiv.innerText = "⚠️ Tekst wel gelezen, maar de logica niet begrepen. Vul zelf aan."; 
                 statusDiv.style.color = "#ff3b30";
-                console.log("Ruwe Tesseract tekst was:\n", ruweTekst);
             }
             
         } catch (error) { 
@@ -248,7 +244,7 @@
         });
         if (document.getElementById('chkHoogwerker').checked) totaalMinuten += 60;
         if (document.getElementById('chkExtraTijd').checked) totaalMinuten += 60;
-        document.getElementById('timeDisplay').innerText = `Berekende Montagetijd: ${totaalMinuten} minuten (${(totaalMinuten/60).toFixed(1)} uur)`;
+        document.getElementById('timeDisplay').innerText = `Berekende Montagetijd: ${totaalMinuten} minutes (${(totaalMinuten/60).toFixed(1)} uur)`;
         document.getElementById('berekendeTijd').value = totaalMinuten;
     }
 
