@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zapply v25 BEAST MODE</title>
     <style>
-        :root { --primary: #ff4757; --bg: #050a14; --card: #1e293b; --accent: #1db954; --rest: #ffa502; --text: #f8fafc; --gold: #f1c40f; }
+        :root { --primary: #ff4757; --bg: #050a14; --card: #1e293b; --accent: #1db954; --rest: #ffa502; --text: #f8fafc; --gold: #f1c40f; --core: #0984e3; }
         body { font-family: 'Arial Black', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); touch-action: manipulation; overflow-x: hidden; }
         .container { max-width: 450px; margin: auto; }
         
@@ -15,18 +15,19 @@
         
         .dashboard { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; border-bottom: 5px solid var(--primary); transition: 0.3s; }
         .dashboard.resting { border-bottom-color: var(--rest); background: #2c3e50; }
-        .dashboard.bonus { border-bottom-color: var(--gold); background: #3e3305; box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
+        .dashboard.core-mode { border-bottom-color: var(--core); background: #062b4a; }
         
-        #timer { font-size: 4.5rem; font-weight: 900; margin: 0; line-height: 1; }
+        #timer { font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; }
         
         #prep-area { background: #0f172a; padding: 15px; border-radius: 10px; margin: 15px 0; border: 2px dashed var(--accent); }
-        #prep-list { font-size: 1rem; color: #fff; text-align: left; display: inline-block; margin-top: 10px; line-height: 1.6; }
+        #prep-list { font-size: 0.95rem; color: #fff; text-align: left; display: block; margin-top: 10px; line-height: 1.6; }
         .prep-eq-title { color: var(--gold); font-size: 0.9rem; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; }
+        .history-text { font-size: 0.8rem; color: #94a3b8; font-weight: normal; display: block; margin-bottom: 5px; }
 
-        .visual-card { background: #0f172a; border-radius: 15px; padding: 12px; margin: 10px 0; border: 2px solid var(--primary); min-height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .visual-card { background: #0f172a; border-radius: 15px; padding: 12px; margin: 10px 0; border: 2px solid var(--primary); min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .ascii-art { font-family: monospace; background: #000; color: var(--accent); padding: 8px; border-radius: 8px; font-size: 10px; white-space: pre; line-height: 1.1; width: 100%; text-align: center; }
         
-        #ex-title { font-size: 1.5rem; color: var(--accent); font-weight: 900; text-transform: uppercase; margin-bottom: 10px; text-align: center; }
+        #ex-title { font-size: 1.4rem; color: var(--accent); font-weight: 900; text-transform: uppercase; margin-bottom: 5px; text-align: center; }
         #ex-eq { font-size: 0.8rem; color: var(--gold); font-weight: bold; margin-bottom: 5px; }
 
         /* Input Controls */
@@ -38,13 +39,19 @@
         .btn-main { width: 100%; padding: 20px; border-radius: 15px; border: none; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 10px; transition: 0.1s; cursor: pointer; }
         .btn-log { background: var(--accent); color: white; box-shadow: 0 6px 0 #15833b; }
         .btn-log:active { box-shadow: 0 2px 0 #15833b; transform: translateY(4px); }
-        .btn-skip { background: var(--rest); color: black; margin-top: 15px; font-size: 1.4rem; padding: 25px; box-shadow: 0 6px 0 #b37300; }
+        .btn-skip { background: var(--rest); color: black; margin-top: 15px; font-size: 1.4rem; padding: 20px; box-shadow: 0 6px 0 #b37300; }
         .btn-skip:active { box-shadow: 0 2px 0 #b37300; transform: translateY(4px); }
-        .btn-finish-ex { background: #475569; font-size: 0.8rem; padding: 10px; margin-top: 5px; color: white; }
         
-        /* Rest Timer Controls */
+        /* Rest / Transition Timer Controls */
         #rest-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid var(--rest); text-align: center; }
-        #rest-display { font-size: 6rem; font-weight: 900; color: var(--rest); line-height: 1; text-shadow: 0 0 15px rgba(255, 165, 2, 0.4); margin: 20px 0; }
+        #rest-label { font-size: 1.2rem; font-weight: bold; color: var(--rest); letter-spacing: 2px; }
+        #rest-display { font-size: 6rem; font-weight: 900; color: var(--rest); line-height: 1; text-shadow: 0 0 15px rgba(255, 165, 2, 0.4); margin: 10px 0; }
+
+        /* Core Mode */
+        #core-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid var(--core); text-align: center; }
+        #core-label { font-size: 1.5rem; font-weight: 900; color: var(--core); letter-spacing: 1px; margin-bottom: 5px; }
+        #core-display { font-size: 6rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 15px rgba(9, 132, 227, 0.5); margin: 10px 0; }
+        #core-next { font-size: 0.9rem; color: #cbd5e1; margin-top: 10px; }
 
         .hidden { display: none !important; }
     </style>
@@ -73,11 +80,12 @@
         <button class="btn-main" style="background:#fff; color:#000;" onclick="startApp()" id="startBtn">START TRAINING</button>
     </div>
 
+    <!-- Visuele kaart (Hoofd oefeningen) -->
     <div class="visual-card" id="visual-card" style="display:none;">
         <div id="ex-title">OEFENING NAAM</div>
         <div id="ex-eq">GEWICHT KLAARZETTEN</div>
         <div id="visualContent" class="ascii-art">KIES OEFENING</div>
-        <div id="instruction" style="font-size: 0.8rem; margin-top: 5px; text-align: center;">Kies je eerste doelwit.</div>
+        <div id="instruction" style="font-size: 0.8rem; margin-top: 5px; text-align: center;">...</div>
     </div>
 
     <div id="input-ui" class="hidden">
@@ -94,78 +102,85 @@
                 <div class="stepper-val" id="val-r">12 reps</div>
                 <button class="btn-step" onclick="adj('r',1)">+</button>
             </div>
+            <button class="btn-main btn-log" id="logBtn" onclick="logSet()">SLA SET OP</button>
         </div>
         
-        <!-- Rest UI -->
+        <!-- Rest / Transition UI -->
         <div id="rest-container" class="hidden">
-            <div style="font-size: 1.2rem; font-weight: bold; color: var(--rest); letter-spacing: 2px;">HERSTEL FASE</div>
-            <div id="rest-display">45</div>
-            <button class="btn-main btn-skip" id="skipBtn" onclick="skipRest()">SKIP RUST - GO!</button>
+            <div id="rest-label">HERSTEL FASE</div>
+            <div id="rest-display">30</div>
+            <button class="btn-main btn-skip" id="skipBtn" onclick="skipTimer()">SKIP - GO!</button>
         </div>
-        
-        <button class="btn-main btn-log" id="logBtn" onclick="logSet()">SLA SET OP</button>
-        <button class="btn-main btn-finish-ex" id="finishExBtn" onclick="finishExManually()">IK BEN KLAAR MET DEZE OEFENING</button>
+
+        <!-- Core Circuit UI -->
+        <div id="core-container" class="hidden">
+            <div id="core-label">ACTIE</div>
+            <div id="core-display">40</div>
+            <div id="core-next">Maak je klaar...</div>
+        </div>
+
     </div>
 </div>
 
 <script>
-    let timeLeft = 900, timerRunning = false, currentSet = 1, isResting = false;
-    let weight = 10, reps = 12;
-    let restTimeRemaining = 0;
+    let timeLeft = 900; // 15 minuten
+    let globalTimerInterval;
+    let mode = 'IDLE'; // IDLE, WORK, REST, TRANS, CORE
+    let localTimeRemaining = 0;
     
-    let currentWorkoutList = [];
-    let currentExIndex = 0;
+    let currentMainIndex = 0;
+    let currentSet = 1;
+    let weight = 10, reps = 12;
 
-    // DRILL INSTRUCTOR QUOTES
+    let mainExercises = [];
+    let coreExercises = ["Russian Twists", "Crunches", "Plank"];
+    let coreCircuitQueue = []; // Bepaalt de flow van het core blok
+
+    // QUOTES
     const quotesStart = [
-        "15 minuten op de klok! Geen genade! Rammen met die handel!",
-        "Materiaal gereed? 15 minuten gas geven! Start!"
+        "15 minuten op de klok! Geen genade! Start!",
+        "Materiaal gereed? Vanaf nu wordt er gezweet! Go go go!"
     ];
-    const quotesRest = [
-        "Set klaar! 45 seconden ademhalen en niet janken!",
-        "Goed. 45 seconden rust. Blijf staan, niet zitten!"
-    ];
-    const quotesGo = [
-        "Genoeg gerust! Bewegen! GO GO GO!",
-        "Klaar met huilen! Pak dat gewicht op! Nu!"
-    ];
-    const quotesExDone = [
-        "Oefening voltooid! Meteen door naar de volgende, we hebben geen hele dag!",
-        "Klaar! Volgende doelwit op je scherm! Uitvoeren!"
+    const quotesTrans = [
+        "Tijd om te wisselen! 20 seconden! Opschieten!",
+        "Wissel van oefening! Snel, we hebben geen hele dag!"
     ];
 
     function getRandomQuote(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
     
-    // HET ULTIEME ARSENAAL (Halter, DBs, Dips, Lichaamsgewicht, Medicijnbal)
+    // OEFENINGEN ARSENAAL
     const exercises = {
         "Push-Ups": { d: "Lichaam recht als een plank. Borst naar grond.", a: "   O____\n  /|    |\n  / \\___|", eq: "Lichaamsgewicht" },
-        "Diamond Push-Ups": { d: "Handen in ruitvorm. Focus op triceps.", a: "   O____\n  /|\\   |\n  / \\___|", eq: "Lichaamsgewicht" },
-        "Dips": { d: "Handen op stangen of bankje. Zak tot 90 graden.", a: "   O \n  /|\\\n  _|_", eq: "Dips / Lichaamsgewicht" },
+        "Dips": { d: "Handen op stangen. Zak tot 90 graden.", a: "   O \n  /|\\\n  _|_", eq: "Dips / Lichaamsgewicht" },
         "DB Chest Press": { d: "Lig op rug. Druk DB's recht omhoog.", a: "  [O]   [O]\n    \\   /\n     -O-", eq: "Dumbbells" },
         "Chest Flyes": { d: "Armen wijd in boog. Boven borst samen.", a: "  [O] _  _ [O]\n     \\ (O) /", eq: "Dumbbells" },
-        "Barbell Rows": { d: "Rug recht, voorover gebogen. Trek halter naar navel.", a: "   O__\n  /|  [I]", eq: "Halter" },
+        "Barbell Rows": { d: "Rug recht, voorover gebogen. Trek halter.", a: "   O__\n  /|  [I]", eq: "Halter" },
         "DB Rows": { d: "Voorover gebogen, rug recht. Trek DBs op.", a: "   O__\n  /|  [I]", eq: "Dumbbells" },
-        "Barbell Squats": { d: "Halter in nek, voeten schouderbreedte. Zak diep door.", a: "  [I]_[I]\n    O\n   /|\\\n  _/ \\_", eq: "Halter" },
-        "Barbell Overhead Press": { d: "Core strak, halter recht omhoog uitstoten.", a: " [I]_[I]\n  \\ O /\n    |\n   / \\", eq: "Halter" },
-        "Barbell Curls": { d: "Recht staan, ellebogen in de zij. Pomp de biceps.", a: "   /|\\_\n  [I]_[I]", eq: "Halter" },
+        "DB Pull-overs": { d: "Lig op rug, laat DB achter hoofd zakken.", a: "  _O_\n   | \\ [O]", eq: "Dumbbell" },
+        "Barbell Squats": { d: "Halter in nek, voeten schouderbreedte.", a: "  [I]_[I]\n    O\n   /|\\\n  _/ \\_", eq: "Halter" },
+        "Med Ball Squats": { d: "Hou bal tegen borst. Zak diep door.", a: "   O\n  /|\\\n _/ \\_", eq: "12 kg Medicijnbal" },
+        "Lunges": { d: "Stap naar voren. Knie net niet op grond.", a: "   O\n  /|\n  / \\_", eq: "Dumbbells of Bodyweight" },
+        "Barbell Overhead Press": { d: "Core strak, halter uitstoten.", a: " [I]_[I]\n  \\ O /\n    |\n   / \\", eq: "Halter" },
+        "Lateral Raises": { d: "Armen wijd, focus op zijkant schouders.", a: " [O] O [O]\n  \\ /|\\ /\n    / \\", eq: "Dumbbells" },
+        "DB Front Raises": { d: "Hef DBs recht vooruit. Beheerst laten zakken.", a: "   O_ [O]\n  /|\\\n  / \\", eq: "Dumbbells" },
+        "Barbell Curls": { d: "Recht staan, ellebogen in de zij.", a: "   /|\\_\n  [I]_[I]", eq: "Halter" },
         "Hammer Curls": { d: "Neutrale grip. Pomp die biceps op!", a: "   /|\\_\n  [||]_ [O]", eq: "Dumbbells" },
         "Skullcrushers": { d: "Lig op rug. Alleen onderarmen bewegen.", a: "  [O]\n   |\n  /|\\", eq: "Dumbbells of Halter" },
-        "Lateral Raises": { d: "Armen wijd, focus op zijkant schouders.", a: " [O] O [O]\n  \\ /|\\ /\n    / \\", eq: "Dumbbells" },
-        "Lunges": { d: "Stap naar voren. Knie net niet op de grond.", a: "   O\n  /|\n  / \\_", eq: "Dumbbells of Lichaamsgewicht" },
-        "Med Ball Squats": { d: "Hou de bal tegen je borst. Zak diep door.", a: "   O\n  /|\\\n _/ \\_", eq: "12 kg Medicijnbal" },
-        "Med Ball Slams": { d: "Smijt de bal met brute kracht op de grond!", a: "  \\O/\n   |\n  / \\  O", eq: "12 kg Medicijnbal" },
+        
+        // CORE (Voor 5 minuten circuit)
         "Russian Twists": { d: "Zit in V-vorm, tik bal links en rechts aan.", a: "   _O_\n  /  \\\n -^---", eq: "12 kg Medicijnbal" },
         "Crunches": { d: "Span die core aan! Schouders van de vloer.", a: "    _O\n   /  \\__\n  -^-----", eq: "Lichaamsgewicht" },
-        "Plank": { d: "Span buik en billen aan. Hou vast!", a: "  O-------\n  ||    ||", eq: "Lichaamsgewicht" }
+        "Plank": { d: "Span buik en billen aan. Hou vast!", a: "  O-------\n  ||    ||", eq: "Lichaamsgewicht" },
+        "Med Ball Slams": { d: "Smijt de bal met brute kracht op de grond!", a: "  \\O/\n   |\n  / \\  O", eq: "12 kg Medicijnbal" }
     };
     
-    // 5-DAGEN SCHEMA (Aangepast op Halter, Dips en Medicijnbal. 1x buik per dag gegarandeerd)
+    // SCHEMA (1 spiergroep per sessie: 3 Oefeningen)
     const schedule = { 
-        1: { AM: ["Push-Ups", "DB Chest Press", "Barbell Squats"], PM: ["Barbell Rows", "Hammer Curls", "Plank"] },
-        2: { AM: ["Barbell Overhead Press", "Lateral Raises", "Crunches"], PM: ["Lunges", "Dips", "Med Ball Slams"] },
-        3: { AM: ["Chest Flyes", "Diamond Push-Ups", "Plank"], PM: ["Med Ball Squats", "Barbell Curls", "DB Rows"] },
-        4: { AM: ["Lunges", "Barbell Rows", "Dips"], PM: ["Push-Ups", "Barbell Overhead Press", "Russian Twists"] },
-        5: { AM: ["DB Chest Press", "DB Rows", "Plank"], PM: ["Barbell Squats", "Barbell Curls", "Lateral Raises"] }
+        1: { AM: ["DB Chest Press", "Dips", "Chest Flyes"], PM: ["Barbell Rows", "DB Rows", "DB Pull-overs"] },
+        2: { AM: ["Barbell Squats", "Lunges", "Med Ball Squats"], PM: ["Barbell Overhead Press", "Lateral Raises", "DB Front Raises"] },
+        3: { AM: ["Barbell Curls", "Hammer Curls", "Skullcrushers"], PM: ["Push-Ups", "DB Chest Press", "Dips"] },
+        4: { AM: ["Barbell Rows", "DB Rows", "Med Ball Slams"], PM: ["Barbell Squats", "Lunges", "Med Ball Squats"] },
+        5: { AM: ["Barbell Overhead Press", "Lateral Raises", "DB Front Raises"], PM: ["Barbell Curls", "Hammer Curls", "Skullcrushers"] }
     };
 
     function speak(t) { 
@@ -175,34 +190,63 @@
         window.speechSynthesis.speak(m); 
     }
     
-    function adj(t, v) { if(t==='w'){weight+=v; if(weight<0) weight=0; document.getElementById('val-w').innerText = weight+' kg';} else {reps+=v; if(reps<0) reps=0; document.getElementById('val-r').innerText = reps+' reps';} }
+    function adj(t, v) { 
+        if(t==='w'){weight+=v; if(weight<0) weight=0; document.getElementById('val-w').innerText = weight+' kg';} 
+        else {reps+=v; if(reps<0) reps=0; document.getElementById('val-r').innerText = reps+' reps';} 
+    }
+
+    // LOKALE OPSLAG (Smart Memory)
+    function getHistory(ex) {
+        let data = localStorage.getItem('zap25_' + ex);
+        return data ? JSON.parse(data) : null;
+    }
+    function saveHistory(ex, w, r) {
+        localStorage.setItem('zap25_' + ex, JSON.stringify({w: w, r: r}));
+    }
 
     function init() {
         let day = new Date().getDay();
-        if (day === 0 || day === 6) day = 1; // Weekend val terug op dag 1
+        if (day === 0 || day === 6) day = 1; 
 
         const hour = new Date().getHours();
         const sessionTime = hour < 14 ? "AM" : "PM";
-        const sessionNaam = sessionTime === "AM" ? "OCHTEND" : "AVOND";
         
-        document.getElementById('status-label').innerText = `DAG ${day} - ${sessionNaam} SESSIE`;
+        let groups = {
+            1: { AM: "BORST", PM: "RUG" },
+            2: { AM: "BENEN", PM: "SCHOUDERS" },
+            3: { AM: "ARMEN", PM: "BORST" },
+            4: { AM: "RUG", PM: "BENEN" },
+            5: { AM: "SCHOUDERS", PM: "ARMEN" }
+        };
 
-        // Haal de lijst met 3 oefeningen op
-        currentWorkoutList = schedule[day][sessionTime];
+        document.getElementById('status-label').innerText = `DAG ${day} ${sessionTime === "AM" ? "OCHTEND" : "AVOND"} - ${groups[day][sessionTime]} & CORE`;
+
+        mainExercises = schedule[day][sessionTime];
         
-        // Bereken benodigde materialen
-        const requiredEq = [...new Set(currentWorkoutList.map(ex => exercises[ex].eq))];
+        let reqEq = [...new Set(mainExercises.map(ex => exercises[ex].eq))];
+        reqEq.push("12 kg Medicijnbal"); // Voor Core altijd nodig
         
-        // Genereer de Prep List HTML
-        let prepHtml = `<div class="prep-eq-title">BENODIGD MATERIAAL:<br><span style="color:#fff; font-weight:normal; font-size: 0.9rem;">${requiredEq.join(" &bull; ")}</span></div>`;
+        let prepHtml = `<div class="prep-eq-title">BENODIGD MATERIAAL: <br><span style="color:#fff; font-weight:normal;">${reqEq.join(" &bull; ")}</span></div>`;
         prepHtml += `<hr style="border: 1px solid #334155; margin: 10px 0;">`;
-        prepHtml += currentWorkoutList.map((ex, i) => `<strong>${i+1}.</strong> ${ex} <span style="font-size:0.8rem; color:var(--gold);">[${exercises[ex].eq}]</span>`).join("<br>");
         
+        // Genereer de lijst met historie
+        mainExercises.forEach((ex, i) => {
+            let hist = getHistory(ex);
+            let histText = hist ? `Vorige: ${hist.w}kg, ${hist.r} reps` : `Nieuwe oefening`;
+            prepHtml += `<strong>${i+1}. ${ex}</strong> <span style="font-size:0.7rem; color:var(--gold);">[${exercises[ex].eq}]</span>
+                         <span class="history-text">${histText}</span>`;
+        });
+        
+        prepHtml += `<br><strong>CORE BLOCK:</strong> Russian Twists, Crunches, Plank`;
         document.getElementById('prep-list').innerHTML = prepHtml;
+
+        // Genereer Core Circuit Queue (2 rondes van 3 oefeningen = 6 werkblokken, 5 transities)
+        coreExercises.forEach(ex => { coreCircuitQueue.push({ t: 'work', ex: ex, time: 40 }); coreCircuitQueue.push({ t: 'trans', ex: 'Wissel', time: 15 }); });
+        coreExercises.forEach(ex => { coreCircuitQueue.push({ t: 'work', ex: ex, time: 40 }); coreCircuitQueue.push({ t: 'trans', ex: 'Wissel', time: 15 }); });
+        coreCircuitQueue.pop(); // Laatste transitie weghalen
     }
 
     function startApp() {
-        timerRunning = true; 
         document.getElementById('startBtn').classList.add('hidden');
         document.getElementById('prep-area').classList.add('hidden'); 
         
@@ -211,141 +255,184 @@
         
         speak(getRandomQuote(quotesStart));
         
-        // Start met oefening 1
-        loadExercise(currentExIndex);
+        loadMainExercise(0);
 
-        const timer = setInterval(() => {
-            if(timeLeft > 0) { timeLeft--; updateClock(); } else { clearInterval(timer); finishSession(false); }
+        // Centrale Master Tick Functie
+        globalTimerInterval = setInterval(() => {
+            if(timeLeft > 0) timeLeft--;
+            
+            // Format global clock
+            const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+
+            // Handel lokale sub-timers af
+            if(mode === 'REST' || mode === 'TRANS' || mode === 'CORE') {
+                localTimeRemaining--;
+                if(mode === 'REST' || mode === 'TRANS') {
+                    document.getElementById('rest-display').innerText = localTimeRemaining;
+                    if(localTimeRemaining <= 3 && localTimeRemaining > 0) speak(localTimeRemaining);
+                    if(localTimeRemaining <= 0) autoNextPhase();
+                } else if(mode === 'CORE') {
+                    document.getElementById('core-display').innerText = localTimeRemaining;
+                    if(localTimeRemaining <= 3 && localTimeRemaining > 0) speak(localTimeRemaining);
+                    if(localTimeRemaining <= 0) nextCoreStep();
+                }
+            }
+
+            if(timeLeft <= 0) finishSession(false);
         }, 1000);
     }
     
-    function loadExercise(index) {
-        const ex = currentWorkoutList[index];
-        document.getElementById('ex-title').innerText = `${index + 1}. ${ex}`;
-        document.getElementById('ex-eq').innerText = `BENODIGD: ${exercises[ex].eq.toUpperCase()}`;
+    function loadMainExercise(index) {
+        mode = 'WORK';
+        const ex = mainExercises[index];
+        document.getElementById('ex-title').innerText = `${index + 1}/3: ${ex}`;
+        document.getElementById('ex-eq').innerText = `[ ${exercises[ex].eq.toUpperCase()} ]`;
         document.getElementById('visualContent').innerText = exercises[ex].a;
         document.getElementById('instruction').innerText = exercises[ex].d;
         
+        // Haal historie op om steppers in te stellen
+        let hist = getHistory(ex);
+        weight = hist ? hist.w : 10;
+        reps = hist ? hist.r : 12;
+        adj('w', 0); adj('r', 0); // Update UI
+        
         currentSet = 1;
         document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
-        speak(`Jouw missie: ${ex}. ${exercises[ex].d}.`);
-    }
-
-    function updateClock() {
-        const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-        document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+        speak(`Missie: ${ex}. Drie sets. Aan de bak.`);
     }
 
     function logSet() {
+        if(mode !== 'WORK') return;
+        
+        // Sla gegevens op
+        saveHistory(mainExercises[currentMainIndex], weight, reps);
+
         if(currentSet < 3) { 
-            startRest(); 
+            startSubTimer(30, 'REST', "RUST"); 
         } else { 
-            finishEx(); 
+            // Oefening klaar!
+            currentMainIndex++;
+            if(currentMainIndex < mainExercises.length) {
+                // Er komen nog hoofdoefeningen, 20s wissel!
+                startSubTimer(20, 'TRANS', "WISSEL OEF."); 
+                speak(getRandomQuote(quotesTrans) + " Volgende is " + mainExercises[currentMainIndex]);
+            } else {
+                // Hoofdoefeningen klaar. Transitie naar Core.
+                startSubTimer(20, 'TRANS', "MAAK KLAAR VOOR CORE"); 
+                speak("Hoofdblok zit erop! Maak je klaar voor het Core Circuit! 20 seconden!");
+            }
         }
     }
 
-    function startRest() {
-        isResting = true; 
-        restTimeRemaining = 45;
+    function startSubTimer(seconds, timerMode, labelText) {
+        mode = timerMode;
+        localTimeRemaining = seconds;
+        currentSet++; // Voor de rest-cyclus
         
         document.getElementById('workout-controls').classList.add('hidden');
-        document.getElementById('logBtn').classList.add('hidden');
-        document.getElementById('finishExBtn').classList.add('hidden');
-        
         document.getElementById('db-panel').classList.add('resting');
-        document.getElementById('rest-container').classList.remove('hidden');
-        document.getElementById('rest-display').innerText = restTimeRemaining;
-
-        speak(getRandomQuote(quotesRest));
         
-        window.restTimer = setInterval(() => {
-            restTimeRemaining--;
-            document.getElementById('rest-display').innerText = restTimeRemaining;
-            
-            if(restTimeRemaining <= 3 && restTimeRemaining > 0) speak(restTimeRemaining);
-            if(restTimeRemaining <= 0) skipRest();
-        }, 1000);
+        document.getElementById('rest-container').classList.remove('hidden');
+        document.getElementById('rest-label').innerText = labelText;
+        document.getElementById('rest-display').innerText = localTimeRemaining;
+        
+        if(timerMode === 'REST') speak("30 seconden rust.");
     }
 
-    function skipRest() {
-        clearInterval(window.restTimer); isResting = false; currentSet++;
-        
+    function skipTimer() {
+        if(mode === 'REST' || mode === 'TRANS') {
+            localTimeRemaining = 0;
+            autoNextPhase();
+        }
+    }
+
+    function autoNextPhase() {
         document.getElementById('rest-container').classList.add('hidden'); 
         document.getElementById('db-panel').classList.remove('resting');
         
-        document.getElementById('workout-controls').classList.remove('hidden');
-        document.getElementById('logBtn').classList.remove('hidden');
-        document.getElementById('finishExBtn').classList.remove('hidden');
-        
-        document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
-        speak(getRandomQuote(quotesGo));
-    }
-
-    function finishExManually() {
-        if(isResting) skipRest(); 
-        finishEx();
-    }
-
-    function finishEx() {
-        currentExIndex++;
-        
-        if(currentExIndex < currentWorkoutList.length) {
-            speak(getRandomQuote(quotesExDone));
-            loadExercise(currentExIndex);
-        } 
-        else if(timeLeft > 60) {
-            activateBonus();
-        } 
-        else {
-            finishSession(true);
+        if(currentMainIndex < mainExercises.length) {
+            // We zijn nog met hoofdoefeningen bezig
+            if(mode === 'REST') {
+                // Volgende set
+                mode = 'WORK';
+                document.getElementById('workout-controls').classList.remove('hidden');
+                document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
+                speak("GO!");
+            } else if (mode === 'TRANS') {
+                // Volgende oefening laden
+                loadMainExercise(currentMainIndex);
+                document.getElementById('workout-controls').classList.remove('hidden');
+            }
+        } else {
+            // Tijd voor Core Circuit
+            startCoreCircuit();
         }
     }
 
-    function activateBonus() {
-        document.getElementById('db-panel').classList.remove('resting');
-        document.getElementById('db-panel').classList.add('bonus');
-        document.getElementById('status-label').innerText = "GOUDEN BONUS RONDE!";
+    // --- CORE CIRCUIT LOGICA ---
+    function startCoreCircuit() {
+        mode = 'CORE';
+        document.getElementById('db-panel').classList.add('core-mode');
+        document.getElementById('workout-controls').classList.add('hidden');
+        document.getElementById('rest-container').classList.add('hidden');
+        document.getElementById('core-container').classList.remove('hidden');
         
-        speak("Alle doelen vernietigd, maar we hebben nog tijd! GOUDEN BONUS RONDE! Extra Core Training!");
+        speak("Core Circuit gestart! Geen pauzes meer, we knallen door!");
+        nextCoreStep();
+    }
+
+    function nextCoreStep() {
+        if(coreCircuitQueue.length === 0) {
+            finishSession(true);
+            return;
+        }
+
+        let step = coreCircuitQueue.shift();
+        localTimeRemaining = step.time;
         
-        // Voeg een extra core oefening toe
-        const bonusOefening = currentWorkoutList.includes("Crunches") ? "Plank" : "Crunches";
-        currentWorkoutList.push(bonusOefening);
+        let nextEx = coreCircuitQueue.length > 0 ? coreCircuitQueue[0].ex : "Finish";
         
-        loadExercise(currentExIndex);
+        if(step.t === 'work') {
+            document.getElementById('core-label').innerText = step.ex.toUpperCase();
+            document.getElementById('core-label').style.color = "var(--core)";
+            document.getElementById('core-next').innerText = `Hierna: ${nextEx}`;
+            document.getElementById('visualContent').innerText = exercises[step.ex].a;
+            document.getElementById('ex-title').innerText = "CORE CIRCUIT";
+            document.getElementById('ex-eq').innerText = `[ ${exercises[step.ex].eq.toUpperCase()} ]`;
+            speak(`Start ${step.ex}! 40 seconden.`);
+        } else {
+            document.getElementById('core-label').innerText = "KORTE WISSEL";
+            document.getElementById('core-label').style.color = "var(--rest)";
+            document.getElementById('core-next').innerText = `Maak klaar voor: ${nextEx}`;
+            speak(`15 seconden! Draai om voor ${nextEx}!`);
+        }
+        
+        document.getElementById('core-display').innerText = localTimeRemaining;
     }
 
     function finishSession(isSuccess) {
+        clearInterval(globalTimerInterval);
+        document.getElementById('core-container').classList.add('hidden');
+        document.getElementById('rest-container').classList.add('hidden');
+        document.getElementById('workout-controls').classList.add('hidden');
+
         if(isSuccess) {
-            speak("Missie voltooid! Uitstekend werk, soldaat! Tot de volgende sessie!");
+            speak("Sessie voltooid! Brutaal gewerkt, soldaat! Rust uit.");
             document.body.style.background = "var(--accent)";
-            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>MISSIE VOLTOOID!</h1><p style='text-align:center;'>Goed gewerkt. Rust nu uit.</p>";
+            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>MISSIE VOLTOOID!</h1><p style='text-align:center;'>Je gegevens zijn opgeslagen.</p>";
             document.getElementById('visual-card').style.display = 'none';
         } else {
-            speak("TIJD IS OM! Laat alles vallen! Goed gewerkt, soldaat!");
+            speak("TIJD IS OM! Laat alles vallen! Je was te langzaam, maar goed gewerkt.");
             document.body.style.background = "red";
             document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>TIJD IS OM</h1>";
             document.getElementById('visual-card').style.display = 'none';
         }
         timeLeft = 0;
-        updateClock();
+        document.getElementById('timer').innerText = "0:00";
     }
 
     init();
 </script>
 </body>
 </html>
-        
-      
-   
-       
-  
- 
-  
-     
-    
-     
-        
-  
-        
-    
