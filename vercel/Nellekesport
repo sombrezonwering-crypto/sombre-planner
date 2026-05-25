@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zapply Shape & Tone</title>
+    <style>
+        :root { 
+            --primary: #00cec9;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --accent: #ff7675;
+            --text: #2d3436;
+            --subtext: #636e72;
+            --shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        body { 
+            font-family: 'Helvetica Neue', Arial, sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text); 
+            touch-action: manipulation; 
+            overflow-x: hidden; 
+        }
+        .container { max-width: 450px; margin: auto; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .app-title { color: var(--primary); font-weight: 800; font-size: 1.2rem; letter-spacing: 1px; }
+        .spotify-link { 
+            background: #1db954; padding: 8px 15px; border-radius: 20px; 
+            text-decoration: none; color: white; font-size: 0.8rem; 
+            display: flex; align-items: center; gap: 8px; font-weight: bold; 
+            box-shadow: var(--shadow);
+        }
+        
+        /* Dashboard / Timer */
+        .dashboard { 
+            background: var(--card); padding: 25px 15px; border-radius: 20px; 
+            text-align: center; box-shadow: var(--shadow);
+            border-top: 5px solid var(--primary); transition: 0.3s; 
+        }
+        .dashboard.resting { border-top-color: var(--accent); background: #fff5f5; }
+        
+        #timer { font-size: 3.5rem; font-weight: 300; margin: 10px 0; color: var(--text); }
+        
+        /* Briefing Area */
+        #prep-area { 
+            background: #eefaf9; 
+            border-left: 6px solid var(--primary);
+            padding: 20px; 
+            border-radius: 12px; 
+            margin: 20px 0; 
+            text-align: left; 
+        }
+        .prep-title { color: var(--text); font-size: 1.1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 0.5px;}
+        .prep-item { margin-bottom: 15px; border-bottom: 2px dashed #dfe6e9; padding-bottom: 15px; }
+        .prep-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .ex-name { font-weight: 800; font-size: 1.25rem; display: block; color: var(--primary); }
+        .history-text { font-size: 0.95rem; font-weight: 600; color: var(--subtext); display: block; margin-top: 6px; }
+
+        /* Active Exercise Card */
+        .visual-card { 
+            background: var(--card); border-radius: 20px; padding: 20px; 
+            margin: 15px 0; box-shadow: var(--shadow); text-align: center;
+        }
+        #ex-title { font-size: 1.3rem; color: var(--primary); font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        
+        .instruction-box {
+            background: var(--bg); padding: 15px; border-radius: 12px;
+            font-size: 1rem; line-height: 1.5; color: var(--text);
+            border-left: 4px solid var(--accent);
+            margin: 15px 0; text-align: left;
+        }
+
+        /* Rep Stepper */
+        .stepper-group { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: var(--bg); padding: 15px 20px; border-radius: 15px; margin-bottom: 15px; 
+        }
+        .stepper-val { font-size: 2.5rem; font-weight: bold; color: var(--text); width: 120px; text-align: center; }
+        .btn-step { 
+            background: var(--card); color: var(--primary); width: 60px; height: 60px; 
+            border-radius: 50%; font-size: 2rem; border: 2px solid #dfe6e9; 
+            font-weight: 300; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .btn-step:active { transform: scale(0.95); background: #f1f2f6; }
+
+        /* Buttons */
+        .btn-main { 
+            width: 100%; padding: 18px; border-radius: 15px; border: none; 
+            font-weight: bold; font-size: 1.1rem; text-transform: uppercase; 
+            margin-bottom: 10px; transition: 0.2s; cursor: pointer; letter-spacing: 1px;
+        }
+        .btn-start { background: var(--primary); color: white; box-shadow: 0 5px 0 #00b894; }
+        .btn-start:active { box-shadow: 0 2px 0 #00b894; transform: translateY(3px); }
+        
+        .btn-log { background: var(--accent); color: white; box-shadow: 0 5px 0 #d63031; }
+        .btn-log:active { box-shadow: 0 2px 0 #d63031; transform: translateY(3px); }
+        
+        .btn-skip { background: #dfe6e9; color: var(--text); margin-top: 10px; box-shadow: 0 5px 0 #b2bec3; }
+        .btn-skip:active { box-shadow: 0 2px 0 #b2bec3; transform: translateY(3px); }
+        
+        /* Rest UI */
+        #rest-container { text-align: center; padding: 20px 0; }
+        #rest-label { font-size: 1.2rem; font-weight: bold; color: var(--accent); text-transform: uppercase; }
+        #rest-display { font-size: 5rem; font-weight: 300; color: var(--text); margin: 10px 0; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="app-title">ZAPPLY VITALITY</div>
+        <a href="spotify:open" class="spotify-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.508 17.302c-.218.358-.684.474-1.042.255-2.887-1.764-6.521-2.164-10.803-1.184-.41.094-.817-.164-.911-.574-.094-.41.164-.817.574-.911 4.69-1.071 8.706-.615 11.927 1.353.358.218.474.684.255 1.042zm1.472-3.262c-.274.446-.856.588-1.302.314-3.303-2.03-8.337-2.617-12.245-1.429-.502.153-1.03-.131-1.183-.633-.153-.502.131-1.03.633-1.183 4.47-1.358 10.02-.705 13.782 1.606.446.274.588.856.314 1.302zm.127-3.414c-3.963-2.353-10.517-2.57-14.321-1.415-.608.184-1.248-.162-1.432-.77-.184-.608.162-1.248.77-1.432 4.385-1.332 11.607-1.077 16.172 1.631.547.325.727 1.033.402 1.58-.325.547-1.033.727-1.58.402z"/></svg>
+            Muziek
+        </a>
+    </div>
+
+    <div class="dashboard" id="db-panel">
+        <div id="status-label" style="font-size:0.95rem; font-weight: bold; color: var(--subtext);">KLAAR VOOR JE WORKOUT</div>
+        
+        <div id="prep-area">
+            <div class="prep-title">Vandaag op het programma:</div>
+            <div id="prep-list"></div>
+        </div>
+        
+        <div id="timer">15:00</div>
+        <button class="btn-main btn-start" onclick="startApp()" id="startBtn">Start Training</button>
+    </div>
+
+    <div class="visual-card" id="visual-card" style="display:none;">
+        <div id="ex-title">OEFENING NAAM</div>
+        <div class="instruction-box" id="instruction">Instructies komen hier.</div>
+    </div>
+
+    <div id="input-ui" class="hidden">
+        
+        <div id="workout-controls">
+            <div style="text-align: center; color: var(--subtext); margin-bottom: 5px; font-weight: bold; font-size: 0.9rem;">AANTAL HERHALINGEN</div>
+            <div class="stepper-group">
+                <button class="btn-step" onclick="adj(-1)">-</button>
+                <div class="stepper-val" id="val-r">12</div>
+                <button class="btn-step" onclick="adj(1)">+</button>
+            </div>
+            <button class="btn-main btn-log" id="logBtn" onclick="logSet()">Sla Set 1 Op</button>
+        </div>
+        
+        <div id="rest-container" class="hidden">
+            <div id="rest-label">Neem even rust</div>
+            <div id="rest-display">45</div>
+            <button class="btn-main btn-skip" id="skipBtn" onclick="skipTimer()">Ik ben er weer klaar voor</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let timeLeft = 900; // Exact 15 minuten
+    let globalTimerInterval;
+    let mode = 'IDLE'; 
+    let localTimeRemaining = 0;
+    
+    let currentMainIndex = 0;
+    let currentSet = 1;
+    let reps = 12;
+
+    const quotesStart = [
+        "Neem de tijd, let op je houding en ademhaling. We gaan beginnen.",
+        "Succes! Focus op de spieren die je gebruikt. Daar gaan we."
+    ];
+    const quotesTrans = [
+        "Keurig gedaan. Kom rustig overeind en maak je klaar voor de volgende oefening.",
+        "Set voltooid. Neem een slokje water en maak je klaar voor de wissel."
+    ];
+    const quotesRest = [
+        "Goed bezig. Haal diep adem.",
+        "Neem even je rust, je doet het fantastisch."
+    ];
+
+    function getRandomQuote(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    
+    // BODY SHAPE OEFENINGEN
+    const exercises = {
+        "Glute Bridges": { d: "Liggend op je rug, knieën gebogen en voeten plat op de vloer. Duw je heupen omhoog richting het plafond en knijp je billen stevig samen. Laat gecontroleerd weer zakken." },
+        "Wall Push-ups": { d: "Zet je handen plat tegen de muur op schouderbreedte. Zak gecontroleerd door je armen tot je neus bijna de muur raakt, en duw jezelf weer terug. Hou je rug recht." },
+        "Reverse Lunges": { d: "Sta rechtop. Stap met één been rustig naar achteren en laat je achterste knie richting de vloer zakken. Je voorste knie blijft recht boven je enkel. Stap terug en wissel af." },
+        "Bird-Dog": { d: "Ga op handen en knieën zitten. Strek tegelijk je linkerarm naar voren en je rechterbeen naar achteren. Span je buik aan om in balans te blijven. Wissel rustig af." },
+        "Sumo Squats": { d: "Zet je voeten ruim buiten schouderbreedte, tenen wijzen naar buiten. Zak met een rechte rug door je knieën alsof je op een laag krukje gaat zitten. Kom rustig weer omhoog." },
+        "Dead Bugs": { d: "Liggend op je rug. Armen recht omhoog, knieën gebogen in 90 graden. Laat langzaam je linkerarm en rechterbeen tegelijk naar de vloer zakken. Hou je onderrug plat op de mat!" },
+        "Chair Squats": { d: "Ga voor een stoel of de bank staan. Zak gecontroleerd naar beneden alsof je gaat zitten, raak het zitoppervlak héél licht aan met je billen, en span je benen aan om direct weer op te staan." },
+        "Modified Plank": { d: "Plaats je onderarmen op de vloer en steun op je knieën in plaats van je tenen. Trek je navel in richting je wervelkolom en hou je rug recht als een plank. (Telt in seconden i.p.v. reps)." },
+        "Arm Circles": { d: "Sta stevig. Strek je armen zijwaarts uit. Maak 15 kleine draaibewegingen naar voren, en daarna 15 kleine bewegingen naar achteren. Goed voor de schouderhouding." }
+    };
+    
+    const schedule = { 
+        1: ["Glute Bridges", "Wall Push-ups", "Reverse Lunges"], 
+        2: ["Sumo Squats", "Bird-Dog", "Modified Plank"], 
+        3: ["Chair Squats", "Arm Circles", "Dead Bugs"]    
+    };
+
+    let todayRoutine = [];
+
+    // Vangnet voor de Robotstem
+    function speak(t) { 
+        try {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel(); 
+            const m = new SpeechSynthesisUtterance(t); 
+            m.lang = 'nl-NL'; 
+            m.pitch = 1.1; 
+            m.rate = 0.95; 
+            window.speechSynthesis.speak(m); 
+        } catch(e) { console.log("Spraak geblokkeerd door browser."); }
+    }
+    
+    function adj(v) { 
+        reps += v; 
+        if(reps < 0) reps = 0; 
+        document.getElementById('val-r').innerText = reps; 
+    }
+
+    // Vangnet voor het Geheugen
+    let tempMemory = {};
+    function getHistory(ex) {
+        try {
+            let data = localStorage.getItem('shape_' + ex);
+            return data ? JSON.parse(data) : null;
+        } catch(e) {
+            return tempMemory['shape_' + ex] || null;
+        }
+    }
+    function saveHistory(ex, r) {
+        try {
+            localStorage.setItem('shape_' + ex, JSON.stringify({r: r}));
+        } catch(e) {
+            tempMemory['shape_' + ex] = {r: r};
+        }
+    }
+
+    function init() {
+        let dayIndex = new Date().getDay() % 3; 
+        if(dayIndex === 0) dayIndex = 3; 
+
+        document.getElementById('status-label').innerText = `FULL BODY ROUTINE - DAG ${dayIndex}`;
+        todayRoutine = schedule[dayIndex];
+        
+        let prepHtml = "";
+        todayRoutine.forEach((ex, i) => {
+            let hist = getHistory(ex);
+            let histText = hist ? `✔️ Vorige score: ${hist.r} herhalingen` : `👉 Eerste keer!`;
+            prepHtml += `<div class="prep-item">
+                            <span class="ex-name">${i+1}. ${ex}</span>
+                            <span class="history-text">${histText}</span>
+                         </div>`;
+        });
+        document.getElementById('prep-list').innerHTML = prepHtml;
+    }
+
+    function startApp() {
+        document.getElementById('startBtn').classList.add('hidden');
+        document.getElementById('prep-area').classList.add('hidden'); 
+        
+        document.getElementById('visual-card').style.display = 'block';
+        document.getElementById('input-ui').classList.remove('hidden');
+        
+        speak(getRandomQuote(quotesStart));
+        loadExercise(0);
+
+        globalTimerInterval = setInterval(() => {
+            if(timeLeft > 0) timeLeft--;
+            
+            const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+
+            if(mode === 'REST' || mode === 'TRANS') {
+                localTimeRemaining--;
+                document.getElementById('rest-display').innerText = localTimeRemaining;
+                if(localTimeRemaining <= 0) autoNextPhase();
+            }
+            if(timeLeft <= 0) finishSession(false);
+        }, 1000);
+    }
+    
+    function loadExercise(index) {
+        mode = 'WORK';
+        const ex = todayRoutine[index];
+        document.getElementById('ex-title').innerText = `${index + 1}/${todayRoutine.length}: ${ex}`;
+        document.getElementById('instruction').innerText = exercises[ex].d;
+        
+        let hist = getHistory(ex);
+        reps = hist ? hist.r : (ex === "Modified Plank" ? 30 : 12);
+        adj(0); 
+        
+        currentSet = 1;
+        document.getElementById('logBtn').innerText = `Sla Set ${currentSet} Op`;
+        
+        let startTekst = `We starten met ${ex}. ` + (ex === "Modified Plank" ? "Hou deze plank " + reps + " seconden vast." : "Probeer " + reps + " herhalingen te maken.");
+        speak(startTekst);
+    }
+
+    function logSet() {
+        if(mode !== 'WORK') return;
+        
+        saveHistory(todayRoutine[currentMainIndex], reps);
+
+        if(currentSet < 3) { 
+            startSubTimer(45, 'REST', "Tussenpauze"); 
+        } else { 
+            currentMainIndex++;
+            if(currentMainIndex < todayRoutine.length) {
+                // Toon de uitleg van de nieuwe oefening alvast op het scherm
+                const nextEx = todayRoutine[currentMainIndex];
+                document.getElementById('ex-title').innerText = `MAAK JE KLAAR VOOR: ${nextEx}`;
+                document.getElementById('instruction').innerText = exercises[nextEx].d;
+                
+                startSubTimer(30, 'TRANS', "Tijd om te wisselen"); 
+                speak(getRandomQuote(quotesTrans) + " De volgende oefening is " + nextEx);
+            } else {
+                finishSession(true);
+            }
+        }
+    }
+
+    function startSubTimer(seconds, timerMode, labelText) {
+        mode = timerMode;
+        localTimeRemaining = seconds;
+        currentSet++; 
+        
+        document.getElementById('workout-controls').classList.add('hidden');
+        document.getElementById('db-panel').classList.add('resting');
+        
+        document.getElementById('rest-container').classList.remove('hidden');
+        document.getElementById('rest-label').innerText = labelText;
+        document.getElementById('rest-display').innerText = localTimeRemaining;
+        
+        if(timerMode === 'REST') speak(getRandomQuote(quotesRest));
+    }
+
+    function skipTimer() {
+        if(mode === 'REST' || mode === 'TRANS') {
+            localTimeRemaining = 0;
+            autoNextPhase();
+        }
+    }
+
+    function autoNextPhase() {
+        document.getElementById('rest-container').classList.add('hidden'); 
+        document.getElementById('db-panel').classList.remove('resting');
+        
+        if(currentMainIndex < todayRoutine.length) {
+            if(mode === 'REST') {
+                mode = 'WORK';
+                document.getElementById('workout-controls').classList.remove('hidden');
+                document.getElementById('logBtn').innerText = `Sla Set ${currentSet} Op`;
+                speak("Klaar voor de volgende set? Succes.");
+            } else if (mode === 'TRANS') {
+                loadExercise(currentMainIndex);
+                document.getElementById('workout-controls').classList.remove('hidden');
+            }
+        }
+    }
+
+    function finishSession(isSuccess) {
+        clearInterval(globalTimerInterval);
+        document.getElementById('rest-container').classList.add('hidden');
+        document.getElementById('workout-controls').classList.add('hidden');
+        document.getElementById('visual-card').style.display = 'none';
+
+        if(isSuccess) {
+            speak("Heel erg goed gedaan! Je workout zit erop. Trots op je!");
+            document.body.style.background = "var(--primary)";
+            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>WORKOUT VOLTOOID!</h1><p style='text-align:center; color:white;'>Je hebt fantastisch gewerkt. Neem een groot glas water.</p>";
+        } else {
+            speak("De tijd is om. Goed dat je in beweging bent gekomen vandaag.");
+            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center;'>TIJD IS OM</h1>";
+        }
+        timeLeft = 0;
+        document.getElementById('timer').innerText = "0:00";
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
