@@ -276,11 +276,16 @@
     
     voegProductRegelToe();
 
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
+   document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "Bezig met plannen...";
-        const formData = new FormData(this); let dataObject = Object.fromEntries(formData.entries());
-        dataObject.demontage = formData.get('demontage') === 'on'; dataObject.spoed = formData.get('spoed') === 'on';
+        const btn = document.getElementById('submitBtn'); 
+        btn.disabled = true; 
+        btn.innerText = "Bezig met plannen...";
+
+        const formData = new FormData(this); 
+        let dataObject = Object.fromEntries(formData.entries());
+        dataObject.demontage = formData.get('demontage') === 'on'; 
+        dataObject.spoed = formData.get('spoed') === 'on';
         
         let extraOps = [];
         if(document.getElementById('chkHoogwerker').checked) extraOps.push("Hoogwerker");
@@ -290,13 +295,32 @@
         const regels = document.querySelectorAll('.product-row');
         dataObject.bestellijst = Array.from(regels).map(r => `${r.querySelector('.p-aantal').value}x ${r.querySelector('.p-type').value} (${r.querySelector('.p-bediening').value})`).join(', ');
 
-        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dataObject) })
-        .then(() => { 
-            alert("✅ Order gepland!"); this.reset(); productContainer.innerHTML = ""; voegProductRegelToe(); toggleTijdVak();
-            document.getElementById('adres').setAttribute('readonly', true); document.getElementById('adresStatus').innerText = "Wachten op invoer...";
-            btn.disabled = false; btn.innerText = "Opslaan & Plannen"; 
-        }).catch(err => { alert("❌ Fout bij opslaan."); btn.disabled = false; btn.innerText = "Opslaan & Plannen"; });
+        // FIX: Geen 'no-cors' meer, en wachten op de echte reactie van Google Sheets
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify(dataObject) 
+        })
+        .then(response => response.text())
+        .then(result => { 
+            if (result === "OK") {
+                alert("✅ Order succesvol opgeslagen in Google Sheets!"); 
+                this.reset(); 
+                productContainer.innerHTML = ""; 
+                voegProductRegelToe(); 
+                toggleTijdVak();
+                document.getElementById('adres').setAttribute('readonly', true); 
+                document.getElementById('adresStatus').innerText = "Wachten op invoer...";
+            } else if (result.includes("Bestaat al")) {
+                alert("⚠️ Let op: Dit ordernummer staat al in de planning!");
+            } else {
+                alert("❌ Fout van server: " + result);
+            }
+            btn.disabled = false; 
+            btn.innerText = "Opslaan & Plannen"; 
+        })
+        .catch(err => { 
+            alert("❌ Fout bij opslaan. Geen internet of toegang geweigerd?"); 
+            btn.disabled = false; 
+            btn.innerText = "Opslaan & Plannen"; 
+        });
     });
-</script>
-</body>
-</html>
