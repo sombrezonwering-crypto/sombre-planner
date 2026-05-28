@@ -2,195 +2,227 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magazijn & Planning App - Sombre</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Magazijn Pro | Sombre</title>
+    <!-- Tailwind CSS voor een professioneel uiterlijk zonder veel code -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML5 QRCode Scanner Bibliotheek (Voor Optie 4) -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 550px; }
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hidden { display: none !important; }
+        .status-badge { font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
         
-        .nav-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .nav-title { font-weight: bold; color: #2c3e50; font-size: 18px; }
-        .nav-btn { background: #e8f0fe; color: #1a73e8; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .status-binnen { background-color: #fef08a; color: #854d0e; } /* Geel */
+        .status-wacht { background-color: #e5e7eb; color: #374151; }  /* Grijs */
+        .status-bellen { background-color: #fecaca; color: #991b1b; } /* Rood */
+        .status-deels { background-color: #fef9c3; color: #a16207; }  /* Goud/Geel */
 
-        /* Aangepaste layout voor zoekbalk mét camera knop */
-        .search-container { display: flex; gap: 10px; margin-bottom: 10px; }
-        .search-bar { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        .btn-camera { background: #e8f0fe; color: #1a73e8; border: 2px dashed #1a73e8; border-radius: 8px; width: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; position: relative; transition: 0.3s; }
-        .btn-camera:hover { background: #d2e3fc; }
-        .btn-camera input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        #scannerStatus { font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 20px; min-height: 15px; }
-
-        .order-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid #1a73e8; }
-        .order-title { font-weight: bold; font-size: 16px; color: #2c3e50; margin-bottom: 5px; }
-        .order-products { font-size: 14px; color: #555; background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
-        
-        .btn-group { display: flex; gap: 10px; }
-        .btn-green { flex: 1; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; font-size: 14px;}
-        .btn-yellow { flex: 1; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; font-size: 14px;}
-        .btn-blue { flex: 1; background: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; font-size: 14px;}
-        
-        .btn-green:hover { background: #c3e6cb; }
-        .btn-yellow:hover { background: #ffeeba; }
-        .btn-blue:hover { background: #b8daff; }
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
     </style>
 </head>
-<body>
+<body class="p-4">
 
-<div class="container">
-    <div class="nav-bar">
-        <div class="nav-title">📦 Magazijn App</div>
-        <a href="intake-order.html" class="nav-btn">📝 Intake ➔</a>
+    <!-- Header -->
+    <div class="max-w-2xl mx-auto mb-6">
+        <h1 class="text-3xl font-extrabold text-gray-800">Magazijn & Intake</h1>
+        <p class="text-gray-500">Sombre Zonwering Orders</p>
     </div>
 
-    <div class="search-container">
-        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Typ ordernr of scan label..." onkeyup="filterOrders()">
-        <div class="btn-camera" title="Scan doos label">
-            📸
-            <input type="file" id="magazijnScanner" accept="image/*" capture="environment">
+    <!-- Controle Paneel (Zoeken & Filters) -->
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
+        
+        <!-- Optie 2 & 4: Zoekbalk & Scanner -->
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="searchInput" placeholder="🔍 Zoek op klant, plaats of order..." 
+                   class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 shadow-inner">
+            
+            <button onclick="startScanner()" class="bg-gray-800 hover:bg-gray-700 text-white rounded-lg px-4 py-2 font-bold shadow-md transition-all flex items-center justify-center">
+                📷 Scan
+            </button>
+        </div>
+
+        <!-- Scanner Weergave (Verborgen tot geklikt) -->
+        <div id="scanner-container" class="hidden mb-4 p-2 bg-gray-900 rounded-lg">
+            <div id="reader"></div>
+            <button onclick="stopScanner()" class="mt-2 w-full bg-red-600 text-white py-2 rounded-lg font-bold">Sluit Camera</button>
+        </div>
+
+        <!-- Optie 1: Filters -->
+        <div class="flex overflow-x-auto gap-2 pb-2" id="filter-buttons">
+            <button onclick="setFilter('Alles')" class="filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">Alles Tonen</button>
+            <button onclick="setFilter('Wacht op Producten')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Wacht op Prod.</button>
+            <button onclick="setFilter('Klant Bellen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Klant Bellen</button>
+            <button onclick="setFilter('Deels Binnen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Deels Binnen</button>
         </div>
     </div>
-    <div id="scannerStatus"></div>
 
-    <div id="loading" style="text-align: center; color: #666; font-weight: bold; margin-top: 10px;">⏳ Orders laden uit systeem...</div>
-    <div id="orderLijst"></div>
-</div>
+    <!-- Order Lijst -->
+    <div id="loader" class="text-center py-10 font-bold text-gray-500">Orders inladen vanaf server... ⏳</div>
+    <div id="order-container" class="max-w-2xl mx-auto space-y-4">
+        <!-- Orders worden hier via JavaScript opgebouwd -->
+    </div>
 
 <script>
-    // VUL HIER JOUW EIGEN GOOGLE WEB APP URL IN !!
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+    // ⚠️ PLAK HIER JOUW APPS SCRIPT URL!
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+    
+    let allOrders = [];
+    let currentFilter = 'Alles';
+    let html5QrcodeScanner = null;
 
-    // 📸 SCANNER LOGICA VOOR MAGAZIJN LABELS
-    document.getElementById('magazijnScanner').addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    // --- Optie 3: Controleer of we via de Agenda Link (URL parameter) komen ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlOrderToLoad = urlParams.get('order'); // Haalt bijv '61415' uit de URL
 
-        const statusLabel = document.getElementById('scannerStatus');
-        statusLabel.innerText = "⏳ Label scannen... (Even geduld)";
-        statusLabel.style.color = "#ff9800";
-
+    // --- Initialisatie & Data ophalen ---
+    async function loadOrders() {
         try {
-            const result = await Tesseract.recognize(file, 'nld');
-            const tekst = result.data.text;
-
-            // Zoek naar 'Referentie:' of 'Ref.:' en pak de cijfers die erachter staan (bijv. 62430)
-            const refMatch = tekst.match(/(?:Referentie|Ref\.?)[\s:]*(\d{4,6})/i);
+            const res = await fetch(WEB_APP_URL + "?action=getOrders");
+            allOrders = await res.json();
+            document.getElementById('loader').classList.add('hidden');
             
-            if (refMatch && refMatch[1]) {
-                const orderNr = refMatch[1];
-                document.getElementById('searchInput').value = orderNr; // Vul zoekbalk in
-                filterOrders(); // Filter de lijst direct!
-                
-                statusLabel.innerText = `✅ Doos herkend: Order ${orderNr}`;
-                statusLabel.style.color = "green";
-            } else {
-                statusLabel.innerText = "⚠️ Geen referentienummer kunnen lezen op dit label.";
-                statusLabel.style.color = "#ff3b30";
-                console.log("Gelezen tekst magazijnlabel:", tekst);
+            // Als er een URL parameter is, zet die direct in de zoekbalk!
+            if (urlOrderToLoad) {
+                document.getElementById('searchInput').value = urlOrderToLoad;
             }
-        } catch (error) {
-            statusLabel.innerText = "❌ Fout bij scannen van afbeelding.";
-            statusLabel.style.color = "red";
+
+            renderOrders();
+        } catch(e) {
+            document.getElementById('loader').innerText = "Fout bij inladen. Controleer URL.";
         }
-    });
-
-    function laadOrders() {
-        document.getElementById("loading").style.display = "block";
-        document.getElementById("orderLijst").innerHTML = "";
-
-        fetch(SCRIPT_URL + "?action=getOrders")
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("loading").style.display = "none";
-                let html = "";
-                if(data.length === 0) {
-                    html = "<div style='text-align:center; color:#555; background:white; padding:20px; border-radius:12px;'>🎉 Geen wachtende orders gevonden!</div>";
-                } else {
-                    data.forEach(order => {
-                        let isBinnen = order.status.includes("Binnen"); 
-                        let badge = isBinnen ? `<span style='color: #28a745; font-size: 12px; font-weight: bold;'> (${order.status})</span>` : "";
-                        
-                        let knoppen = "";
-                        if (!isBinnen) {
-                            knoppen = `
-                                <button class="btn-green" onclick="actieUitvoeren('${order.ordernummer}', 'markBinnen', this)">✅ Alles Binnen</button>
-                                <button class="btn-yellow" onclick="actieUitvoeren('${order.ordernummer}', 'markPartial', this)">⚠️ Deellevering</button>
-                            `;
-                        } else {
-                            knoppen = `
-                                <button class="btn-blue" onclick="actieUitvoeren('${order.ordernummer}', 'reschedule', this)">🔄 Herplan</button>
-                                <button class="btn-green" onclick="actieUitvoeren('${order.ordernummer}', 'markGreen', this)">✅ Klant Akkoord</button>
-                            `;
-                        }
-
-                        html += `
-                        <div class="order-card" data-zoek="${order.naam.toLowerCase()} ${order.ordernummer}">
-                            <div class="order-title">ORD: ${order.ordernummer} - ${order.naam} ${badge}</div>
-                            <div class="order-products">📦 <b>Besteld:</b><br>${order.producten || "Geen producten gevonden"}</div>
-                            <div class="btn-group">
-                                ${knoppen}
-                            </div>
-                        </div>`;
-                    });
-                }
-                document.getElementById("orderLijst").innerHTML = html;
-                filterOrders(); // Zorg dat een eventuele zoekopdracht na het laden blijft staan
-            }).catch(err => {
-                document.getElementById("loading").innerHTML = "❌ Fout bij ophalen. Check je internetverbinding.";
-            });
     }
 
-    function actieUitvoeren(ordernummer, actieScript, knopElement) {
-        let locatieInfo = "";
+    // --- Optie 1: Filtering instellen ---
+    function setFilter(status) {
+        currentFilter = status;
         
-        if (actieScript === 'markBinnen') {
-            locatieInfo = prompt("In welk vak (of vakken) heb je de spullen gelegd?\n(Bijv: RS-14 of Z-03)");
-            if (locatieInfo === null) return; 
-            if (locatieInfo.trim() === "") locatieInfo = "Vak onbekend";
-        } else if (actieScript === 'markPartial') {
-            locatieInfo = prompt("⚠️ Deellevering:\nWat heb je al binnen, en wat mis je nog? (Noteer ook het vaknummer)");
-            if (locatieInfo === null) return; 
-            if (locatieInfo.trim() === "") locatieInfo = "Deellevering zonder notitie";
-        } else if (actieScript === 'reschedule') {
-            if (!confirm("Wil je aangeven dat deze order met prioriteit naar voren gehaald moet worden?")) return;
-        } else if (actieScript === 'markGreen') {
-            if (!confirm("Is de klant akkoord met de datum? Deze order wordt nu definitief gemaakt en verdwijnt uit deze lijst!")) return;
-        }
-
-        let origineleTekst = knopElement.innerText;
-        knopElement.innerText = "⏳ Bezig...";
-        knopElement.disabled = true;
-        
-        fetch(`${SCRIPT_URL}?action=${actieScript}&ordernummer=${ordernummer}&locatieInfo=${encodeURIComponent(locatieInfo)}`)
-            .then(r => r.json())
-            .then(res => {
-                alert("✅ Systeem succesvol geüpdatet!");
-                // Zoekbalk leegmaken na succesvolle magazijn inboeking, zodat ze de volgende doos kunnen scannen
-                if(actieScript === 'markBinnen' || actieScript === 'markPartial') {
-                    document.getElementById('searchInput').value = "";
-                    document.getElementById('scannerStatus').innerText = "";
-                }
-                laadOrders(); 
-            }).catch(err => {
-                alert("❌ Er ging iets mis. Check je verbinding.");
-                knopElement.innerText = origineleTekst;
-                knopElement.disabled = false;
-            });
-    }
-
-    function filterOrders() {
-        let input = document.getElementById("searchInput").value.toLowerCase();
-        let cards = document.querySelectorAll(".order-card");
-        cards.forEach(card => {
-            if (card.getAttribute("data-zoek").includes(input)) {
-                card.style.display = "block";
+        // Update kleuren van de knoppen
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.innerText.includes(status) || (status === 'Alles' && btn.innerText === 'Alles Tonen')) {
+                btn.className = "filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm";
             } else {
-                card.style.display = "none";
+                btn.className = "filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap";
             }
         });
+
+        renderOrders();
     }
 
-    laadOrders();
+    // --- Optie 2: Live Zoekbalk events koppelen ---
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        renderOrders(); // Filtert live bij elke letter die getypt wordt
+    });
+
+    // --- Render Motor (Toont alleen wat door filter & zoekbalk komt) ---
+    function renderOrders() {
+        const container = document.getElementById('order-container');
+        container.innerHTML = '';
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+        let visibleCount = 0;
+
+        allOrders.forEach(order => {
+            // 1. Controleer of status overeenkomt met de filterknop
+            let matchStatus = false;
+            if (currentFilter === 'Alles') matchStatus = true;
+            else if (currentFilter === 'Klant Bellen' && order.status.includes('Klant Bellen')) matchStatus = true;
+            else if (order.status === currentFilter) matchStatus = true;
+
+            // 2. Controleer of de zoekterm voorkomt in Naam, Ordernummer of Product
+            let matchSearch = true;
+            if (searchTerm !== "") {
+                const textStr = (order.ordernummer + " " + order.naam + " " + order.producten).toLowerCase();
+                if (!textStr.includes(searchTerm)) matchSearch = false;
+            }
+
+            // Alleen renderen als beide waar zijn
+            if (matchStatus && matchSearch) {
+                visibleCount++;
+                container.appendChild(buildOrderCard(order));
+            }
+        });
+
+        if (visibleCount === 0) {
+            container.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold">Geen orders gevonden voor deze zoekopdracht/filter.</div>`;
+        }
+    }
+
+    // --- Bouwt het HTML blokje voor 1 order ---
+    function buildOrderCard(order) {
+        let badgeClass = 'status-wacht';
+        if (order.status.includes('Binnen')) badgeClass = 'status-binnen';
+        if (order.status.includes('Klant Bellen')) badgeClass = 'status-bellen';
+        if (order.status.includes('Deels')) badgeClass = 'status-deels';
+
+        const div = document.createElement('div');
+        div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
+        div.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <div class="text-xs text-gray-500 font-bold mb-1">ORD: ${order.ordernummer}</div>
+                    <div class="text-lg font-extrabold text-gray-900">${order.naam}</div>
+                </div>
+                <span class="status-badge ${badgeClass}">${order.status}</span>
+            </div>
+            <div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100">📦 ${order.producten}</div>
+            
+            <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
+                <button onclick="updateStatus('${order.ordernummer}', 'markPartial')" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm transition-colors">⚠️ Deels Binnen</button>
+                <button onclick="updateStatus('${order.ordernummer}', 'markBinnen')" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm transition-colors shadow-sm">✅ Alles Binnen</button>
+            </div>
+        `;
+        return div;
+    }
+
+    // --- Verzenden naar Achterkant ---
+    async function updateStatus(ordernummer, action) {
+        let loc = "";
+        if(action === 'markBinnen' || action === 'markPartial') {
+            loc = prompt(`Magazijn Locatie (optioneel) voor ORD ${ordernummer}:`);
+            if (loc === null) return; // Geannuleerd
+        }
+        
+        // Optimistisch updaten (verander direct op scherm voor snelheid)
+        allOrders.forEach(o => {
+            if(o.ordernummer === ordernummer) {
+                if (action === 'markBinnen') o.status = "Producten Binnen (Klant Bellen)";
+                if (action === 'markPartial') o.status = "Deels Binnen";
+            }
+        });
+        renderOrders(); // Ververs scherm
+
+        // Push naar backend
+        await fetch(WEB_APP_URL + "?action=" + action + "&ordernummer=" + ordernummer + "&locatieInfo=" + encodeURIComponent(loc || ""));
+    }
+
+    // --- Optie 4: Barcode / QR Scanner Engine ---
+    function startScanner() {
+        document.getElementById('scanner-container').classList.remove('hidden');
+        if (!html5QrcodeScanner) {
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 100} }, false);
+        }
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    function stopScanner() {
+        if (html5QrcodeScanner) { html5QrcodeScanner.clear(); }
+        document.getElementById('scanner-container').classList.add('hidden');
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // Zodra een barcode gescand is, stopt de camera en vult de zoekbalk zich
+        stopScanner();
+        document.getElementById('searchInput').value = decodedText;
+        setFilter('Alles'); // Zorg dat we niet op een verkeerde tab staan
+        // Automatisch renderOrders() wordt nu aangeroepen via setFilter
+    }
+
+    function onScanFailure(error) { /* genegeerd tijdens scannen */ }
+
+    // Start inladen bij openen
+    loadOrders();
 </script>
 </body>
 </html>
