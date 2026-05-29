@@ -47,7 +47,7 @@
 <div class="container">
     <div class="nav-bar">
         <div class="nav-title">📝 Intake Planner</div>
-        <a href="magazijn.html" class="nav-btn">Magazijn 📦 ➔</a>
+        <a href="magazijn" class="nav-btn">Magazijn 📦 ➔</a>
     </div>
 
     <div class="card">
@@ -96,7 +96,7 @@
             </div>
             
             <label>Gewenste Datum (Override Regio & Max 3 Klussen Limiet)</label>
-            <input type="text" name="gewenste_datum" placeholder="Bijv. 12-06-2026 (Leeglaten voor auto-planning)">
+            <input type="text" name="gewenste_datum" placeholder="Bijv. 01-06-2026 (Leeglaten voor auto-planning)">
 
             <label>Afwijkende Reistijd (minuten - optioneel)</label>
             <input type="number" name="afwijkende_reistijd" id="afwijkende_reistijd" placeholder="Leeglaten voor automatische regio-reistijd">
@@ -142,22 +142,39 @@
     const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
 
     function zoekAdres() {
-        let pc = pcIn.value.replace(/\s+/g, '').toUpperCase(), nr = nrIn.value.trim();
+        let pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
+        let nr = nrIn.value.trim();
+        
         if(pc.length === 6 && nr.length >= 1) {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
-                stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
-                fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${pc} ${nr}&fq=type:adres`)
-                .then(r => r.json()).then(d => {
-                    if(d.response.docs.length > 0) {
+                stIn.innerText = "⏳ Zoeken..."; 
+                stIn.style.color = "#1a73e8";
+                
+                // Veilig inpakken van de zoekopdracht zodat spaties (bijv in huisnr 12 A) niet crashen
+                let veiligeZoekterm = encodeURIComponent(pc + " " + nr);
+                
+                fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${veiligeZoekterm}&fq=type:adres`)
+                .then(r => r.json())
+                .then(d => {
+                    if(d.response && d.response.docs && d.response.docs.length > 0) {
                         adIn.value = d.response.docs[0].straatnaam + ", " + d.response.docs[0].woonplaatsnaam;
-                        stIn.innerText = "✅ Adres Gevonden!"; stIn.style.color = "green";
-                    } else throw new Error("Niet gevonden");
-                }).catch(() => {
-                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; stIn.style.color = "red"; adIn.removeAttribute('readonly');
+                        stIn.innerText = "✅ Adres Gevonden!"; 
+                        stIn.style.color = "green";
+                        adIn.setAttribute('readonly', true);
+                    } else {
+                        throw new Error("Niet gevonden");
+                    }
+                }).catch((error) => {
+                    stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; 
+                    stIn.style.color = "red"; 
+                    adIn.removeAttribute('readonly'); // Zorgt dat je toch handmatig kunt typen
                 });
             }, 500);
-        } else { stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; stIn.style.color = "#888"; }
+        } else { 
+            stIn.innerText = "Adreszoeker: Wachten op complete invoer..."; 
+            stIn.style.color = "#888"; 
+        }
     }
     pcIn.addEventListener('input', zoekAdres); nrIn.addEventListener('input', zoekAdres);
 
@@ -212,7 +229,7 @@
                 statusDiv.innerText = `✅ ${veldenGevonden} velden gevonden en ingevuld! Check of het klopt.`; 
                 statusDiv.style.color = "green";
                 if(document.getElementById('pc').value && document.getElementById('nr').value) {
-                    document.getElementById('pc').dispatchEvent(new Event('input'));
+                    zoekAdres();
                 }
             } else {
                 statusDiv.innerText = "⚠️ Tekst wel gelezen, maar de logica niet begrepen. Vul zelf aan."; 
@@ -237,14 +254,14 @@
             if (type === "Zonnescherm") minPerProduct = 120;
             else if (type === "Overkapping") minPerProduct = 480;
             else if (type === "Losse Motor / Onderdeel") minPerProduct = 60;
-            else if (type === "Service: Vervangen / Terugplaatsen") minPerProduct = parseInt(bediening);
+            else if (type === "Service: Vervangen / Terugplaatsen") minPerProduct = parseInt(bediening) || 0;
             else minPerProduct = (bediening === "Solar") ? 45 : (bediening === "Stroom (230V)" ? 60 : 45);
             
             totaalMinuten += (aantal * minPerProduct);
         });
         if (document.getElementById('chkHoogwerker').checked) totaalMinuten += 60;
         if (document.getElementById('chkExtraTijd').checked) totaalMinuten += 60;
-        document.getElementById('timeDisplay').innerText = `Berekende Montagetijd: ${totaalMinuten} minutes (${(totaalMinuten/60).toFixed(1)} uur)`;
+        document.getElementById('timeDisplay').innerText = `Berekende Montagetijd: ${totaalMinuten} minuten (${(totaalMinuten/60).toFixed(1)} uur)`;
         document.getElementById('berekendeTijd').value = totaalMinuten;
     }
 
@@ -260,7 +277,7 @@
     function voegServiceRegelToe() {
         const div = document.createElement('div'); div.className = 'product-row';
         div.innerHTML = `<input type="number" class="p-aantal" value="1" min="1" required onchange="berekenTijd()">
-            <input type="text" class="p-type" value="Service: Vervangen / Terugplaatsen" readonly required style="flex: 2; background: #e8e8e8; color: #555; border: 1px solid #ddd; outline: none;">
+            <input type="text" class="p-type" value="Service: Vervangen / Terugplaatsen" readonly required style="flex: 2; background: #e8e8e8; color: #555; border: 1px solid #ddd; outline: none; height: 50px; font-size: 14px; border-radius: 8px; padding: 0 12px; margin-top:5px;">
             <select class="p-bediening" required onchange="berekenTijd()">
                 <option value="15 min">15 minuten</option>
                 <option value="30 min">30 minuten</option>
@@ -274,9 +291,10 @@
     function verwijderRegel(btn) { if (productContainer.children.length > 1) { btn.parentElement.remove(); berekenTijd(); } }
     document.getElementById('chkHoogwerker').addEventListener('change', berekenTijd); document.getElementById('chkExtraTijd').addEventListener('change', berekenTijd);
     
+    // Direct eerste regel laden bij opstarten
     voegProductRegelToe();
 
-   document.getElementById('orderForm').addEventListener('submit', function(e) {
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn'); 
         btn.disabled = true; 
@@ -290,12 +308,22 @@
         let extraOps = [];
         if(document.getElementById('chkHoogwerker').checked) extraOps.push("Hoogwerker");
         if(document.getElementById('chkExtraTijd').checked) extraOps.push("Extra Tijd");
-        if(extraOps.length > 0) dataObject.opmerkingen = `[${extraOps.join(' + ')}] ` + (dataObject.opmerkingen || "");
+        
+        // Zorg dat we de opmerkingen niet overschrijven maar aanvullen
+        let bestaandeOpm = dataObject.opmerkingen || "";
+        if(extraOps.length > 0) {
+            dataObject.opmerkingen = `[${extraOps.join(' + ')}] ` + bestaandeOpm;
+        }
 
         const regels = document.querySelectorAll('.product-row');
-        dataObject.bestellijst = Array.from(regels).map(r => `${r.querySelector('.p-aantal').value}x ${r.querySelector('.p-type').value} (${r.querySelector('.p-bediening').value})`).join(', ');
+        dataObject.bestellijst = Array.from(regels).map(r => {
+            const aantal = r.querySelector('.p-aantal').value;
+            const type = r.querySelector('.p-type').value;
+            const bediening = r.querySelector('.p-bediening').value;
+            return `${aantal}x ${type} (${bediening})`;
+        }).join(', ');
 
-        // FIX: Geen 'no-cors' meer, en wachten op de echte reactie van Google Sheets
+        // Veilig verzenden zonder 'no-cors' en met foutafhandeling
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify(dataObject) 
@@ -319,8 +347,11 @@
             btn.innerText = "Opslaan & Plannen"; 
         })
         .catch(err => { 
-            alert("❌ Fout bij opslaan. Geen internet of toegang geweigerd?"); 
+            alert("❌ Fout bij opslaan. Geen internet of toegang geweigerd door Google."); 
             btn.disabled = false; 
             btn.innerText = "Opslaan & Plannen"; 
         });
     });
+</script>
+</body>
+</html>
