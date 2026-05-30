@@ -21,8 +21,7 @@
         .status-deels { background-color: #fef9c3; color: #a16207; }  
         #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
         
-        /* Kalender styling optimalisatie voor mobiel/tablet */
-        .flatpickr-calendar { margin: 0 auto; box-shadow: none !important; border: 1px solid #e5e7eb; rounded-lg: 0.5rem; }
+        .flatpickr-calendar { margin: 0 auto; box-shadow: none !important; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
     </style>
 </head>
 <body class="p-4">
@@ -74,11 +73,11 @@
             </div>
             
             <label class="block text-xs font-bold text-gray-700 mb-1">Of selecteer in maandoverzicht:</label>
-            <div class="mb-4 flex justify-center">
+            <div class="mb-2 flex justify-center">
                 <input type="text" id="visueleKalenderInput" class="hidden">
             </div>
             
-            <label class="block text-xs font-bold text-gray-700 mb-1">Specifieke Tijd (Optioneel)</label>
+            <label class="block text-xs font-bold text-gray-700 mb-1 mt-4">Specifieke Tijd (Optioneel)</label>
             <input type="time" id="nieuweTijd" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 mb-5 focus:ring-blue-500 text-sm">
             
             <div class="flex gap-2">
@@ -94,27 +93,42 @@
     let allOrders = [];
     let currentFilter = 'Alles';
     let html5QrcodeScanner = null;
-    let kalenderInstance = null; // Flatpickr geheugen-slot
+    let kalenderInstance = null; 
     const urlParams = new URLSearchParams(window.location.search);
     const urlOrderToLoad = urlParams.get('order'); 
 
-    // Kalender direct opstarten zodra het scherm geladen is
     document.addEventListener("DOMContentLoaded", function() {
         kalenderInstance = flatpickr("#visueleKalenderInput", {
-            inline: true,          // Zorgt dat hij direct als maandblok getoond wordt
-            locale: "nl",          // Nederlandse dagen/maanden
-            dateFormat: "Y-m-d",   // Formaat voor communicatie met Google
-            minDate: "today",      // Je kunt niet in het verleden plannen
-            defaultDate: "today"
+            inline: true,          
+            locale: "nl",          
+            dateFormat: "Y-m-d",   
+            minDate: "today",      
+            defaultDate: "today",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length > 0) {
+                    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                    const mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', options);
+                    
+                    let feedbackDiv = document.getElementById("kalenderFeedback");
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement("div");
+                        feedbackDiv.id = "kalenderFeedback";
+                        feedbackDiv.className = "text-center text-sm font-bold text-green-700 bg-green-100 py-2 mt-2 rounded-lg transition-all opacity-0";
+                        instance.calendarContainer.insertAdjacentElement('afterend', feedbackDiv);
+                    }
+                    
+                    feedbackDiv.innerText = `✅ Geselecteerd: ${mooieDatum}`;
+                    feedbackDiv.style.opacity = "1"; 
+                }
+            }
         });
     });
 
-    // Functie voor de Snelkeuze-knoppen
     function setSnelkeuzeDatum(dagenErbij) {
         let doelDatum = new Date();
         doelDatum.setDate(doelDatum.getDate() + dagenErbij);
         if (kalenderInstance) {
-            kalenderInstance.setDate(doelDatum);
+            kalenderInstance.setDate(doelDatum, true); 
         }
     }
 
@@ -232,8 +246,12 @@
     function openHerplanModal(ordernummer) {
         document.getElementById('herplanOrderNr').value = ordernummer;
         if (kalenderInstance) {
-            kalenderInstance.setDate(new Date()); // Reset kalender naar vandaag bij openen
+            kalenderInstance.setDate(new Date(), false); 
         }
+        
+        let feedbackDiv = document.getElementById("kalenderFeedback");
+        if (feedbackDiv) feedbackDiv.style.opacity = "0"; 
+
         document.getElementById('herplanModal').classList.remove('hidden');
     }
 
@@ -244,7 +262,7 @@
 
     async function verstuurHerplanning() {
         const ordernummer = document.getElementById('herplanOrderNr').value;
-        const datum = kalenderInstance ? kalenderInstance.input.value : ""; // Haalt gekozen datum uit de plugin
+        const datum = kalenderInstance ? kalenderInstance.input.value : "";
         const tijd = document.getElementById('nieuweTijd').value;
         
         if (!datum) { alert("⚠️ Selecteer a.u.b. een nieuwe datum!"); return; }
