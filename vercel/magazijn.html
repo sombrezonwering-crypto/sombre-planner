@@ -72,6 +72,7 @@
     </div>
 
 <script>
+    // ⚠️ PLAK HIER JOUW APPS SCRIPT URL!
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
     
     let allOrders = [];
@@ -135,6 +136,18 @@
         if (order.status.includes('Klant Bellen')) badgeClass = 'status-bellen';
         if (order.status.includes('Deels')) badgeClass = 'status-deels';
 
+        let planTekst = "Nog niet ingepland";
+        if (order.planningsBericht && order.planningsBericht.includes("Gepland op")) {
+            planTekst = order.planningsBericht.replace("Gepland op ", "").split("\n")[0].replace(/'/g, "");
+        }
+        
+        let tijdTekst = "";
+        if (order.vasteTijd) {
+            tijdTekst = ` | 🕒 ${order.vasteTijd}`;
+        } else if (order.voorkeur && order.voorkeur !== "Geen") {
+            tijdTekst = ` | 🕒 ${order.voorkeur}`;
+        }
+
         const div = document.createElement('div'); div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
         div.innerHTML = `
             <div class="flex justify-between items-start mb-2">
@@ -144,6 +157,11 @@
                 </div>
                 <span class="status-badge ${badgeClass}">${order.status}</span>
             </div>
+            
+            <div class="text-sm text-blue-800 bg-blue-50 p-2 rounded-lg border border-blue-100 font-bold mb-3 flex items-center shadow-inner">
+                📅 ${planTekst}${tijdTekst}
+            </div>
+
             <div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100">📦 ${order.producten}</div>
             
             <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
@@ -215,4 +233,5 @@
     loadOrders();
 </script>
 </body>
+</html>
 </html>
