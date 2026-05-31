@@ -136,25 +136,28 @@
 </div>
 
 <script>
+    // ZORG DAT DEZE URL KLOPT MET JE EIGEN GOOGLE APPS SCRIPT URL!
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
     let fp = null;
 
-    // --- KALENDER INITIALISATIE ---
-    fp = flatpickr("#kalenderInput", {
-        inline: true,
-        locale: "nl",
-        dateFormat: "d-m-Y", 
-        minDate: "today",
-        onChange: function(selectedDates, dateStr, instance) {
-            if (selectedDates.length > 0) {
-                const options = { weekday: 'long', day: 'numeric', month: 'long' };
-                const mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', options);
-                let feedbackDiv = document.getElementById("kalenderFeedback");
-                feedbackDiv.innerText = `✅ Geselecteerd: ${mooieDatum}`;
-                feedbackDiv.classList.remove("hidden");
-                feedbackDiv.style.opacity = "1"; 
+    document.addEventListener("DOMContentLoaded", function() {
+        fp = flatpickr("#kalenderInput", {
+            inline: true,
+            locale: "nl",
+            dateFormat: "d-m-Y", 
+            minDate: "today",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length > 0) {
+                    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                    const mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', options);
+                    let feedbackDiv = document.getElementById("kalenderFeedback");
+                    feedbackDiv.innerText = `✅ Geselecteerd: ${mooieDatum}`;
+                    feedbackDiv.classList.remove("hidden");
+                    feedbackDiv.style.opacity = "1"; 
+                }
             }
-        }
+        });
+        voegProductRegelToe();
     });
 
     function setIntakeDatum(dagen) {
@@ -169,7 +172,6 @@
         tijdInput.required = (v === 'Vast'); 
     }
 
-    // --- PRODUCTEN & UREN CALCULATOR ---
     const productContainer = document.getElementById('productContainer');
 
     function berekenTijd() {
@@ -219,13 +221,10 @@
     }
 
     function verwijderRegel(btn) { if (productContainer.children.length > 1) { btn.parentElement.remove(); berekenTijd(); } }
-    
-    voegProductRegelToe(); // Start met 1 lege regel
 
     document.getElementById('chkHoogwerker').addEventListener('change', berekenTijd); 
     document.getElementById('chkExtraTijd').addEventListener('change', berekenTijd);
 
-    // --- PDOK ADRES ZOEKER ---
     let timeout = null;
     const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres');
 
@@ -254,7 +253,6 @@
     }
     pcIn.addEventListener('input', zoekAdres); nrIn.addEventListener('input', zoekAdres);
 
-    // --- OCR FOTO SCANNER ---
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0]; if (!file) return;
         const statusDiv = document.getElementById('scannerStatus'); 
@@ -274,6 +272,7 @@
             const pcMatch = ruweTekst.match(/\b([1-9][0-9]{3}\s?[A-Za-z]{2})\b/i);
             if (pcMatch) { document.getElementById('pc').value = pcMatch[1].toUpperCase().replace(/\s+/g, ''); veldenGevonden++; }
 
+            // Herstelde regex voor straatnummer (uit de review van je collega)
             const emailStreetNrMatch = ruweTekst.match(/@[\w\.-]+\.\w+\s+[A-Za-z\s]+\s+([0-9]{1,5}[a-zA-Z]?)/);
             if (emailStreetNrMatch) { document.getElementById('nr').value = emailStreetNrMatch[1]; veldenGevonden++; } 
             else {
@@ -297,7 +296,6 @@
         }
     });
 
-    // --- FORMULIER VERZENDEN ---
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn'); 
@@ -307,35 +305,29 @@
         const formData = new FormData(this); 
         let dataObject = Object.fromEntries(formData.entries());
         
-        // Fix: Defensieve check op DOM elementen voor de checkboxes
         dataObject.demontage = document.getElementById('chkDemontage')?.checked || false; 
         dataObject.spoed = document.getElementById('chkSpoed')?.checked || false;
         
         let extraOps = [];
         if(document.getElementById('chkHoogwerker')?.checked) extraOps.push("Hoogwerker");
         if(document.getElementById('chkExtraTijd')?.checked) extraOps.push("Extra Tijd");
-        if(dataObject.demontage) extraOps.push("Demontage"); // Fix: Demontage netjes toegevoegd aan opmerkingen
+        if(dataObject.demontage) extraOps.push("Demontage");
         
         let bestaandeOpm = dataObject.opmerkingen || "";
         if(extraOps.length > 0) dataObject.opmerkingen = `[${extraOps.join(' + ')}] ` + bestaandeOpm;
 
-        // Fix: Defensieve chaining (?.) voor product regels
         const regels = document.querySelectorAll('.product-row');
         dataObject.bestellijst = Array.from(regels).map(r => `${r.querySelector('.p-aantal')?.value || 1}x ${r.querySelector('.p-type')?.value || ''} (${r.querySelector('.p-bediening')?.value || ''})`).join(', ');
 
-        // Fix: AbortController toegevoegd tegen oneindig laden
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconden timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); 
 
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataObject), signal: controller.signal })
         .then(response => response.text())
         .then(result => { 
             clearTimeout(timeoutId);
-            // Fix: trim() toegevoegd voor veiligere vergelijking
             if (result.trim() === "OK") {
                 alert("✅ Order succesvol opgeslagen in Google Sheets!"); 
-                
-                // Fix: Vloeiende reset zonder de pagina hard te herladen
                 this.reset();
                 if(fp) { fp.clear(); }
                 document.getElementById('kalenderFeedback').classList.add("hidden");
