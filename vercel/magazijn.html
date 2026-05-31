@@ -89,6 +89,7 @@
     </div>
 
 <script>
+    // ZORG DAT DEZE URL KLOPT MET JE EIGEN GOOGLE APPS SCRIPT URL!
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
     
     let allOrders = [];
@@ -184,6 +185,7 @@
 
         let planTekst = "Nog niet ingepland";
         
+        // Robuuste check voor beide varianten van 'Gepland'
         if (order.planningsBericht && (order.planningsBericht.includes("Gepland op") || order.planningsBericht.includes("Geplanned op"))) {
             planTekst = order.planningsBericht.replace("Gepland op ", "").replace("Geplanned op ", "").split("\n")[0].replace(/'/g, "");
         }
@@ -259,6 +261,7 @@
         document.getElementById('nieuweTijd').value = '';
     }
 
+    // FIX: De herstelde Herplan-functie met daadwerkelijke foutafhandeling
     async function verstuurHerplanning() {
         const ordernummer = document.getElementById('herplanOrderNr').value;
         const datum = kalenderInstance ? kalenderInstance.input.value : "";
@@ -266,14 +269,32 @@
         
         if (!datum) { alert("⚠️ Selecteer a.u.b. een nieuwe datum!"); return; }
         
-        sluitHerplanModal();
-        allOrders.forEach(o => { if(o.ordernummer === ordernummer) o.status = "Definitief"; });
-        renderOrders();
+        // Knop status updaten zodat gebruiker weet dat de server bezig is
+        const btn = document.querySelector('#herplanModal button:last-child');
+        const oudeTekst = btn.innerText;
+        btn.innerText = "⏳ Bezig met plannen...";
+        btn.disabled = true;
         
         try {
-            await fetch(WEB_APP_URL + "?action=herplanDefinitief&ordernummer=" + ordernummer + "&nieuweDatum=" + datum + "&nieuweTijd=" + tijd);
+            // Wacht daadwerkelijk op het antwoord van Google Sheets
+            const response = await fetch(WEB_APP_URL + "?action=herplanDefinitief&ordernummer=" + ordernummer + "&nieuweDatum=" + datum + "&nieuweTijd=" + tijd);
+            const resultaat = await response.json(); 
+            
+            if (resultaat.status === "ok") {
+                // Succes! Nu pas de modal sluiten en de UI updaten
+                sluitHerplanModal();
+                allOrders.forEach(o => { if(o.ordernummer === ordernummer) o.status = "Definitief"; });
+                renderOrders();
+            } else {
+                // De sheet weigert de order (bijv. wegens limieten) -> Toon de ECHTE fout!
+                alert("❌ De planning is geweigerd door de sheet:\n" + (resultaat.message || resultaat.bericht || "Onbekende fout"));
+            }
         } catch(e) {
-            alert("❌ Fout bij verplaatsen. Controleer netwerkverbinding.");
+            alert("❌ Netwerkfout. Controleer je internetverbinding.");
+        } finally {
+            // Herstel de knop
+            btn.innerText = oudeTekst;
+            btn.disabled = false;
         }
     }
 
