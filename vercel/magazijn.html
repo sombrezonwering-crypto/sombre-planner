@@ -76,6 +76,7 @@
             <div class="mb-2 flex justify-center">
                 <input type="text" id="visueleKalenderInput" class="hidden">
             </div>
+            <div id="kalenderFeedback" class="text-center text-sm font-bold text-green-700 bg-green-100 py-2 mt-2 rounded-lg transition-all opacity-0 hidden"></div>
             
             <label class="block text-xs font-bold text-gray-700 mb-1 mt-4">Specifieke Tijd (Optioneel)</label>
             <input type="time" id="nieuweTijd" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 mb-5 focus:ring-blue-500 text-sm">
@@ -110,14 +111,8 @@
                     const mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', options);
                     
                     let feedbackDiv = document.getElementById("kalenderFeedback");
-                    if (!feedbackDiv) {
-                        feedbackDiv = document.createElement("div");
-                        feedbackDiv.id = "kalenderFeedback";
-                        feedbackDiv.className = "text-center text-sm font-bold text-green-700 bg-green-100 py-2 mt-2 rounded-lg transition-all opacity-0";
-                        instance.calendarContainer.insertAdjacentElement('afterend', feedbackDiv);
-                    }
-                    
                     feedbackDiv.innerText = `✅ Geselecteerd: ${mooieDatum}`;
+                    feedbackDiv.classList.remove("hidden");
                     feedbackDiv.style.opacity = "1"; 
                 }
             }
@@ -188,8 +183,9 @@
         if (order.status.includes('Deels')) badgeClass = 'status-deels';
 
         let planTekst = "Nog niet ingepland";
-        if (order.planningsBericht && order.planningsBericht.includes("Gepland op")) {
-            planTekst = order.planningsBericht.replace("Gepland op ", "").split("\n")[0].replace(/'/g, "");
+        
+        if (order.planningsBericht && (order.planningsBericht.includes("Gepland op") || order.planningsBericht.includes("Geplanned op"))) {
+            planTekst = order.planningsBericht.replace("Gepland op ", "").replace("Geplanned op ", "").split("\n")[0].replace(/'/g, "");
         }
         
         let tijdTekst = "";
@@ -250,7 +246,10 @@
         }
         
         let feedbackDiv = document.getElementById("kalenderFeedback");
-        if (feedbackDiv) feedbackDiv.style.opacity = "0"; 
+        if (feedbackDiv) {
+            feedbackDiv.classList.add("hidden");
+            feedbackDiv.style.opacity = "0"; 
+        }
 
         document.getElementById('herplanModal').classList.remove('hidden');
     }
