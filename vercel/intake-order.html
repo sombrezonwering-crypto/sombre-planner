@@ -2,356 +2,378 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sombre Intake - Planner 3.0</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Order Intake | Sombre ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/nl.js"></script>
-
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 550px; margin: 0 auto; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h2 { color: #1a73e8; text-align: center; margin-top: 0; margin-bottom: 20px; }
-        
-        .scanner-zone { background: #e8f0fe; border: 2px dashed #1a73e8; padding: 20px; text-align: center; border-radius: 10px; margin-bottom: 25px; cursor: pointer; position: relative; }
-        .scanner-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        
-        label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 15px; }
-        
-        input, select, textarea { 
-            width: 100%; height: 50px; font-size: 14px; border: 1px solid #ddd; 
-            border-radius: 8px; box-sizing: border-box; padding: 0 12px; 
-            background-color: #fff !important; color: #000 !important; margin-top: 5px; 
-        }
-        select { appearance: auto !important; -webkit-appearance: auto !important; }
-        textarea { height: 100px; padding: 12px; resize: none; }
-        
-        .product-builder { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-top: 5px; }
-        .product-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
-        .btn-remove { background: #ff4d4d; color: white; border: none; border-radius: 6px; width: 35px; height: 50px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        
-        .btn-add { background: #e3f2fd; color: #1a73e8; border: 1px dashed #1a73e8; padding: 10px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .submit-btn { width: 100%; padding: 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
-        .submit-btn:disabled { background: #ccc; }
-        
-        .time-box { background: #d4edda; color: #155724; padding: 10px; border-radius: 8px; margin-top: 15px; font-weight: bold; text-align: center; border: 1px solid #c3e6cb; }
-        
-        .flatpickr-calendar { margin: 10px auto; }
-        .snel-btn { background: #f0f7ff; color: #1a73e8; border: 1px solid #cce3ff; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; transition: 0.2s; }
-        .snel-btn:hover { background: #e1efff; }
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hidden { display: none !important; }
+        .toggle-btn.active { background-color: #1a73e8; color: white; border-color: #1a73e8; }
+        .toggle-btn { background-color: #fff; color: #4b5563; border-color: #d1d5db; }
     </style>
 </head>
-<body>
+<body class="p-4">
 
-<div class="container">
-    <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-5">
-        <div class="font-bold text-gray-800">📝 Intake Planner</div>
-        <a href="magazijn.html" class="text-blue-600 font-bold text-sm bg-blue-50 px-3 py-1 rounded-lg">Magazijn 📦 ➔</a>
-    </div>
-
-    <div class="card">
-        <h2>Nieuwe Order Invoeren</h2>
-        
-        <div class="scanner-zone">
-            📸 <strong>Upload Screenshot Leverancier</strong><br>
-            <span style="font-size: 12px; color: #666;">Scant automatisch klantgegevens</span>
-            <input type="file" id="imageInput" accept="image/*" capture="environment">
-            <div id="scannerStatus" class="text-xs mt-2 font-bold text-blue-600"></div>
+    <div class="max-w-2xl mx-auto mb-6 flex justify-between items-center mt-2">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-800">Nieuwe Order</h1>
+            <p class="text-gray-500">Sombre ERP Systeem</p>
         </div>
-
-        <form id="orderForm">
-            <label>Ordernummer</label>
-            <input type="text" name="ordernummer" required>
-
-            <label>Naam Klant</label>
-            <input type="text" id="klantNaam" name="naam" required>
-
-            <div class="flex gap-2">
-                <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" required></div>
-                <div style="flex: 1;"><label>Huisnr</label><input type="text" id="nr" name="huisnummer" required></div>
-            </div>
-            
-            <label>Straat & Woonplaats</label>
-            <input type="text" id="adres" name="straatEnWoonplaats" readonly required>
-
-            <label>Telefoonnummer</label>
-            <input type="tel" id="telefoon" name="telefoon" required>
-
-            <label>Producten (Bestellijst)</label>
-            <div class="product-builder">
-                <div id="productContainer"></div>
-                <button type="button" class="btn-add" onclick="voegProductRegelToe()">➕ Extra Product Toevoegen</button>
-                <button type="button" class="btn-add" style="background: #fff3e0; color: #e65100; border-color: #e65100;" onclick="voegServiceRegelToe()">🛠️ Service (Vervangen / Terugplaatsen)</button>
-            </div>
-
-            <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkHoogwerker" style="width:auto; margin:0; height:auto;"> 🏗️ Hoogwerker nodig (+60 min)</label>
-                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkExtraTijd" style="width:auto; margin:0; height:auto;"> ⏱️ Extra tijd marge nodig (+60 min)</label>
-                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkDemontage" name="demontage" style="width:auto; margin:0; height:auto;"> ⚠️ Demontage oud product</label>
-                <div class="time-box" id="timeDisplay">Berekende Montagetijd: 0 minuten</div>
-                <input type="hidden" name="montagetijd_minuten" id="berekendeTijd" value="0">
-            </div>
-
-            <div class="mt-6 border-t pt-4">
-                <label class="text-blue-700">📅 Gewenste Datum (Override Regio Limiet)</label>
-                
-                <div class="grid grid-cols-3 gap-2 mt-2">
-                    <button type="button" onclick="setIntakeDatum(1)" class="snel-btn">Morgen</button>
-                    <button type="button" onclick="setIntakeDatum(7)" class="snel-btn">Volgende week</button>
-                    <button type="button" onclick="setIntakeDatum(14)" class="snel-btn">+2 Weken</button>
-                </div>
-
-                <div class="mt-3 flex justify-center">
-                    <input type="text" id="kalenderInput" name="gewenste_datum" class="hidden">
-                </div>
-                <div id="kalenderFeedback" class="text-center text-sm font-bold text-green-700 bg-green-100 py-2 mt-2 rounded-lg transition-all opacity-0 hidden"></div>
-            </div>
-
-            <label>Voorkeur / Tijdstip</label>
-            <div class="flex gap-2">
-                <select name="tijd_voorkeur" id="tijd_voorkeur" onchange="toggleTijd()" style="flex: 2;">
-                    <option value="Geen">Geen voorkeur (Auto)</option>
-                    <option value="Ochtend">☀️ Ochtend</option>
-                    <option value="Middag">🌤️ Middag</option>
-                    <option value="Vast">⏰ Vaste tijd</option>
-                </select>
-                <input type="time" name="vaste_tijd" id="vaste_tijd" style="display:none; flex: 1;" title="Vul specifieke tijd in">
-            </div>
-
-            <label style="display:flex; align-items:center; gap:8px; margin-top:10px;">
-                <input type="checkbox" id="chkSpoed" name="spoed" style="width:auto; height:auto; margin:0;"> 🔥 Spoedklus (Plannen mag vanaf morgen!)
-            </label>
-
-            <label>Montage Instructies & Opmerkingen</label>
-            <textarea id="opmerkingen" name="opmerkingen" placeholder="Instructies of bijzonderheden..."></textarea>
-
-            <button type="submit" id="submitBtn" class="submit-btn">✅ Opslaan & Plannen</button>
-        </form>
+        <a href="magazijn.html" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm shadow-md flex items-center">
+            Magazijn App ➡️
+        </a>
     </div>
-</div>
+
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-10">
+        <form id="orderForm" class="space-y-6">
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Type Order</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btnMontage" onclick="setType('Montage')" class="toggle-btn active font-bold py-3 rounded-lg border shadow-sm transition-all">🏗️ Nieuwe Montage</button>
+                    <button type="button" id="btnService" onclick="setType('Service')" class="toggle-btn font-bold py-3 rounded-lg border shadow-sm transition-all">🛠️ Service Notion</button>
+                </div>
+            </div>
+
+            <div id="serviceBronSectie" class="hidden bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <label class="block text-sm font-bold text-gray-700 mb-1">Afdeling / Bron</label>
+                <select id="afdelingSource" class="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="Sombre">Sombre Zonwering</option>
+                    <option value="Degalux Zakelijk">Degalux Zakelijk</option>
+                    <option value="Degalux Online">Degalux Online</option>
+                </select>
+            </div>
+
+            <hr class="border-gray-200">
+
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3">👤 Klant & Locatie</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Naam Klant *</label>
+                        <input type="text" id="naam" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Telefoonnummer *</label>
+                        <input type="tel" id="telefoon" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Postcode *</label>
+                        <input type="text" id="postcode" required placeholder="Bijv. 1312 AB" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Huisnummer *</label>
+                        <input type="text" id="huisnummer" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Straat & Woonplaats *</label>
+                        <input type="text" id="straatEnWoonplaats" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-200">
+
+            <div id="montageSectie">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">📦 Orderdetails</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Ordernummer *</label>
+                        <input type="text" id="ordernummerMontage" placeholder="Bijv. SO-2026-01" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Geschatte Montagetijd (min) *</label>
+                        <input type="number" id="montagetijdMontage" placeholder="Bijv. 120" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Bestellijst / Producten *</label>
+                        <textarea id="bestellijstMontage" rows="2" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Opmerkingen (Optioneel)</label>
+                        <textarea id="opmerkingenMontage" rows="2" placeholder="Specifieke instructies voor de monteurs..." class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="serviceSectie" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">🛠️ Service Calculator</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Notion Ordernummer *</label>
+                        <input type="text" id="ordernummerService" placeholder="Bijv. 251931" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Type Klus</label>
+                            <select id="srvType" onchange="calculateServiceTime()" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                                <option value="motor">Motor Vervangen</option>
+                                <option value="doek">Doek Vervangen</option>
+                                <option value="lamellen">Lamellen Vervangen/Schuiven</option>
+                                <option value="armen">Armen Vervangen</option>
+                                <option value="inregelen">Inregelen (Hub/AB)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Product</label>
+                            <select id="srvProduct" onchange="calculateServiceTime()" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                                <option value="screen_rolluik">Screen / Rolluik</option>
+                                <option value="zonnescherm">Zonnescherm</option>
+                                <option value="nvt">N.v.t. / Overig</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Aandrijving</label>
+                            <select id="srvVoeding" onchange="calculateServiceTime()" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                                <option value="solar">Solar</option>
+                                <option value="stroom">Stroom (230V)</option>
+                                <option value="hand">Handbediend (Band/Koord)</option>
+                                <option value="nvt">N.v.t.</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2 bg-blue-100 border border-blue-200 rounded-lg p-3 flex justify-between items-center">
+                        <span class="text-sm font-bold text-blue-900">Berekende Servicetijd:</span>
+                        <span id="displayServiceTijd" class="text-lg font-extrabold text-blue-900">30 min</span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Klachtomschrijving / Onderdelen *</label>
+                        <textarea id="klachtService" rows="2" placeholder="Wat is er defect? Welke onderdelen zijn verstuurd?" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-200">
+
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3">📅 Planning & Voorkeuren</h3>
+                
+                <div class="flex items-center mb-4 bg-red-50 p-3 rounded-lg border border-red-100">
+                    <input id="spoed" type="checkbox" class="w-5 h-5 text-red-600 bg-white border-gray-300 rounded focus:ring-red-500 focus:ring-2">
+                    <label for="spoed" class="ml-2 text-sm font-bold text-red-800 flex items-center">
+                        🔥 Dit is een SPOED opdracht
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Gewenste Datum (Optioneel)</label>
+                        <input type="date" id="gewensteDatum" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Tijd Voorkeur (Optioneel)</label>
+                        <select id="tijdVoorkeur" onchange="toggleVasteTijd()" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                            <option value="Geen">Geen specifieke voorkeur</option>
+                            <option value="Ochtend">Ochtend</option>
+                            <option value="Middag">Middag</option>
+                            <option value="Vast">Vaste tijd</option>
+                        </select>
+                    </div>
+                    <div id="vasteTijdContainer" class="hidden md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Specifieke Tijd *</label>
+                        <input type="time" id="vasteTijd" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full text-white bg-blue-600 hover:bg-blue-700 font-bold rounded-lg text-lg px-5 py-4 shadow-md transition-all">
+                🚀 Opslaan & Inplannen
+            </button>
+        </form>
+
+        <div id="successMsg" class="hidden mt-6 bg-green-100 border border-green-400 text-green-700 px-4 py-5 rounded-lg text-center font-bold shadow-sm">
+            ✅ Order succesvol opgeslagen! De planningsmotor draait op de achtergrond.
+            <button onclick="location.reload()" class="mt-4 block w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-all">Nieuwe Order Invoeren</button>
+        </div>
+    </div>
 
 <script>
-    // ZORG DAT DEZE URL KLOPT MET JE EIGEN GOOGLE APPS SCRIPT URL!
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
-    let fp = null;
+    // VUL HIER JOUW NIEUWE GOOGLE APPS SCRIPT URL IN
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
-    document.addEventListener("DOMContentLoaded", function() {
-        fp = flatpickr("#kalenderInput", {
-            inline: true,
-            locale: "nl",
-            dateFormat: "d-m-Y", 
-            minDate: "today",
-            onChange: function(selectedDates, dateStr, instance) {
-                if (selectedDates.length > 0) {
-                    const options = { weekday: 'long', day: 'numeric', month: 'long' };
-                    const mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', options);
-                    let feedbackDiv = document.getElementById("kalenderFeedback");
-                    feedbackDiv.innerText = `✅ Geselecteerd: ${mooieDatum}`;
-                    feedbackDiv.classList.remove("hidden");
-                    feedbackDiv.style.opacity = "1"; 
-                }
-            }
-        });
-        voegProductRegelToe();
-    });
+    let isService = false;
+    let berekendeServiceTijd = 30;
 
-    function setIntakeDatum(dagen) {
-        let d = new Date(); d.setDate(d.getDate() + dagen);
-        if(fp) fp.setDate(d, true); 
-    }
-
-    function toggleTijd() {
-        const v = document.getElementById('tijd_voorkeur').value;
-        const tijdInput = document.getElementById('vaste_tijd');
-        tijdInput.style.display = (v === 'Geen') ? 'none' : 'block';
-        tijdInput.required = (v === 'Vast'); 
-    }
-
-    const productContainer = document.getElementById('productContainer');
-
-    function berekenTijd() {
-        let totaalMinuten = 0;
-        document.querySelectorAll('.product-row').forEach(regel => {
-            const aantal = parseInt(regel.querySelector('.p-aantal')?.value) || 1;
-            const type = regel.querySelector('.p-type')?.value || "";
-            const bediening = regel.querySelector('.p-bediening')?.value || "";
-            let minPerProduct = 0;
-            
-            if (type === "Zonnescherm") minPerProduct = 120;
-            else if (type === "Overkapping") minPerProduct = 480;
-            else if (type === "Losse Motor / Onderdeel") minPerProduct = 60;
-            else if (type === "Service: Vervangen / Terugplaatsen") minPerProduct = parseInt(bediening) || 0;
-            else minPerProduct = (bediening === "Solar") ? 45 : (bediening === "Stroom (230V)" ? 60 : 45);
-            
-            totaalMinuten += (aantal * minPerProduct);
-        });
-        if (document.getElementById('chkHoogwerker').checked) totaalMinuten += 60;
-        if (document.getElementById('chkExtraTijd').checked) totaalMinuten += 60;
-        
-        document.getElementById('timeDisplay').innerText = `Berekende Montagetijd: ${totaalMinuten} minuten (${(totaalMinuten/60).toFixed(1)} uur)`;
-        document.getElementById('berekendeTijd').value = totaalMinuten;
-    }
-
-    function voegProductRegelToe() {
-        const div = document.createElement('div'); div.className = 'product-row';
-        div.innerHTML = `<input type="number" class="p-aantal" style="width: 70px;" value="1" min="1" required onchange="berekenTijd()">
-            <select class="p-type" style="flex: 2;" required onchange="berekenTijd()"><option>Rolluik</option><option>Screen</option><option>Zonnescherm</option><option>Overkapping</option><option>Losse Motor / Onderdeel</option></select>
-            <select class="p-bediening" style="flex: 2;" required onchange="berekenTijd()"><option>Solar</option><option>Stroom (230V)</option><option>Handbediend</option><option>N.v.t.</option></select>
-            <button type="button" class="btn-remove" onclick="verwijderRegel(this)">✖</button>`;
-        productContainer.appendChild(div); berekenTijd();
-    }
-
-    function voegServiceRegelToe() {
-        const div = document.createElement('div'); div.className = 'product-row';
-        div.innerHTML = `<input type="number" class="p-aantal" style="width: 70px;" value="1" min="1" required onchange="berekenTijd()">
-            <input type="text" class="p-type" style="flex: 2; background: #e8e8e8 !important; color: #555 !important;" value="Service: Vervangen / Terugplaatsen" readonly required>
-            <select class="p-bediening" style="flex: 2;" required onchange="berekenTijd()">
-                <option value="15 min">15 minuten</option>
-                <option value="30 min">30 minuten</option>
-                <option value="45 min">45 minuten</option>
-                <option value="60 min">60 minuten</option>
-            </select>
-            <button type="button" class="btn-remove" onclick="verwijderRegel(this)">✖</button>`;
-        productContainer.appendChild(div); berekenTijd();
-    }
-
-    function verwijderRegel(btn) { if (productContainer.children.length > 1) { btn.parentElement.remove(); berekenTijd(); } }
-
-    document.getElementById('chkHoogwerker').addEventListener('change', berekenTijd); 
-    document.getElementById('chkExtraTijd').addEventListener('change', berekenTijd);
-
-    let timeout = null;
-    const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres');
-
-    function zoekAdres() {
-        let pc = pcIn.value.replace(/\s+/g, '').toUpperCase();
-        let nr = nrIn.value.trim();
-        
-        if(pc.length === 6 && nr.length >= 1) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                let veiligeZoekterm = encodeURIComponent(pc + " " + nr);
-                fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${veiligeZoekterm}&fq=type:adres`)
-                .then(r => r.json())
-                .then(d => {
-                    if(d.response && d.response.docs && d.response.docs.length > 0) {
-                        adIn.value = d.response.docs[0].straatnaam + ", " + d.response.docs[0].woonplaatsnaam;
-                        adIn.setAttribute('readonly', true);
-                    } else {
-                        throw new Error("Niet gevonden");
-                    }
-                }).catch(() => {
-                    adIn.removeAttribute('readonly'); 
-                });
-            }, 500);
+    function toggleVasteTijd() {
+        const val = document.getElementById('tijdVoorkeur').value;
+        if (val === 'Vast') {
+            document.getElementById('vasteTijdContainer').classList.remove('hidden');
+        } else {
+            document.getElementById('vasteTijdContainer').classList.add('hidden');
+            document.getElementById('vasteTijd').value = '';
         }
     }
-    pcIn.addEventListener('input', zoekAdres); nrIn.addEventListener('input', zoekAdres);
 
-    document.getElementById('imageInput').addEventListener('change', async function(e) {
-        const file = e.target.files[0]; if (!file) return;
-        const statusDiv = document.getElementById('scannerStatus'); 
-        statusDiv.innerText = "⏳ Foto scannen (Kan even duren)..."; 
+    function setType(type) {
+        isService = (type === 'Service');
         
-        try {
-            const result = await Tesseract.recognize(file, 'nld'); 
-            const ruweTekst = result.data.text;
-            let veldenGevonden = 0;
+        if(isService) {
+            document.getElementById('btnService').classList.add('active');
+            document.getElementById('btnMontage').classList.remove('active');
+            document.getElementById('serviceSectie').classList.remove('hidden');
+            document.getElementById('serviceBronSectie').classList.remove('hidden');
+            document.getElementById('montageSectie').classList.add('hidden');
+            
+            document.getElementById('ordernummerService').required = true;
+            document.getElementById('klachtService').required = true;
+            document.getElementById('ordernummerMontage').required = false;
+            document.getElementById('bestellijstMontage').required = false;
+            document.getElementById('montagetijdMontage').required = false;
+            
+            calculateServiceTime();
+        } else {
+            document.getElementById('btnMontage').classList.add('active');
+            document.getElementById('btnService').classList.remove('active');
+            document.getElementById('montageSectie').classList.remove('hidden');
+            document.getElementById('serviceSectie').classList.add('hidden');
+            document.getElementById('serviceBronSectie').classList.add('hidden');
+            
+            document.getElementById('ordernummerMontage').required = true;
+            document.getElementById('bestellijstMontage').required = true;
+            document.getElementById('montagetijdMontage').required = true;
+            document.getElementById('ordernummerService').required = false;
+            document.getElementById('klachtService').required = false;
+        }
+    }
 
-            const instructieMatch = ruweTekst.match(/Montageinstructie[\s\S]*?\n([\s\S]*?)(?=\nJouw klantgegevens|Jouw klantgegevens)/i);
-            if (instructieMatch && instructieMatch[1]) { document.getElementById('opmerkingen').value = instructieMatch[1].trim(); veldenGevonden++; }
+    function calculateServiceTime() {
+        const type = document.getElementById('srvType').value;
+        const prod = document.getElementById('srvProduct').value;
+        const voeding = document.getElementById('srvVoeding').value;
+        let t = 30;
 
-            const telefoonMatch = ruweTekst.match(/(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})/);
-            if (telefoonMatch) { document.getElementById('telefoon').value = telefoonMatch[1].replace(/\s+/g, ''); veldenGevonden++; }
+        if (type === 'motor' && voeding === 'hand') {
+            alert("⚠️ Let op: Een handbediend scherm heeft geen motor. We berekenen 60 minuten voor het vervangen van band/koord.");
+        }
 
-            const pcMatch = ruweTekst.match(/\b([1-9][0-9]{3}\s?[A-Za-z]{2})\b/i);
-            if (pcMatch) { document.getElementById('pc').value = pcMatch[1].toUpperCase().replace(/\s+/g, ''); veldenGevonden++; }
-
-            // Herstelde regex voor straatnummer (uit de review van je collega)
-            const emailStreetNrMatch = ruweTekst.match(/@[\w\.-]+\.\w+\s+[A-Za-z\s]+\s+([0-9]{1,5}[a-zA-Z]?)/);
-            if (emailStreetNrMatch) { document.getElementById('nr').value = emailStreetNrMatch[1]; veldenGevonden++; } 
-            else {
-                const fallbackNr = ruweTekst.match(/\b([0-9]{1,4}[A-Za-z]?)\s*[\r\n]+\s*[1-9][0-9]{3}\s?[A-Za-z]{2}/);
-                if (fallbackNr) { document.getElementById('nr').value = fallbackNr[1]; veldenGevonden++; }
-            }
-
-            const naamMatch = ruweTekst.match(/(?:06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z]+)\s+([A-Za-z\s]+)/);
-            if (naamMatch && !naamMatch[2].includes("@")) { document.getElementById('klantNaam').value = naamMatch[1] + " " + naamMatch[2].trim(); veldenGevonden++; }
-
-            if (veldenGevonden > 0) {
-                statusDiv.innerText = `✅ ${veldenGevonden} velden gevonden! Controleer a.u.b.`; 
-                statusDiv.style.color = "green";
-                if(document.getElementById('pc').value && document.getElementById('nr').value) zoekAdres();
+        if (type === 'motor') {
+            if (voeding === 'hand') t = 60;
+            else if (prod === 'zonnescherm') {
+                t = (voeding === 'stroom') ? 60 : 45;
             } else {
-                statusDiv.innerText = "⚠️ Tekst gelezen, maar niets bruikbaars gevonden."; 
-                statusDiv.style.color = "#ff3b30";
+                t = (voeding === 'stroom') ? 45 : 30;
             }
-        } catch (error) { 
-            statusDiv.innerText = "❌ Scannen mislukt."; statusDiv.style.color = "red"; 
+        } 
+        else if (type === 'doek') {
+            t = (prod === 'zonnescherm') ? 60 : 45;
         }
-    });
+        else if (type === 'lamellen') t = 45;
+        else if (type === 'armen') t = 60;
+        else if (type === 'inregelen') t = 30;
 
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        berekendeServiceTijd = t;
+        document.getElementById('displayServiceTijd').innerText = t + " min";
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const btn = document.getElementById('submitBtn'); 
-        btn.disabled = true; 
-        btn.innerText = "Bezig met opslaan & plannen...";
 
-        const formData = new FormData(this); 
-        let dataObject = Object.fromEntries(formData.entries());
-        
-        dataObject.demontage = document.getElementById('chkDemontage')?.checked || false; 
-        dataObject.spoed = document.getElementById('chkSpoed')?.checked || false;
-        
-        let extraOps = [];
-        if(document.getElementById('chkHoogwerker')?.checked) extraOps.push("Hoogwerker");
-        if(document.getElementById('chkExtraTijd')?.checked) extraOps.push("Extra Tijd");
-        if(dataObject.demontage) extraOps.push("Demontage");
-        
-        let bestaandeOpm = dataObject.opmerkingen || "";
-        if(extraOps.length > 0) dataObject.opmerkingen = `[${extraOps.join(' + ')}] ` + bestaandeOpm;
+        // 1. DATA VALIDATIES
+        const telefoon = document.getElementById('telefoon').value;
+        if (!/^[0-9+\-\s]{8,20}$/.test(telefoon)) {
+            alert("⚠️ Ongeldig telefoonnummer. Gebruik alleen cijfers, spaties, + of -.");
+            return;
+        }
 
-        const regels = document.querySelectorAll('.product-row');
-        dataObject.bestellijst = Array.from(regels).map(r => `${r.querySelector('.p-aantal')?.value || 1}x ${r.querySelector('.p-type')?.value || ''} (${r.querySelector('.p-bediening')?.value || ''})`).join(', ');
+        const postcode = document.getElementById('postcode').value;
+        if (!/^[1-9][0-9]{3}\s?[A-Za-z]{2}$/i.test(postcode)) {
+            alert("⚠️ Ongeldig postcode formaat. Gebruik 4 cijfers en 2 letters (bijv. 1312 AB).");
+            return;
+        }
+
+        if (!isService) {
+            const montagetijd = parseInt(document.getElementById('montagetijdMontage').value) || 0;
+            if (montagetijd < 0) {
+                alert("⚠️ Montagetijd mag niet negatief zijn.");
+                return;
+            }
+        }
+
+        if (document.getElementById('tijdVoorkeur').value === 'Vast' && !document.getElementById('vasteTijd').value) {
+            alert("⚠️ Je hebt 'Vaste tijd' geselecteerd. Vul a.u.b. de specifieke tijd in.");
+            return;
+        }
+
+        // 2. UI UPDATE (Als validatie slaagt)
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = "⏳ Bezig met opslaan...";
+        btn.disabled = true;
+        btn.classList.replace("bg-blue-600", "bg-gray-400");
+
+        let payload = {
+            naam: document.getElementById('naam').value,
+            telefoon: telefoon,
+            postcode: postcode,
+            huisnummer: document.getElementById('huisnummer').value,
+            straatEnWoonplaats: document.getElementById('straatEnWoonplaats').value,
+            gewenste_datum: document.getElementById('gewensteDatum').value,
+            tijd_voorkeur: document.getElementById('tijdVoorkeur').value,
+            vaste_tijd: document.getElementById('vasteTijd').value,
+            spoed: document.getElementById('spoed').checked,
+            isServiceNotion: isService
+        };
+
+        if (isService) {
+            payload.ordernummer = document.getElementById('ordernummerService').value;
+            payload.afdelingSource = document.getElementById('afdelingSource').value;
+            
+            const typeText = document.getElementById('srvType').options[document.getElementById('srvType').selectedIndex].text;
+            const prodText = document.getElementById('srvProduct').options[document.getElementById('srvProduct').selectedIndex].text;
+            const voedingText = document.getElementById('srvVoeding').options[document.getElementById('srvVoeding').selectedIndex].text;
+            
+            payload.bestellijst = `SERVICE: ${typeText} | ${prodText} | ${voedingText}`;
+            payload.opmerkingen = document.getElementById('klachtService').value;
+            payload.montagetijd_minuten = berekendeServiceTijd;
+            payload.demontage = false;
+        } else {
+            payload.ordernummer = document.getElementById('ordernummerMontage').value;
+            payload.afdelingSource = "Sombre";
+            payload.bestellijst = document.getElementById('bestellijstMontage').value;
+            payload.opmerkingen = document.getElementById('opmerkingenMontage').value;
+            payload.montagetijd_minuten = parseInt(document.getElementById('montagetijdMontage').value) || 0;
+            payload.demontage = false; 
+        }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); 
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataObject), signal: controller.signal })
-        .then(response => response.text())
-        .then(result => { 
+        try {
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
             clearTimeout(timeoutId);
-            if (result.trim() === "OK") {
-                alert("✅ Order succesvol opgeslagen in Google Sheets!"); 
-                this.reset();
-                if(fp) { fp.clear(); }
-                document.getElementById('kalenderFeedback').classList.add("hidden");
-                productContainer.innerHTML = '';
-                voegProductRegelToe();
-                document.getElementById('adres').removeAttribute('readonly');
-                document.getElementById('scannerStatus').innerText = "";
-            } else if (result.includes("Bestaat al")) {
-                alert("⚠️ Let op: Dit ordernummer staat al in de planning!");
+
+            const text = await response.text();
+            
+            if(text === "OK") {
+                document.getElementById('orderForm').classList.add('hidden');
+                document.getElementById('successMsg').classList.remove('hidden');
             } else {
-                alert("❌ Fout van server: " + result);
+                alert("Fout bij opslaan: " + text);
+                btn.innerHTML = "🚀 Opslaan & Inplannen";
+                btn.disabled = false;
+                btn.classList.replace("bg-gray-400", "bg-blue-600");
             }
-            btn.disabled = false; btn.innerText = "✅ Opslaan & Plannen"; 
-        })
-        .catch(err => { 
+        } catch(err) {
             clearTimeout(timeoutId);
             if (err.name === 'AbortError') {
-                alert("❌ Timeout: De verbinding is te traag. Probeer het opnieuw.");
+                alert("❌ Server reageert niet (Timeout). Controleer in het planbord of hij toevallig is doorgekomen, of probeer het zo opnieuw.");
             } else {
-                alert("❌ Fout bij opslaan. Geen internet of toegang geweigerd door Google."); 
+                alert("❌ Netwerkfout. Controleer je internetverbinding.");
             }
-            btn.disabled = false; btn.innerText = "✅ Opslaan & Plannen"; 
-        });
+            btn.innerHTML = "🚀 Opslaan & Inplannen";
+            btn.disabled = false;
+            btn.classList.replace("bg-gray-400", "bg-blue-600");
+        }
     });
+
+    setType('Montage');
 </script>
+
 </body>
 </html>
