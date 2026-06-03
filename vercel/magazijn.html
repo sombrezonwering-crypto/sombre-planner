@@ -21,10 +21,12 @@
         .status-deels { background-color: #fef9c3; color: #a16207; }
         .status-service { background-color: #bfdbfe; color: #1e3a8a; }
         
+        /* Nieuwe Geplande Kleuren! */
+        .status-definitief { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; } /* Groen voor Montage */
+        .status-service-gepland { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; } /* Blauw voor Service */
+        
         #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
         .flatpickr-calendar { margin: 0 auto; box-shadow: none !important; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
-        
-        /* Simpele pull-to-refresh indicator */
         #ptr-indicator { height: 0; overflow: hidden; transition: height 0.2s; text-align: center; color: #6b7280; font-weight: bold; }
     </style>
 </head>
@@ -57,6 +59,7 @@
 
         <div class="flex overflow-x-auto gap-2 pb-2" id="filter-buttons">
             <button onclick="setFilter('Alles')" class="filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">Alles Tonen</button>
+            <button onclick="setFilter('Gepland')" class="filter-btn bg-green-100 text-green-800 hover:bg-green-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-green-200">✅ Gepland Klaarzetten</button>
             <button onclick="setFilter('Service & Spoed')" class="filter-btn bg-red-100 text-red-800 border border-red-200 hover:bg-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">🛠️ Service & Spoed</button>
             <button onclick="setFilter('Wacht op Prod.')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Wacht op Prod.</button>
             <button onclick="setFilter('Klant Bellen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Klant Bellen</button>
@@ -109,17 +112,10 @@
     const urlParams = new URLSearchParams(window.location.search);
     const urlOrderToLoad = urlParams.get('order'); 
 
-    // Helper functie: Voorkom XSS injecties
     function escapeHTML(str) {
         if (!str) return "";
         return str.toString().replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
+            tag => ({ '&': '&', '<': '<', '>': '>', "'": ''', '"': '"' }[tag] || tag)
         );
     }
 
@@ -134,7 +130,6 @@
                 if (selectedDates.length > 0) {
                     const options = { weekday: 'long', day: 'numeric', month: 'long' };
                     const mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', options);
-                    
                     let feedbackDiv = document.getElementById("kalenderFeedback");
                     feedbackDiv.innerText = `✅ Geselecteerd: ${mooieDatum}`;
                     feedbackDiv.classList.remove("hidden");
@@ -142,52 +137,31 @@
                 }
             }
         });
-        
         setupPullToRefresh();
         loadOrders();
     });
 
-    // PULL-TO-REFRESH LOGICA
     function setupPullToRefresh() {
         let touchstartY = 0;
         const ptr = document.getElementById('ptr-indicator');
         
-        document.addEventListener('touchstart', e => {
-            if (window.scrollY === 0) touchstartY = e.touches[0].clientY;
-        }, {passive: true});
-        
-        document.addEventListener('touchmove', e => {
-            if (window.scrollY === 0 && touchstartY > 0) {
-                let currentY = e.touches[0].clientY;
-                if (currentY - touchstartY > 60) {
-                    ptr.style.height = '40px';
-                }
-            }
-        }, {passive: true});
-
+        document.addEventListener('touchstart', e => { if (window.scrollY === 0) touchstartY = e.touches[0].clientY; }, {passive: true});
+        document.addEventListener('touchmove', e => { if (window.scrollY === 0 && touchstartY > 0) { let currentY = e.touches[0].clientY; if (currentY - touchstartY > 60) ptr.style.height = '40px'; } }, {passive: true});
         document.addEventListener('touchend', e => {
             if (window.scrollY === 0 && touchstartY > 0) {
                 let touchendY = e.changedTouches[0].clientY;
                 if (touchendY - touchstartY > 80) {
                     ptr.innerText = "🔄 Vernieuwen...";
-                    loadOrders().then(() => {
-                        ptr.style.height = '0';
-                        setTimeout(() => ptr.innerText = "⬇️ Laat los om te vernieuwen...", 300);
-                    });
-                } else {
-                    ptr.style.height = '0';
-                }
+                    loadOrders().then(() => { ptr.style.height = '0'; setTimeout(() => ptr.innerText = "⬇️ Laat los om te vernieuwen...", 300); });
+                } else { ptr.style.height = '0'; }
                 touchstartY = 0;
             }
         }, {passive: true});
     }
 
     function setSnelkeuzeDatum(dagenErbij) {
-        let doelDatum = new Date();
-        doelDatum.setDate(doelDatum.getDate() + dagenErbij);
-        if (kalenderInstance) {
-            kalenderInstance.setDate(doelDatum, true); 
-        }
+        let doelDatum = new Date(); doelDatum.setDate(doelDatum.getDate() + dagenErbij);
+        if (kalenderInstance) kalenderInstance.setDate(doelDatum, true); 
     }
 
     async function loadOrders() {
@@ -195,25 +169,19 @@
         document.getElementById('loader').innerText = "Orders inladen vanaf server... ⏳";
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s Timeout Beveiliging
+        const timeoutId = setTimeout(() => controller.abort(), 15000); 
 
         try {
             const res = await fetch(WEB_APP_URL + "?action=getOrders", { signal: controller.signal });
             clearTimeout(timeoutId);
-            
             allOrders = await res.json();
             document.getElementById('loader').classList.add('hidden');
-            if (urlOrderToLoad) {
-                document.getElementById('searchInput').value = escapeHTML(urlOrderToLoad);
-            }
+            if (urlOrderToLoad) document.getElementById('searchInput').value = escapeHTML(urlOrderToLoad);
             renderOrders();
         } catch(e) {
             clearTimeout(timeoutId);
-            if (e.name === 'AbortError') {
-                document.getElementById('loader').innerText = "❌ Server reageert niet (Timeout). Probeer het later opnieuw.";
-            } else {
-                document.getElementById('loader').innerText = "❌ Fout bij inladen. Controleer URL of internetverbinding.";
-            }
+            if (e.name === 'AbortError') document.getElementById('loader').innerText = "❌ Server reageert niet (Timeout). Probeer het later opnieuw.";
+            else document.getElementById('loader').innerText = "❌ Fout bij inladen. Controleer URL of internetverbinding.";
         }
     }
 
@@ -223,9 +191,11 @@
             if (btn.innerText.includes(status) || (status === 'Alles' && btn.innerText === 'Alles Tonen')) {
                 btn.className = "filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
                 if (status === 'Service & Spoed') btn.className = "filter-btn bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
+                if (status === 'Gepland') btn.className = "filter-btn bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
             } else {
                 btn.className = "filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent";
                 if (btn.innerText.includes('Service & Spoed')) btn.className = "filter-btn bg-red-50 text-red-800 hover:bg-red-100 border border-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap";
+                if (btn.innerText.includes('Gepland')) btn.className = "filter-btn bg-green-50 text-green-800 hover:bg-green-100 border border-green-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap";
             }
         });
         renderOrders();
@@ -239,6 +209,7 @@
         let visibleCount = 0;
         
         allOrders.forEach(order => {
+            // "Opgeleverd" wordt aan de backend al gefilterd, maar voor veiligheid:
             if (order.status === "Opgeleverd") return; 
 
             let matchStatus = false;
@@ -249,6 +220,7 @@
             else if (currentFilter === 'Klant Bellen' && orderStatLower.includes('bellen')) matchStatus = true;
             else if (currentFilter === 'Deels Binnen' && orderStatLower.includes('deels')) matchStatus = true;
             else if (currentFilter === 'Service & Spoed' && (orderStatLower.includes('service') || orderStatLower.includes('spoed'))) matchStatus = true;
+            else if (currentFilter === 'Gepland' && (orderStatLower.includes('definitief') || orderStatLower.includes('gepland'))) matchStatus = true;
 
             let matchSearch = true;
             if (searchTerm !== "") {
@@ -256,7 +228,8 @@
                 if (!textStr.includes(searchTerm)) matchSearch = false;
             }
 
-            if (matchStatus && matchSearch && order.status !== "Definitief") {
+            // FILTER FIX: We sluiten 'Definitief' NIET meer uit!
+            if (matchStatus && matchSearch) {
                 visibleCount++; 
                 container.appendChild(buildOrderCard(order));
             }
@@ -268,7 +241,6 @@
     }
 
     function buildOrderCard(order) {
-        // Veilig escapen van alle data vóór DOM injectie (Voorkomt XSS)
         const safeOrderNummer = escapeHTML(order.ordernummer);
         const safeNaam = escapeHTML(order.naam);
         const safeStatus = escapeHTML(order.status);
@@ -279,10 +251,13 @@
         let badgeClass = 'status-wacht';
         let orderStatLower = safeStatus.toLowerCase();
         
+        // Bepaal de juiste badge-kleur, nu mét Groen en Blauw!
         if (orderStatLower.includes('binnen')) badgeClass = 'status-binnen';
         if (orderStatLower.includes('bellen') || orderStatLower.includes('spoed')) badgeClass = 'status-bellen';
         if (orderStatLower.includes('deels')) badgeClass = 'status-deels';
-        if (orderStatLower.includes('service')) badgeClass = 'status-service';
+        if (orderStatLower.includes('service nodig') || orderStatLower === 'service') badgeClass = 'status-service';
+        if (orderStatLower.includes('definitief')) badgeClass = 'status-definitief';
+        if (orderStatLower.includes('service gepland')) badgeClass = 'status-service-gepland';
 
         let planTekst = "Nog niet ingepland";
         if (order.planningsBericht && (order.planningsBericht.includes("Gepland op") || order.planningsBericht.includes("Geplanned op") || order.planningsBericht.includes("Handmatig"))) {
@@ -290,28 +265,34 @@
         }
         
         let tijdTekst = "";
-        if (order.vasteTijd) {
-            tijdTekst = ` | 🕒 ${escapeHTML(order.vasteTijd)}`;
-        } else if (order.voorkeur && order.voorkeur !== "Geen") {
-            tijdTekst = ` | 🕒 ${escapeHTML(order.voorkeur)}`;
-        }
+        if (order.vasteTijd) tijdTekst = ` | 🕒 ${escapeHTML(order.vasteTijd)}`;
+        else if (order.voorkeur && order.voorkeur !== "Geen") tijdTekst = ` | 🕒 ${escapeHTML(order.voorkeur)}`;
 
         let bronPill = "";
         if (safeBron && safeBron !== "Sombre") {
             bronPill = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded ml-2 font-bold border border-blue-200">🏢 ${safeBron}</span>`;
         }
 
-        // Correcte Google Maps URL
         const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.adres || '')}`;
+        
+        // SLIMME KNOPPEN: Als het al gepland is, verbergen we Binnen/Deels/Akkoord!
+        const isReedsGepland = orderStatLower.includes('definitief') || orderStatLower.includes('service gepland');
+
+        let actieKnoppen = '';
+        if (!isReedsGepland) {
+            actieKnoppen = `
+                <button onclick="updateStatus('${safeOrderNummer}', 'markPartial', this)" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm border border-transparent">⚠️ Deels</button>
+                <button onclick="updateStatus('${safeOrderNummer}', 'markBinnen', this)" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm border border-transparent">✅ Binnen</button>
+                <button onclick="updateStatus('${safeOrderNummer}', 'markGreen', this)" class="col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm mt-1 border border-transparent">🤝 Akkoord (Maak Definitief)</button>
+            `;
+        }
 
         const div = document.createElement('div'); 
         div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
         div.innerHTML = `
             <div class="flex justify-between items-start mb-2">
                 <div>
-                    <div class="text-xs text-gray-500 font-bold mb-1 flex items-center">
-                        ORD: ${safeOrderNummer} ${bronPill}
-                    </div>
+                    <div class="text-xs text-gray-500 font-bold mb-1 flex items-center">ORD: ${safeOrderNummer} ${bronPill}</div>
                     <div class="text-lg font-extrabold text-gray-900">${safeNaam}</div>
                 </div>
                 <span class="status-badge ${badgeClass} text-center leading-tight">${safeStatus}</span>
@@ -321,20 +302,18 @@
                 📅 ${planTekst}${tijdTekst}
             </div>
 
-            <div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100">📦 ${safeProducten}</div>
+            <div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100 whitespace-pre-wrap">📦 ${safeProducten}</div>
             
             <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
-                <button onclick="updateStatus('${safeOrderNummer}', 'markPartial', this)" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm border border-transparent">⚠️ Deels</button>
-                <button onclick="updateStatus('${safeOrderNummer}', 'markBinnen', this)" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm border border-transparent">✅ Binnen</button>
+                ${actieKnoppen}
                 
-                <button onclick="updateStatus('${safeOrderNummer}', 'markGreen', this)" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm mt-1 border border-transparent">🤝 Akkoord</button>
-                <button onclick="openHerplanModal('${safeOrderNummer}')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded-lg font-bold text-sm mt-1 border border-purple-200">📅 Herplannen</button>
+                <button onclick="openHerplanModal('${safeOrderNummer}')" class="${isReedsGepland ? 'col-span-1' : 'col-span-2'} bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded-lg font-bold text-sm mt-1 border border-purple-200">📅 Herplannen</button>
                 
-                <a href="${mapUrl}" target="_blank" class="col-span-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-lg font-bold text-sm border border-gray-300 flex items-center justify-center mt-1 transition-colors">
-                    🗺️ Open Routeplanner
+                <a href="${mapUrl}" target="_blank" class="${isReedsGepland ? 'col-span-1' : 'col-span-2'} bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold text-sm border border-gray-300 flex items-center justify-center mt-1 transition-colors">
+                    🗺️ Navigeer
                 </a>
 
-                <button onclick="updateStatus('${safeOrderNummer}', 'markFinished', this)" class="col-span-2 bg-gray-800 hover:bg-black text-white py-2.5 rounded-lg font-bold text-sm mt-1 border border-gray-700 transition-colors">
+                <button onclick="updateStatus('${safeOrderNummer}', 'markFinished', this)" class="col-span-2 bg-gray-800 hover:bg-black text-white py-3 rounded-lg font-bold text-sm mt-2 border border-gray-700 transition-colors shadow-md">
                     🏁 Klus Afronden (Verberg)
                 </button>
             </div>
@@ -352,12 +331,10 @@
         const isCriticalAction = (action === 'markFinished' || action === 'markGreen');
         const oldBtnText = btnElement.innerText;
 
-        // Bij kritieke acties (waarbij de kaart verdwijnt of groen wordt) wachten we de backend af
         if (isCriticalAction) {
             btnElement.innerText = "⏳...";
             btnElement.disabled = true;
         } else {
-            // Optimistische update voor minder kritieke statussen
             allOrders.forEach(o => {
                 if(o.ordernummer === ordernummer) {
                     if (action === 'markBinnen') o.status = "Producten Binnen (Klant Bellen)";
@@ -372,7 +349,6 @@
             const resultaat = await res.json();
 
             if (resultaat.status === "ok" && isCriticalAction) {
-                // Pas toepassen in state na succesvolle server-response
                 allOrders.forEach(o => {
                     if(o.ordernummer === ordernummer) {
                         if (action === 'markGreen') o.status = "Definitief"; 
@@ -382,32 +358,19 @@
                 renderOrders();
             } else if (resultaat.status !== "ok") {
                 alert("❌ Fout vanuit de backend: " + resultaat.message);
-                if (isCriticalAction) {
-                    btnElement.innerText = oldBtnText;
-                    btnElement.disabled = false;
-                }
+                if (isCriticalAction) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
             }
         } catch(e) {
             alert("❌ Netwerkfout bij het updaten van de status.");
-            if (isCriticalAction) {
-                btnElement.innerText = oldBtnText;
-                btnElement.disabled = false;
-            }
+            if (isCriticalAction) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
         }
     }
 
     function openHerplanModal(ordernummer) {
         document.getElementById('herplanOrderNr').value = ordernummer;
-        if (kalenderInstance) {
-            kalenderInstance.setDate(new Date(), false); 
-        }
-        
+        if (kalenderInstance) kalenderInstance.setDate(new Date(), false); 
         let feedbackDiv = document.getElementById("kalenderFeedback");
-        if (feedbackDiv) {
-            feedbackDiv.classList.add("hidden");
-            feedbackDiv.style.opacity = "0"; 
-        }
-
+        if (feedbackDiv) { feedbackDiv.classList.add("hidden"); feedbackDiv.style.opacity = "0"; }
         document.getElementById('herplanModal').classList.remove('hidden');
     }
 
@@ -423,7 +386,6 @@
         
         if (!datum) { alert("⚠️ Selecteer a.u.b. een nieuwe datum!"); return; }
         
-        // FIX: Gebruik de specifieke ID selector
         const btn = document.getElementById('herplanSubmitBtn');
         const oudeTekst = btn.innerText;
         btn.innerText = "⏳ Bezig met verplaatsen...";
@@ -465,12 +427,9 @@
         setFilter('Alles'); 
     }
     
-    // Gedebouncete logging voor debuggen indien nodig
     function onScanFailure(error) {
         clearTimeout(scanErrorTimeout);
-        scanErrorTimeout = setTimeout(() => {
-            console.debug("Scan fout/bezig:", error);
-        }, 1000);
+        scanErrorTimeout = setTimeout(() => { console.debug("Scan fout/bezig:", error); }, 1000);
     }
 </script>
 </body>
