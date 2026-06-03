@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazijn Pro | Sombre</title>
+    <title>Magazijn Pro | Sombre ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     
@@ -12,24 +12,32 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/nl.js"></script>
 
     <style>
-        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior-y: contain; }
         .hidden { display: none !important; }
         .status-badge { font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
         .status-binnen { background-color: #fef08a; color: #854d0e; } 
         .status-wacht { background-color: #e5e7eb; color: #374151; }  
         .status-bellen { background-color: #fecaca; color: #991b1b; } 
-        .status-deels { background-color: #fef9c3; color: #a16207; }  
-        #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
+        .status-deels { background-color: #fef9c3; color: #a16207; }
+        .status-service { background-color: #bfdbfe; color: #1e3a8a; }
         
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
         .flatpickr-calendar { margin: 0 auto; box-shadow: none !important; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
+        
+        /* Simpele pull-to-refresh indicator */
+        #ptr-indicator { height: 0; overflow: hidden; transition: height 0.2s; text-align: center; color: #6b7280; font-weight: bold; }
     </style>
 </head>
 <body class="p-4">
 
-    <div class="max-w-2xl mx-auto mb-6 flex justify-between items-center">
+    <div id="ptr-indicator" class="flex items-center justify-center text-sm">
+        ⬇️ Laat los om te vernieuwen...
+    </div>
+
+    <div class="max-w-2xl mx-auto mb-6 flex justify-between items-center mt-2">
         <div>
             <h1 class="text-3xl font-extrabold text-gray-800">Magazijn & Intake</h1>
-            <p class="text-gray-500">Sombre Zonwering Orders</p>
+            <p class="text-gray-500">Sombre ERP Systeem</p>
         </div>
         <a href="intake-order.html" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors text-sm shadow-sm flex items-center">
             ⬅️ Order Intake
@@ -49,9 +57,10 @@
 
         <div class="flex overflow-x-auto gap-2 pb-2" id="filter-buttons">
             <button onclick="setFilter('Alles')" class="filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">Alles Tonen</button>
-            <button onclick="setFilter('Wacht op Producten')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Wacht op Prod.</button>
-            <button onclick="setFilter('Klant Bellen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Klant Bellen</button>
-            <button onclick="setFilter('Deels Binnen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Deels Binnen</button>
+            <button onclick="setFilter('Service & Spoed')" class="filter-btn bg-red-100 text-red-800 border border-red-200 hover:bg-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">🛠️ Service & Spoed</button>
+            <button onclick="setFilter('Wacht op Prod.')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Wacht op Prod.</button>
+            <button onclick="setFilter('Klant Bellen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Klant Bellen</button>
+            <button onclick="setFilter('Deels Binnen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Deels Binnen</button>
         </div>
     </div>
 
@@ -83,21 +92,36 @@
             
             <div class="flex gap-2">
                 <button onclick="sluitHerplanModal()" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg border border-gray-300 text-sm transition-colors">Annuleer</button>
-                <button onclick="verstuurHerplanning()" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md text-sm transition-colors">✅ Verplaats Order</button>
+                <button id="herplanSubmitBtn" onclick="verstuurHerplanning()" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md text-sm transition-colors">✅ Verplaats Order</button>
             </div>
         </div>
     </div>
 
 <script>
-    // ZORG DAT DEZE URL KLOPT MET JE EIGEN GOOGLE APPS SCRIPT URL!
+    // VUL HIER JOUW NIEUWE GOOGLE APPS SCRIPT URL IN
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
     
     let allOrders = [];
     let currentFilter = 'Alles';
     let html5QrcodeScanner = null;
     let kalenderInstance = null; 
+    let scanErrorTimeout = null;
     const urlParams = new URLSearchParams(window.location.search);
     const urlOrderToLoad = urlParams.get('order'); 
+
+    // Helper functie: Voorkom XSS injecties
+    function escapeHTML(str) {
+        if (!str) return "";
+        return str.toString().replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
 
     document.addEventListener("DOMContentLoaded", function() {
         kalenderInstance = flatpickr("#visueleKalenderInput", {
@@ -118,7 +142,45 @@
                 }
             }
         });
+        
+        setupPullToRefresh();
+        loadOrders();
     });
+
+    // PULL-TO-REFRESH LOGICA
+    function setupPullToRefresh() {
+        let touchstartY = 0;
+        const ptr = document.getElementById('ptr-indicator');
+        
+        document.addEventListener('touchstart', e => {
+            if (window.scrollY === 0) touchstartY = e.touches[0].clientY;
+        }, {passive: true});
+        
+        document.addEventListener('touchmove', e => {
+            if (window.scrollY === 0 && touchstartY > 0) {
+                let currentY = e.touches[0].clientY;
+                if (currentY - touchstartY > 60) {
+                    ptr.style.height = '40px';
+                }
+            }
+        }, {passive: true});
+
+        document.addEventListener('touchend', e => {
+            if (window.scrollY === 0 && touchstartY > 0) {
+                let touchendY = e.changedTouches[0].clientY;
+                if (touchendY - touchstartY > 80) {
+                    ptr.innerText = "🔄 Vernieuwen...";
+                    loadOrders().then(() => {
+                        ptr.style.height = '0';
+                        setTimeout(() => ptr.innerText = "⬇️ Laat los om te vernieuwen...", 300);
+                    });
+                } else {
+                    ptr.style.height = '0';
+                }
+                touchstartY = 0;
+            }
+        }, {passive: true});
+    }
 
     function setSnelkeuzeDatum(dagenErbij) {
         let doelDatum = new Date();
@@ -129,14 +191,29 @@
     }
 
     async function loadOrders() {
+        document.getElementById('loader').classList.remove('hidden');
+        document.getElementById('loader').innerText = "Orders inladen vanaf server... ⏳";
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s Timeout Beveiliging
+
         try {
-            const res = await fetch(WEB_APP_URL + "?action=getOrders");
+            const res = await fetch(WEB_APP_URL + "?action=getOrders", { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
             allOrders = await res.json();
             document.getElementById('loader').classList.add('hidden');
-            if (urlOrderToLoad) document.getElementById('searchInput').value = urlOrderToLoad;
+            if (urlOrderToLoad) {
+                document.getElementById('searchInput').value = escapeHTML(urlOrderToLoad);
+            }
             renderOrders();
         } catch(e) {
-            document.getElementById('loader').innerText = "Fout bij inladen. Controleer URL.";
+            clearTimeout(timeoutId);
+            if (e.name === 'AbortError') {
+                document.getElementById('loader').innerText = "❌ Server reageert niet (Timeout). Probeer het later opnieuw.";
+            } else {
+                document.getElementById('loader').innerText = "❌ Fout bij inladen. Controleer URL of internetverbinding.";
+            }
         }
     }
 
@@ -144,9 +221,11 @@
         currentFilter = status;
         document.querySelectorAll('.filter-btn').forEach(btn => {
             if (btn.innerText.includes(status) || (status === 'Alles' && btn.innerText === 'Alles Tonen')) {
-                btn.className = "filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm";
+                btn.className = "filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
+                if (status === 'Service & Spoed') btn.className = "filter-btn bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
             } else {
-                btn.className = "filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap";
+                btn.className = "filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent";
+                if (btn.innerText.includes('Service & Spoed')) btn.className = "filter-btn bg-red-50 text-red-800 hover:bg-red-100 border border-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap";
             }
         });
         renderOrders();
@@ -158,11 +237,18 @@
         const container = document.getElementById('order-container'); container.innerHTML = '';
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let visibleCount = 0;
+        
         allOrders.forEach(order => {
+            if (order.status === "Opgeleverd") return; 
+
             let matchStatus = false;
+            let orderStatLower = order.status.toLowerCase();
+
             if (currentFilter === 'Alles') matchStatus = true;
-            else if (currentFilter === 'Klant Bellen' && order.status.includes('Klant Bellen')) matchStatus = true;
-            else if (order.status === currentFilter) matchStatus = true;
+            else if (currentFilter === 'Wacht op Prod.' && orderStatLower.includes('wacht')) matchStatus = true;
+            else if (currentFilter === 'Klant Bellen' && orderStatLower.includes('bellen')) matchStatus = true;
+            else if (currentFilter === 'Deels Binnen' && orderStatLower.includes('deels')) matchStatus = true;
+            else if (currentFilter === 'Service & Spoed' && (orderStatLower.includes('service') || orderStatLower.includes('spoed'))) matchStatus = true;
 
             let matchSearch = true;
             if (searchTerm !== "") {
@@ -171,74 +257,143 @@
             }
 
             if (matchStatus && matchSearch && order.status !== "Definitief") {
-                visibleCount++; container.appendChild(buildOrderCard(order));
+                visibleCount++; 
+                container.appendChild(buildOrderCard(order));
             }
         });
-        if (visibleCount === 0) container.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold">Geen openstaande orders.</div>`;
+
+        if (visibleCount === 0) {
+            container.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold">Geen openstaande orders gevonden in dit overzicht.</div>`;
+        }
     }
 
     function buildOrderCard(order) {
+        // Veilig escapen van alle data vóór DOM injectie (Voorkomt XSS)
+        const safeOrderNummer = escapeHTML(order.ordernummer);
+        const safeNaam = escapeHTML(order.naam);
+        const safeStatus = escapeHTML(order.status);
+        const safeProducten = escapeHTML(order.producten);
+        const safeBron = escapeHTML(order.bron);
+        const safeAdres = escapeHTML(order.adres);
+        
         let badgeClass = 'status-wacht';
-        if (order.status.includes('Binnen')) badgeClass = 'status-binnen';
-        if (order.status.includes('Klant Bellen')) badgeClass = 'status-bellen';
-        if (order.status.includes('Deels')) badgeClass = 'status-deels';
+        let orderStatLower = safeStatus.toLowerCase();
+        
+        if (orderStatLower.includes('binnen')) badgeClass = 'status-binnen';
+        if (orderStatLower.includes('bellen') || orderStatLower.includes('spoed')) badgeClass = 'status-bellen';
+        if (orderStatLower.includes('deels')) badgeClass = 'status-deels';
+        if (orderStatLower.includes('service')) badgeClass = 'status-service';
 
         let planTekst = "Nog niet ingepland";
-        
-        // Robuuste check voor beide varianten van 'Gepland'
-        if (order.planningsBericht && (order.planningsBericht.includes("Gepland op") || order.planningsBericht.includes("Geplanned op"))) {
-            planTekst = order.planningsBericht.replace("Gepland op ", "").replace("Geplanned op ", "").split("\n")[0].replace(/'/g, "");
+        if (order.planningsBericht && (order.planningsBericht.includes("Gepland op") || order.planningsBericht.includes("Geplanned op") || order.planningsBericht.includes("Handmatig"))) {
+            planTekst = escapeHTML(order.planningsBericht.replace("Gepland op ", "").replace("Geplanned op ", "").split("\n")[0].replace(/'/g, ""));
         }
         
         let tijdTekst = "";
         if (order.vasteTijd) {
-            tijdTekst = ` | 🕒 ${order.vasteTijd}`;
+            tijdTekst = ` | 🕒 ${escapeHTML(order.vasteTijd)}`;
         } else if (order.voorkeur && order.voorkeur !== "Geen") {
-            tijdTekst = ` | 🕒 ${order.voorkeur}`;
+            tijdTekst = ` | 🕒 ${escapeHTML(order.voorkeur)}`;
         }
 
-        const div = document.createElement('div'); div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
+        let bronPill = "";
+        if (safeBron && safeBron !== "Sombre") {
+            bronPill = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded ml-2 font-bold border border-blue-200">🏢 ${safeBron}</span>`;
+        }
+
+        // Correcte Google Maps URL
+        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.adres || '')}`;
+
+        const div = document.createElement('div'); 
+        div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
         div.innerHTML = `
             <div class="flex justify-between items-start mb-2">
                 <div>
-                    <div class="text-xs text-gray-500 font-bold mb-1">ORD: ${order.ordernummer}</div>
-                    <div class="text-lg font-extrabold text-gray-900">${order.naam}</div>
+                    <div class="text-xs text-gray-500 font-bold mb-1 flex items-center">
+                        ORD: ${safeOrderNummer} ${bronPill}
+                    </div>
+                    <div class="text-lg font-extrabold text-gray-900">${safeNaam}</div>
                 </div>
-                <span class="status-badge ${badgeClass}">${order.status}</span>
+                <span class="status-badge ${badgeClass} text-center leading-tight">${safeStatus}</span>
             </div>
             
             <div class="text-sm text-blue-800 bg-blue-50 p-2 rounded-lg border border-blue-100 font-bold mb-3 flex items-center shadow-inner">
                 📅 ${planTekst}${tijdTekst}
             </div>
 
-            <div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100">📦 ${order.producten}</div>
+            <div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100">📦 ${safeProducten}</div>
             
             <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
-                <button onclick="updateStatus('${order.ordernummer}', 'markPartial')" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm">⚠️ Deels</button>
-                <button onclick="updateStatus('${order.ordernummer}', 'markBinnen')" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm">✅ Binnen</button>
+                <button onclick="updateStatus('${safeOrderNummer}', 'markPartial', this)" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm border border-transparent">⚠️ Deels</button>
+                <button onclick="updateStatus('${safeOrderNummer}', 'markBinnen', this)" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm border border-transparent">✅ Binnen</button>
                 
-                <button onclick="updateStatus('${order.ordernummer}', 'markGreen')" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm mt-1">🤝 Akkoord</button>
-                <button onclick="openHerplanModal('${order.ordernummer}')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded-lg font-bold text-sm mt-1 border border-purple-200">📅 Herplannen</button>
+                <button onclick="updateStatus('${safeOrderNummer}', 'markGreen', this)" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm mt-1 border border-transparent">🤝 Akkoord</button>
+                <button onclick="openHerplanModal('${safeOrderNummer}')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded-lg font-bold text-sm mt-1 border border-purple-200">📅 Herplannen</button>
+                
+                <a href="${mapUrl}" target="_blank" class="col-span-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-lg font-bold text-sm border border-gray-300 flex items-center justify-center mt-1 transition-colors">
+                    🗺️ Open Routeplanner
+                </a>
+
+                <button onclick="updateStatus('${safeOrderNummer}', 'markFinished', this)" class="col-span-2 bg-gray-800 hover:bg-black text-white py-2.5 rounded-lg font-bold text-sm mt-1 border border-gray-700 transition-colors">
+                    🏁 Klus Afronden (Verberg)
+                </button>
             </div>
-        `; return div;
+        `; 
+        return div;
     }
 
-    async function updateStatus(ordernummer, action) {
+    async function updateStatus(ordernummer, action, btnElement) {
         let loc = "";
         if(action === 'markBinnen' || action === 'markPartial') {
             loc = prompt(`Magazijn Locatie (optioneel) voor ORD ${ordernummer}:`);
             if (loc === null) return;
         }
+
+        const isCriticalAction = (action === 'markFinished' || action === 'markGreen');
+        const oldBtnText = btnElement.innerText;
+
+        // Bij kritieke acties (waarbij de kaart verdwijnt of groen wordt) wachten we de backend af
+        if (isCriticalAction) {
+            btnElement.innerText = "⏳...";
+            btnElement.disabled = true;
+        } else {
+            // Optimistische update voor minder kritieke statussen
+            allOrders.forEach(o => {
+                if(o.ordernummer === ordernummer) {
+                    if (action === 'markBinnen') o.status = "Producten Binnen (Klant Bellen)";
+                    if (action === 'markPartial') o.status = "Deels Binnen";
+                }
+            });
+            renderOrders();
+        }
         
-        allOrders.forEach(o => {
-            if(o.ordernummer === ordernummer) {
-                if (action === 'markBinnen') o.status = "Producten Binnen (Klant Bellen)";
-                if (action === 'markPartial') o.status = "Deels Binnen";
-                if (action === 'markGreen') o.status = "Definitief"; 
+        try {
+            const res = await fetch(WEB_APP_URL + "?action=" + action + "&ordernummer=" + encodeURIComponent(ordernummer) + "&locatieInfo=" + encodeURIComponent(loc || ""));
+            const resultaat = await res.json();
+
+            if (resultaat.status === "ok" && isCriticalAction) {
+                // Pas toepassen in state na succesvolle server-response
+                allOrders.forEach(o => {
+                    if(o.ordernummer === ordernummer) {
+                        if (action === 'markGreen') o.status = "Definitief"; 
+                        if (action === 'markFinished') o.status = "Opgeleverd"; 
+                    }
+                });
+                renderOrders();
+            } else if (resultaat.status !== "ok") {
+                alert("❌ Fout vanuit de backend: " + resultaat.message);
+                if (isCriticalAction) {
+                    btnElement.innerText = oldBtnText;
+                    btnElement.disabled = false;
+                }
             }
-        });
-        renderOrders();
-        await fetch(WEB_APP_URL + "?action=" + action + "&ordernummer=" + ordernummer + "&locatieInfo=" + encodeURIComponent(loc || ""));
+        } catch(e) {
+            alert("❌ Netwerkfout bij het updaten van de status.");
+            if (isCriticalAction) {
+                btnElement.innerText = oldBtnText;
+                btnElement.disabled = false;
+            }
+        }
     }
 
     function openHerplanModal(ordernummer) {
@@ -261,7 +416,6 @@
         document.getElementById('nieuweTijd').value = '';
     }
 
-    // FIX: De herstelde Herplan-functie met daadwerkelijke foutafhandeling
     async function verstuurHerplanning() {
         const ordernummer = document.getElementById('herplanOrderNr').value;
         const datum = kalenderInstance ? kalenderInstance.input.value : "";
@@ -269,30 +423,26 @@
         
         if (!datum) { alert("⚠️ Selecteer a.u.b. een nieuwe datum!"); return; }
         
-        // Knop status updaten zodat gebruiker weet dat de server bezig is
-        const btn = document.querySelector('#herplanModal button:last-child');
+        // FIX: Gebruik de specifieke ID selector
+        const btn = document.getElementById('herplanSubmitBtn');
         const oudeTekst = btn.innerText;
-        btn.innerText = "⏳ Bezig met plannen...";
+        btn.innerText = "⏳ Bezig met verplaatsen...";
         btn.disabled = true;
         
         try {
-            // Wacht daadwerkelijk op het antwoord van Google Sheets
-            const response = await fetch(WEB_APP_URL + "?action=herplanDefinitief&ordernummer=" + ordernummer + "&nieuweDatum=" + datum + "&nieuweTijd=" + tijd);
+            const response = await fetch(WEB_APP_URL + "?action=herplanDefinitief&ordernummer=" + encodeURIComponent(ordernummer) + "&nieuweDatum=" + encodeURIComponent(datum) + "&nieuweTijd=" + encodeURIComponent(tijd));
             const resultaat = await response.json(); 
             
             if (resultaat.status === "ok") {
-                // Succes! Nu pas de modal sluiten en de UI updaten
                 sluitHerplanModal();
                 allOrders.forEach(o => { if(o.ordernummer === ordernummer) o.status = "Definitief"; });
                 renderOrders();
             } else {
-                // De sheet weigert de order (bijv. wegens limieten) -> Toon de ECHTE fout!
-                alert("❌ De planning is geweigerd door de sheet:\n" + (resultaat.message || resultaat.bericht || "Onbekende fout"));
+                alert("❌ De planning is geweigerd door de sheet:\n" + escapeHTML(resultaat.message || resultaat.bericht || "Onbekende fout"));
             }
         } catch(e) {
             alert("❌ Netwerkfout. Controleer je internetverbinding.");
         } finally {
-            // Herstel de knop
             btn.innerText = oudeTekst;
             btn.disabled = false;
         }
@@ -303,11 +453,25 @@
         if (!html5QrcodeScanner) html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 100} }, false);
         html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     }
-    function stopScanner() { if (html5QrcodeScanner) html5QrcodeScanner.clear(); document.getElementById('scanner-container').classList.add('hidden'); }
-    function onScanSuccess(decodedText) { stopScanner(); document.getElementById('searchInput').value = decodedText; setFilter('Alles'); }
-    function onScanFailure(error) {}
-
-    loadOrders();
+    
+    function stopScanner() { 
+        if (html5QrcodeScanner) html5QrcodeScanner.clear(); 
+        document.getElementById('scanner-container').classList.add('hidden'); 
+    }
+    
+    function onScanSuccess(decodedText) { 
+        stopScanner(); 
+        document.getElementById('searchInput').value = escapeHTML(decodedText); 
+        setFilter('Alles'); 
+    }
+    
+    // Gedebouncete logging voor debuggen indien nodig
+    function onScanFailure(error) {
+        clearTimeout(scanErrorTimeout);
+        scanErrorTimeout = setTimeout(() => {
+            console.debug("Scan fout/bezig:", error);
+        }, 1000);
+    }
 </script>
 </body>
 </html>
