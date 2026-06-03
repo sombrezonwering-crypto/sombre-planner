@@ -10,6 +10,7 @@
         .hidden { display: none !important; }
         .toggle-btn.active { background-color: #1a73e8; color: white; border-color: #1a73e8; }
         .toggle-btn { background-color: #fff; color: #4b5563; border-color: #d1d5db; }
+        .transition-bg { transition: background-color 0.5s ease, border-color 0.5s ease; }
     </style>
 </head>
 <body class="p-4">
@@ -59,15 +60,15 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Postcode *</label>
-                        <input type="text" id="postcode" required placeholder="Bijv. 1312 AB" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 uppercase">
+                        <input type="text" id="postcode" required placeholder="Bijv. 1312 AB" onblur="haalAdresOp()" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 uppercase">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Huisnummer *</label>
-                        <input type="text" id="huisnummer" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                        <input type="text" id="huisnummer" required onblur="haalAdresOp()" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-gray-700 mb-1">Straat & Woonplaats *</label>
-                        <input type="text" id="straatEnWoonplaats" required class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                        <input type="text" id="straatEnWoonplaats" required placeholder="Wordt automatisch ingevuld..." class="transition-bg w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
                     </div>
                 </div>
             </div>
@@ -98,16 +99,18 @@
 
             <div id="serviceSectie" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 mb-3">🛠️ Service Calculator</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Notion Ordernummer *</label>
                         <input type="text" id="ordernummerService" placeholder="Bijv. 251931" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
                     </div>
-                    
-                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
+                </div>
+                
+                <div id="takenContainer" class="space-y-3 mb-4">
+                    <div class="service-task bg-white border border-gray-200 p-3 rounded-lg flex flex-col md:flex-row gap-2 items-end">
+                        <div class="flex-1 w-full">
                             <label class="block text-xs font-bold text-gray-700 mb-1">Type Klus</label>
-                            <select id="srvType" onchange="calculateServiceTime()" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                            <select onchange="calculateServiceTime()" class="srvType w-full bg-white border border-gray-300 rounded p-2 text-sm focus:ring-blue-500">
                                 <option value="motor">Motor Vervangen</option>
                                 <option value="doek">Doek Vervangen</option>
                                 <option value="lamellen">Lamellen Vervangen/Schuiven</option>
@@ -115,34 +118,41 @@
                                 <option value="inregelen">Inregelen (Hub/AB)</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="flex-1 w-full">
                             <label class="block text-xs font-bold text-gray-700 mb-1">Product</label>
-                            <select id="srvProduct" onchange="calculateServiceTime()" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                            <select onchange="calculateServiceTime()" class="srvProduct w-full bg-white border border-gray-300 rounded p-2 text-sm focus:ring-blue-500">
                                 <option value="screen_rolluik">Screen / Rolluik</option>
                                 <option value="zonnescherm">Zonnescherm</option>
                                 <option value="nvt">N.v.t. / Overig</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="flex-1 w-full">
                             <label class="block text-xs font-bold text-gray-700 mb-1">Aandrijving</label>
-                            <select id="srvVoeding" onchange="calculateServiceTime()" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500">
+                            <select onchange="calculateServiceTime()" class="srvVoeding w-full bg-white border border-gray-300 rounded p-2 text-sm focus:ring-blue-500">
                                 <option value="solar">Solar</option>
                                 <option value="stroom">Stroom (230V)</option>
-                                <option value="hand">Handbediend (Band/Koord)</option>
+                                <option value="hand">Handbediend (Band)</option>
                                 <option value="nvt">N.v.t.</option>
                             </select>
                         </div>
+                        <button type="button" onclick="verwijderKlus(this)" class="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-2 rounded border border-red-200 font-bold text-sm w-full md:w-auto h-[38px] flex items-center justify-center">❌</button>
                     </div>
+                </div>
 
-                    <div class="md:col-span-2 bg-blue-100 border border-blue-200 rounded-lg p-3 flex justify-between items-center">
-                        <span class="text-sm font-bold text-blue-900">Berekende Servicetijd:</span>
-                        <span id="displayServiceTijd" class="text-lg font-extrabold text-blue-900">30 min</span>
-                    </div>
+                <div class="mb-4">
+                    <button type="button" onclick="voegKlusToe()" class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-4 rounded-lg border border-blue-200 text-sm transition-colors flex items-center">
+                        ➕ Extra klus toevoegen
+                    </button>
+                </div>
 
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-700 mb-1">Klachtomschrijving / Onderdelen *</label>
-                        <textarea id="klachtService" rows="2" placeholder="Wat is er defect? Welke onderdelen zijn verstuurd?" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500"></textarea>
-                    </div>
+                <div class="bg-blue-100 border border-blue-200 rounded-lg p-3 flex justify-between items-center mb-4">
+                    <span class="text-sm font-bold text-blue-900">Berekende Totaaltijd:</span>
+                    <span id="displayServiceTijd" class="text-xl font-extrabold text-blue-900">30 min</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Klachtomschrijving / Onderdelen *</label>
+                    <textarea id="klachtService" rows="2" placeholder="Wat is er defect? Welke onderdelen zijn verstuurd?" class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500"></textarea>
                 </div>
             </div>
 
@@ -195,7 +205,32 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
     let isService = false;
-    let berekendeServiceTijd = 30;
+    let totaleServiceTijd = 30;
+
+    // --- PDOK POSTCODE API INTEGRATIE ---
+    async function haalAdresOp() {
+        const pcInput = document.getElementById('postcode').value.replace(/\s+/g, '').toUpperCase();
+        const hnInput = document.getElementById('huisnummer').value.trim();
+        const straatVeld = document.getElementById('straatEnWoonplaats');
+
+        if (/^[1-9][0-9]{3}[A-Z]{2}$/.test(pcInput) && hnInput !== "") {
+            try {
+                const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${pcInput}+${hnInput}&rows=1`);
+                const data = await res.json();
+                
+                if (data.response.docs.length > 0) {
+                    const doc = data.response.docs[0];
+                    if (doc.straatnaam && doc.woonplaatsnaam) {
+                        straatVeld.value = `${doc.straatnaam}, ${doc.woonplaatsnaam}`;
+                        straatVeld.classList.add('bg-green-100', 'border-green-400');
+                        setTimeout(() => straatVeld.classList.remove('bg-green-100', 'border-green-400'), 2000);
+                    }
+                }
+            } catch (e) {
+                console.error("Adres ophalen mislukt:", e);
+            }
+        }
+    }
 
     function toggleVasteTijd() {
         const val = document.getElementById('tijdVoorkeur').value;
@@ -239,39 +274,95 @@
         }
     }
 
+    // --- DYNAMISCHE TAKEN LOGICA ---
+    function voegKlusToe() {
+        const container = document.getElementById('takenContainer');
+        const template = `
+            <div class="service-task bg-white border border-gray-200 p-3 rounded-lg flex flex-col md:flex-row gap-2 items-end mt-3">
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Type Klus</label>
+                    <select onchange="calculateServiceTime()" class="srvType w-full bg-white border border-gray-300 rounded p-2 text-sm focus:ring-blue-500">
+                        <option value="motor">Motor Vervangen</option>
+                        <option value="doek">Doek Vervangen</option>
+                        <option value="lamellen">Lamellen Vervangen/Schuiven</option>
+                        <option value="armen">Armen Vervangen</option>
+                        <option value="inregelen">Inregelen (Hub/AB)</option>
+                    </select>
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Product</label>
+                    <select onchange="calculateServiceTime()" class="srvProduct w-full bg-white border border-gray-300 rounded p-2 text-sm focus:ring-blue-500">
+                        <option value="screen_rolluik">Screen / Rolluik</option>
+                        <option value="zonnescherm">Zonnescherm</option>
+                        <option value="nvt">N.v.t. / Overig</option>
+                    </select>
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Aandrijving</label>
+                    <select onchange="calculateServiceTime()" class="srvVoeding w-full bg-white border border-gray-300 rounded p-2 text-sm focus:ring-blue-500">
+                        <option value="solar">Solar</option>
+                        <option value="stroom">Stroom (230V)</option>
+                        <option value="hand">Handbediend (Band)</option>
+                        <option value="nvt">N.v.t.</option>
+                    </select>
+                </div>
+                <button type="button" onclick="verwijderKlus(this)" class="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-2 rounded border border-red-200 font-bold text-sm w-full md:w-auto h-[38px] flex items-center justify-center">❌</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', template);
+        calculateServiceTime();
+    }
+
+    function verwijderKlus(btnElement) {
+        const rows = document.querySelectorAll('.service-task');
+        if (rows.length === 1) {
+            alert("Je moet minimaal 1 klus in de lijst laten staan.");
+            return;
+        }
+        btnElement.closest('.service-task').remove();
+        calculateServiceTime();
+    }
+
     function calculateServiceTime() {
-        const type = document.getElementById('srvType').value;
-        const prod = document.getElementById('srvProduct').value;
-        const voeding = document.getElementById('srvVoeding').value;
-        let t = 30;
+        let total = 0;
+        let handbediendWaarschuwing = false;
 
-        if (type === 'motor' && voeding === 'hand') {
-            alert("⚠️ Let op: Een handbediend scherm heeft geen motor. We berekenen 60 minuten voor het vervangen van band/koord.");
-        }
+        const taken = document.querySelectorAll('.service-task');
+        taken.forEach(taak => {
+            const type = taak.querySelector('.srvType').value;
+            const prod = taak.querySelector('.srvProduct').value;
+            const voeding = taak.querySelector('.srvVoeding').value;
+            let rowTime = 30;
 
-        if (type === 'motor') {
-            if (voeding === 'hand') t = 60;
-            else if (prod === 'zonnescherm') {
-                t = (voeding === 'stroom') ? 60 : 45;
-            } else {
-                t = (voeding === 'stroom') ? 45 : 30;
+            if (type === 'motor') {
+                if (voeding === 'hand') {
+                    rowTime = 60;
+                    handbediendWaarschuwing = true;
+                }
+                else if (prod === 'zonnescherm') {
+                    rowTime = (voeding === 'stroom') ? 60 : 45;
+                } else {
+                    rowTime = (voeding === 'stroom') ? 45 : 30;
+                }
+            } 
+            else if (type === 'doek') {
+                rowTime = (prod === 'zonnescherm') ? 60 : 45;
             }
-        } 
-        else if (type === 'doek') {
-            t = (prod === 'zonnescherm') ? 60 : 45;
-        }
-        else if (type === 'lamellen') t = 45;
-        else if (type === 'armen') t = 60;
-        else if (type === 'inregelen') t = 30;
+            else if (type === 'lamellen') rowTime = 45;
+            else if (type === 'armen') rowTime = 60;
+            else if (type === 'inregelen') rowTime = 30;
 
-        berekendeServiceTijd = t;
-        document.getElementById('displayServiceTijd').innerText = t + " min";
+            total += rowTime;
+        });
+
+        totaleServiceTijd = total;
+        document.getElementById('displayServiceTijd').innerText = total + " min";
     }
 
     document.getElementById('orderForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        // 1. DATA VALIDATIES
+        // VALIDATIES
         const telefoon = document.getElementById('telefoon').value;
         if (!/^[0-9+\-\s]{8,20}$/.test(telefoon)) {
             alert("⚠️ Ongeldig telefoonnummer. Gebruik alleen cijfers, spaties, + of -.");
@@ -286,8 +377,8 @@
 
         if (!isService) {
             const montagetijd = parseInt(document.getElementById('montagetijdMontage').value) || 0;
-            if (montagetijd < 0) {
-                alert("⚠️ Montagetijd mag niet negatief zijn.");
+            if (montagetijd <= 0) {
+                alert("⚠️ Montagetijd moet groter zijn dan 0.");
                 return;
             }
         }
@@ -297,7 +388,6 @@
             return;
         }
 
-        // 2. UI UPDATE (Als validatie slaagt)
         const btn = document.getElementById('submitBtn');
         btn.innerHTML = "⏳ Bezig met opslaan...";
         btn.disabled = true;
@@ -320,13 +410,18 @@
             payload.ordernummer = document.getElementById('ordernummerService').value;
             payload.afdelingSource = document.getElementById('afdelingSource').value;
             
-            const typeText = document.getElementById('srvType').options[document.getElementById('srvType').selectedIndex].text;
-            const prodText = document.getElementById('srvProduct').options[document.getElementById('srvProduct').selectedIndex].text;
-            const voedingText = document.getElementById('srvVoeding').options[document.getElementById('srvVoeding').selectedIndex].text;
+            // Loop door alle rijen en bouw een overzichtelijke lijst
+            let samengesteldeLijst = [];
+            document.querySelectorAll('.service-task').forEach(taak => {
+                const typeText = taak.querySelector('.srvType').options[taak.querySelector('.srvType').selectedIndex].text;
+                const prodText = taak.querySelector('.srvProduct').options[taak.querySelector('.srvProduct').selectedIndex].text;
+                const voedingText = taak.querySelector('.srvVoeding').options[taak.querySelector('.srvVoeding').selectedIndex].text;
+                samengesteldeLijst.push(`- ${typeText} | ${prodText} | ${voedingText}`);
+            });
             
-            payload.bestellijst = `SERVICE: ${typeText} | ${prodText} | ${voedingText}`;
+            payload.bestellijst = `SERVICE TAKEN:\n${samengesteldeLijst.join('\n')}`;
             payload.opmerkingen = document.getElementById('klachtService').value;
-            payload.montagetijd_minuten = berekendeServiceTijd;
+            payload.montagetijd_minuten = totaleServiceTijd;
             payload.demontage = false;
         } else {
             payload.ordernummer = document.getElementById('ordernummerMontage').value;
