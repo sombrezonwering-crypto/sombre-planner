@@ -1,214 +1,637 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sombre Intake - Planner</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 550px; }
-        
-        /* Navigatie Balk */
-        .nav-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .nav-title { font-weight: bold; color: #2c3e50; font-size: 18px; }
-        .nav-btn { background: #e8f0fe; color: #1a73e8; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
-        .nav-btn:hover { background: #d2e3fc; }
-
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h2 { color: #1a73e8; text-align: center; margin-top: 0; margin-bottom: 20px; }
-        
-        .scanner-zone { background: #e8f0fe; border: 2px dashed #1a73e8; padding: 20px; text-align: center; border-radius: 10px; margin-bottom: 25px; cursor: pointer; position: relative; transition: 0.3s; }
-        .scanner-zone:hover { background: #d2e3fc; }
-        .scanner-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        #scannerStatus { font-weight: bold; color: #1a73e8; margin-top: 10px; }
-        
-        label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-top: 15px; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .row { display: flex; gap: 10px; }
-        #adresStatus { font-size: 11px; margin-top: 5px; font-weight: bold; height: 15px; }
-        
-        .product-builder { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-top: 5px; }
-        .product-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
-        .p-aantal { width: 70px; }
-        .p-type { flex: 2; }
-        .p-bediening { flex: 2; }
-        .btn-remove { background: #ff4d4d; color: white; border: none; border-radius: 6px; width: 35px; height: 42px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .btn-add { background: #e3f2fd; color: #1a73e8; border: 1px dashed #1a73e8; padding: 10px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-
-        button.submit-btn { width: 100%; padding: 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; transition: 0.3s; }
-        button.submit-btn:disabled { background: #ccc; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1f2937">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Magazijn Pro">
+<link rel="manifest" href="/manifest.json">
+<title>Magazijn Pro | Sombre ERP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/nl.js"></script>
+<style>
+body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior-y: contain; }
+.hidden { display: none !important; }
+.status-badge { font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
+.status-binnen { background-color: #fef08a; color: #854d0e; }
+.status-wacht { background-color: #e5e7eb; color: #374151; }
+.status-bellen { background-color: #fecaca; color: #991b1b; }
+.status-deels { background-color: #fef9c3; color: #a16207; }
+.status-service { background-color: #bfdbfe; color: #1e3a8a; }
+.status-definitief { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.status-service-gepland { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+#reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
+.flatpickr-calendar { margin: 0 auto; box-shadow: none !important; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
+#ptr-indicator { height: 0; overflow: hidden; transition: height 0.2s; text-align: center; color: #6b7280; font-weight: bold; }
+#offline-banner { position: fixed; top: 0; left: 0; right: 0; background: #fef3c7; color: #92400e; text-align: center; padding: 8px; font-weight: bold; font-size: 0.8rem; z-index: 10000; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+#offline-banner.show { transform: translateY(0); }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 0.875rem; z-index: 9999; opacity: 0; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; pointer-events: none; max-width: 90vw; text-align: center; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast-success { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.toast-error { background-color: #fecaca; color: #991b1b; border: 1px solid #fca5a5; }
+.toast-warning { background-color: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+.modal-backdrop { background: rgba(17, 24, 39, 0.6); }
+#install-prompt { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(100px); background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 9998; opacity: 0; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; max-width: 90vw; width: 320px; }
+#install-prompt.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
 </head>
-<body>
+<body class="p-4">
 
-<div class="container">
-    <!-- Navigatie -->
-    <div class="nav-bar">
-        <div class="nav-title">📝 Intake Planner</div>
-        <a href="/magazijn" class="nav-btn">Magazijn 📦 ➔</a>
+<div id="offline-banner">📡 Geen internet. Je ziet de laatst geladen orders.</div>
+<div id="ptr-indicator" class="flex items-center justify-center text-sm">⬇️ Laat los om te vernieuwen...</div>
+
+<div class="max-w-2xl mx-auto mb-6 flex justify-between items-center mt-2">
+    <div>
+        <h1 class="text-3xl font-extrabold text-gray-800">Magazijn & Intake</h1>
+        <p class="text-gray-500">Sombre ERP Systeem</p>
     </div>
+    <a href="/intake-order.html" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors text-sm shadow-sm flex items-center">⬅️ Order Intake</a>
+</div>
 
-    <!-- Intake Formulier -->
-    <div class="card">
-        <h2>Nieuwe Order Invoeren</h2>
-        
-        <div class="scanner-zone">
-            <span style="font-size: 24px;">📸</span><br>
-            <strong>Upload Screenshot Leverancier</strong><br>
-            <span style="font-size: 12px; color: #666;">Scant automatisch klantgegevens & instructies</span>
-            <input type="file" id="imageInput" accept="image/*" capture="environment">
-            <div id="scannerStatus"></div>
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
+    <div class="flex gap-2 mb-4">
+        <input type="text" id="searchInput" placeholder="🔍 Zoek op klant of order..." class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 shadow-inner">
+        <button id="scanBtn" class="bg-gray-800 hover:bg-gray-700 text-white rounded-lg px-4 py-2 font-bold shadow-md transition-all flex items-center justify-center">📷 Scan</button>
+    </div>
+    <div id="scanner-container" class="hidden mb-4 p-2 bg-gray-900 rounded-lg">
+        <div id="reader"></div>
+        <button id="stopScanBtn" class="mt-2 w-full bg-red-600 text-white py-2 rounded-lg font-bold">Sluit Camera</button>
+    </div>
+    <div class="flex overflow-x-auto gap-2 pb-2" id="filter-buttons">
+        <button data-filter="Alles" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">Alles Tonen</button>
+        <button data-filter="Gepland" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">✅ Gepland Klaarzetten</button>
+        <button data-filter="Service & Spoed" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">🛠️ Service & Spoed</button>
+        <button data-filter="Wacht op Prod." class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Wacht op Prod.</button>
+        <button data-filter="Klant Bellen" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Klant Bellen</button>
+        <button data-filter="Deels Binnen" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Deels Binnen</button>
+    </div>
+</div>
+
+<div id="loader" class="text-center py-10 font-bold text-gray-500">Orders inladen vanaf server... ⏳</div>
+<div id="order-container" class="max-w-2xl mx-auto space-y-4"></div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<div id="install-prompt">
+    <div class="flex items-center gap-3 mb-3">
+        <div class="text-2xl">📲</div>
+        <div>
+            <div class="font-extrabold text-gray-800 text-sm">Installeer Magazijn Pro</div>
+            <div class="text-xs text-gray-500">Werkt ook offline, sneller opstarten</div>
         </div>
+    </div>
+    <div class="flex gap-2">
+        <button id="install-dismiss" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg text-xs border border-gray-200 transition-colors">Later</button>
+        <button id="install-accept" class="flex-1 bg-gray-800 hover:bg-black text-white font-bold py-2 rounded-lg text-xs transition-colors shadow-sm">Installeer</button>
+    </div>
+</div>
 
-        <form id="orderForm">
-            <label>Ordernummer (Zelf invoeren)</label>
-            <input type="text" name="ordernummer" placeholder="Bijv. 2024-001" required>
+<div id="locatieModal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-50">
+    <div class="modal-backdrop absolute inset-0" id="locatieModalBackdrop"></div>
+    <div class="bg-white rounded-xl shadow-lg p-5 max-w-sm w-full border-2 border-gray-300 relative z-10">
+        <h3 class="text-lg font-extrabold text-gray-800 mb-1">📍 Magazijn Locatie</h3>
+        <p class="text-xs text-gray-500 mb-4">Optioneel: geef aan waar het opgeslagen wordt.</p>
+        <input type="text" id="locatieInput" placeholder="Bijv. Stelling A3, Rek 2" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 mb-4" maxlength="100">
+        <input type="hidden" id="locatieOrderNr">
+        <input type="hidden" id="locatieAction">
+        <div class="flex gap-2">
+            <button id="locatieCancel" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg border border-gray-300 text-sm transition-colors">Annuleer</button>
+            <button id="locatieSubmit" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg shadow-md text-sm transition-colors">✅ Bevestig</button>
+        </div>
+    </div>
+</div>
 
-            <label>Naam Klant</label>
-            <input type="text" id="klantNaam" name="naam" required>
-
-            <div class="row">
-                <div style="flex: 2;"><label>Postcode</label><input type="text" id="pc" name="postcode" maxlength="6" required></div>
-                <div style="flex: 1;"><label>Huisnummer</label><input type="text" id="nr" name="huisnummer" required></div>
-            </div>
-            <div id="adresStatus">Adreszoeker: Wachten op invoer...</div>
-
-            <label>Straat & Woonplaats</label>
-            <input type="text" id="adres" name="straatEnWoonplaats" readonly required>
-
-            <label>Telefoonnummer</label>
-            <input type="tel" id="telefoon" name="telefoon" required>
-
-            <label>Producten (Bestellijst)</label>
-            <div class="product-builder">
-                <div id="productContainer"></div>
-                <button type="button" class="btn-add" onclick="voegProductRegelToe()">➕ Extra Product Toevoegen</button>
-            </div>
-
-            <label>Verwachte montagetijd</label>
-            <select name="montagetijd_minuten">
-                <option value="60">1 uur (Service / Reparatie)</option>
-                <option value="120" selected>2 uur (Standaard montage)</option>
-                <option value="240">4 uur (Halve dag)</option>
-                <option value="360">6 uur (Driekwart dag)</option>
-                <option value="480">8 uur (Volledige dag)</option>
-            </select>
-
-            <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="demontage" style="width:auto; margin:0;"> ⚠️ Demontage oud product nodig</label>
-            
-            <label>Montage Instructies & Opmerkingen</label>
-            <textarea id="opmerkingen" name="opmerkingen" rows="3" placeholder="Instructies of bijzonderheden..."></textarea>
-
-            <button type="submit" id="submitBtn" class="submit-btn">Opslaan & Plannen</button>
-        </form>
+<div id="herplanModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-lg p-5 max-w-sm w-full border-2 border-blue-500 max-h-[95vh] overflow-y-auto">
+        <h3 class="text-xl font-extrabold text-gray-800 mb-1">📅 Klant Herplannen</h3>
+        <p class="text-xs text-gray-500 mb-4 border-b pb-2">Verplaatst de order direct en maakt de status definitief (Akkoord).</p>
+        <input type="hidden" id="herplanOrderNr">
+        <label class="block text-xs font-bold text-gray-700 mb-1.5">Snelkeuze datum:</label>
+        <div class="grid grid-cols-3 gap-1.5 mb-4" id="snelkeuzeContainer">
+            <button type="button" data-dagen="1" class="snelkeuze-btn bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">Morgen</button>
+            <button type="button" data-dagen="7" class="snelkeuze-btn bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">Volgende week</button>
+            <button type="button" data-dagen="14" class="snelkeuze-btn bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">+2 Weken</button>
+        </div>
+        <label class="block text-xs font-bold text-gray-700 mb-1">Of selecteer in maandoverzicht:</label>
+        <div class="mb-2 flex justify-center">
+            <input type="text" id="visueleKalenderInput" class="hidden">
+        </div>
+        <div id="kalenderFeedback" class="text-center text-sm font-bold text-green-700 bg-green-100 py-2 mt-2 rounded-lg transition-all opacity-0 hidden"></div>
+        <label class="block text-xs font-bold text-gray-700 mb-1 mt-4">Specifieke Tijd (Optioneel)</label>
+        <input type="time" id="nieuweTijd" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 mb-5 focus:ring-blue-500 text-sm">
+        <div class="flex gap-2">
+            <button id="herplanCancelBtn" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg border border-gray-300 text-sm transition-colors">Annuleer</button>
+            <button id="herplanSubmitBtn" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md text-sm transition-colors">✅ Verplaats Order</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // VUL HIER JOUW GOOGLE WEB APP URL IN
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+;(function() {
+    'use strict';
 
-    // OCR Scanner
-    document.getElementById('imageInput').addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8XNAycvrJWLnKYxP5ulFmbCZUrLNtb0Etc9-HteUcsdtLU9P90QiKhqumPaKxaqc/exec";
+    var FETCH_TIMEOUT = 15000;
+    var DEBOUNCE_MS = 150;
+    var CACHE_KEY = 'magazijn_orders_cache';
+    var QUEUE_KEY = 'magazijn_pending_actions';
 
-        const statusDiv = document.getElementById('scannerStatus');
-        statusDiv.innerText = "⏳ Foto analyseren op tabel-layout...";
-        statusDiv.style.color = "#ff9800";
+    var allOrders = [];
+    var currentFilter = 'Alles';
+    var html5QrcodeInstance = null;
+    var kalenderInstance = null;
+    var debounceTimer = null;
+    var deferredInstallPrompt = null;
 
-        try {
-            const result = await Tesseract.recognize(file, 'nld');
-            const ruweTekst = result.data.text;
+    var dom = {
+        loader: document.getElementById('loader'),
+        container: document.getElementById('order-container'),
+        searchInput: document.getElementById('searchInput'),
+        scannerContainer: document.getElementById('scanner-container'),
+        filterButtons: document.getElementById('filter-buttons'),
+        herplanModal: document.getElementById('herplanModal'),
+        herplanOrderNr: document.getElementById('herplanOrderNr'),
+        herplanSubmitBtn: document.getElementById('herplanSubmitBtn'),
+        herplanCancelBtn: document.getElementById('herplanCancelBtn'),
+        kalenderFeedback: document.getElementById('kalenderFeedback'),
+        nieuweTijd: document.getElementById('nieuweTijd'),
+        locatieModal: document.getElementById('locatieModal'),
+        locatieInput: document.getElementById('locatieInput'),
+        locatieOrderNr: document.getElementById('locatieOrderNr'),
+        locatieAction: document.getElementById('locatieAction'),
+        toast: document.getElementById('toast'),
+        ptr: document.getElementById('ptr-indicator'),
+        offlineBanner: document.getElementById('offline-banner'),
+        installPrompt: document.getElementById('install-prompt'),
+    };
 
-            const telNaamRegex = /(06[\s-]?[0-9]{8}|0[1-9][0-9]{1,2}[\s-]?[0-9]{6,7})\s+([A-Za-z\s]+)/;
-            const telNaamMatch = ruweTekst.match(telNaamRegex);
-            if (telNaamMatch) {
-                document.getElementById('telefoon').value = telNaamMatch[1];
-                document.getElementById('klantNaam').value = telNaamMatch[2].trim();
-            }
-
-            const emailStraatRegex = /[\w\.-]+@[\w\.-]+\.\w+\s+([A-Za-z\s]+?)\s+([0-9]+[A-Za-z]?)/;
-            const straatMatch = ruweTekst.match(emailStraatRegex);
-            if (straatMatch) document.getElementById('nr').value = straatMatch[2]; 
-
-            const postcodeMatch = ruweTekst.match(/[1-9][0-9]{3}\s?[A-Za-z]{2}/);
-            if (postcodeMatch) document.getElementById('pc').value = postcodeMatch[0].replace(/\s/g, '').toUpperCase();
-
-            const instructieMatch = ruweTekst.match(/(?:montageinstructie|opmerking|notitie)[s]?[\s:\n]+(.*?)(?=\n\n|\n[A-Z]|$|Jouw klantgegevens)/is);
-            if (instructieMatch && instructieMatch[1]) document.getElementById('opmerkingen').value = instructieMatch[1].trim();
-
-            statusDiv.innerText = "✅ Klantgegevens & Instructies gelezen!";
-            statusDiv.style.color = "green";
-
-            if (postcodeMatch && straatMatch) zoekAdres();
-
-        } catch (error) {
-            statusDiv.innerText = "❌ Fout bij scannen. Vul handmatig in.";
-            statusDiv.style.color = "red";
-        }
-    });
-
-    // PDOK Adreszoeker
-    let timeout = null;
-    const pcIn = document.getElementById('pc'), nrIn = document.getElementById('nr'), adIn = document.getElementById('adres'), stIn = document.getElementById('adresStatus');
-
-    function zoekAdres() {
-        const pc = pcIn.value.replace(/\s+/g, '').toUpperCase(), nr = nrIn.value.trim();
-        if (pc.length === 6 && nr.length >= 1) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                stIn.innerText = "⏳ Zoeken..."; stIn.style.color = "#1a73e8";
-                fetch(`https://api.pdok.nl/bzk/locatieserver/v3/suggest?q=${pc}+${nr}`)
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(d => d.response.docs.length > 0 ? fetch(`https://api.pdok.nl/bzk/locatieserver/v3/lookup?id=${d.response.docs[0].id}`) : Promise.reject())
-                .then(r => r.json()).then(d => {
-                    adIn.value = d.response.docs[0].weergavenaam; stIn.innerText = "✅ Adres Gevonden!"; stIn.style.color = "green";
-                }).catch(() => { stIn.innerText = "⚠️ Adres niet gevonden. Vul handmatig in."; stIn.style.color = "red"; adIn.removeAttribute('readonly'); });
-            }, 500);
-        }
+    function escapeHTML(str) {
+        if (!str) return "";
+        var el = document.createElement('span');
+        el.textContent = str.toString();
+        return el.innerHTML;
     }
-    pcIn.addEventListener('keyup', zoekAdres); nrIn.addEventListener('keyup', zoekAdres);
 
-    // Producten Bouwer
-    const productContainer = document.getElementById('productContainer');
-    function voegProductRegelToe() {
-        const div = document.createElement('div'); div.className = 'product-row';
-        div.innerHTML = `<input type="number" class="p-aantal" value="1" min="1" required>
-            <select class="p-type" required>
-                <option value="Rolluik">Rolluik</option><option value="Screen">Screen</option>
-                <option value="Zonnescherm">Zonnescherm</option><option value="Overkapping">Overkapping</option>
-                <option value="Losse Motor / Onderdeel">Motor/Onderdeel (Service)</option>
-            </select>
-            <select class="p-bediening" required>
-                <option value="Solar">Solar</option><option value="Stroom (230V)">Stroom (230V)</option>
-                <option value="Handbediend">Handbediend</option><option value="N.v.t.">N.v.t.</option>
-            </select>
-            <button type="button" class="btn-remove" onclick="verwijderRegel(this)">✖</button>`;
-        productContainer.appendChild(div);
+    function showToast(message, type, duration) {
+        type = type || 'success';
+        duration = duration || 3000;
+        dom.toast.textContent = message;
+        dom.toast.className = 'toast toast-' + type + ' show';
+        setTimeout(function() { dom.toast.classList.remove('show'); }, duration);
     }
-    function verwijderRegel(btn) { if (productContainer.children.length > 1) btn.parentElement.remove(); else alert("Minimaal 1 product verplicht."); }
-    voegProductRegelToe();
 
-    // Formulier Verzenden
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "Bezig met plannen...";
-        const formData = new FormData(this); let dataObject = Object.fromEntries(formData.entries());
-        dataObject.demontage = formData.get('demontage') === 'on';
-        
-        const regels = document.querySelectorAll('.product-row');
-        dataObject.bestellijst = Array.from(regels).map(r => `${r.querySelector('.p-aantal').value}x ${r.querySelector('.p-type').value} (${r.querySelector('.p-bediening').value})`).join(', ');
+    function debounce(fn, ms) {
+        return function() {
+            var args = arguments;
+            var context = this;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() { fn.apply(context, args); }, ms);
+        };
+    }
 
-        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dataObject) })
-        .then(() => { 
-            alert("✅ Order succesvol verwerkt en gepland!"); this.reset(); productContainer.innerHTML = ""; voegProductRegelToe(); 
-            adIn.setAttribute('readonly', true); stIn.innerText = "Wachten op invoer..."; stIn.style.color = "#888"; 
-            document.getElementById('scannerStatus').innerText = "";
-            btn.disabled = false; btn.innerText = "Opslaan & Plannen"; 
+    function fetchWithTimeout(url, timeout) {
+        timeout = timeout || FETCH_TIMEOUT;
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, timeout);
+        return fetch(url, { signal: controller.signal }).then(function(res) {
+            clearTimeout(timeoutId);
+            return res;
+        }).catch(function(e) {
+            clearTimeout(timeoutId);
+            throw e;
         });
+    }
+
+    function formatDatumLeesbaar(dateStr) {
+        try {
+            var parts = dateStr.split('-');
+            var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            return d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+        } catch(e) { return dateStr; }
+    }
+
+    function saveToCache(orders) {
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), orders: orders })); } catch(e) {}
+    }
+
+    function loadFromCache() {
+        try { var c = localStorage.getItem(CACHE_KEY); if (!c) return null; return JSON.parse(c).orders || null; } catch(e) { return null; }
+    }
+
+    function getCacheAge() {
+        try { var c = localStorage.getItem(CACHE_KEY); if (!c) return null; return Math.round((Date.now() - JSON.parse(c).timestamp) / 60000); } catch(e) { return null; }
+    }
+
+    function queueAction(actionData) {
+        try { var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); q.push(actionData); localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch(e) {}
+    }
+
+    function getQueuedActions() {
+        try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e) { return []; }
+    }
+
+    function clearQueue() { localStorage.removeItem(QUEUE_KEY); }
+
+    function processQueue() {
+        var queue = getQueuedActions();
+        if (queue.length === 0) return;
+        showToast('\u{1F4E4} ' + queue.length + ' wachtende actie(s) worden verstuurd...', 'warning', 2000);
+        var promises = queue.map(function(item) {
+            return fetchWithTimeout(item.url).then(function(res) { return res.json(); });
+        });
+        Promise.allSettled(promises).then(function(results) {
+            var succeeded = results.filter(function(r) { return r.status === 'fulfilled' && r.value && r.value.status === 'ok'; }).length;
+            var failed = results.length - succeeded;
+            clearQueue();
+            if (failed > 0) showToast('\u26A0\uFE0F ' + succeeded + ' gelukt, ' + failed + ' mislukt', 'warning', 4000);
+            else showToast('\u2705 Alle ' + succeeded + ' wachtende actie(s) verstuurd!', 'success');
+            loadOrders();
+        });
+    }
+
+    function updateOnlineStatus() {
+        if (navigator.onLine) { dom.offlineBanner.classList.remove('show'); processQueue(); }
+        else { dom.offlineBanner.classList.add('show'); }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    function getStatusCategory(statusStr) {
+        var s = statusStr.toLowerCase();
+        if (s.includes('service gepland')) return 'service-gepland';
+        if (s.includes('definitief')) return 'definitief';
+        if (s.includes('deels')) return 'deels';
+        if (s.includes('bellen') || s.includes('spoed')) return 'bellen';
+        if (s === 'service' || s.includes('service nodig')) return 'service';
+        if (s.includes('binnen')) return 'binnen';
+        if (s.includes('wacht')) return 'wacht';
+        return 'wacht';
+    }
+
+    function getStatusBadgeClass(category) {
+        var map = { 'binnen': 'status-binnen', 'wacht': 'status-wacht', 'bellen': 'status-bellen', 'deels': 'status-deels', 'service': 'status-service', 'definitief': 'status-definitief', 'service-gepland': 'status-service-gepland' };
+        return map[category] || 'status-wacht';
+    }
+
+    function matchesFilter(order, filter) {
+        if (filter === 'Alles') return true;
+        var cat = getStatusCategory(order.status);
+        switch(filter) {
+            case 'Gepland': return cat === 'definitief' || cat === 'service-gepland';
+            case 'Service & Spoed': return cat === 'service' || cat === 'bellen';
+            case 'Wacht op Prod.': return cat === 'wacht';
+            case 'Klant Bellen': return cat === 'bellen';
+            case 'Deels Binnen': return cat === 'deels';
+            default: return true;
+        }
+    }
+
+    function updateFilterButtonStyles() {
+        dom.filterButtons.querySelectorAll('.filter-btn').forEach(function(btn) {
+            var filter = btn.dataset.filter;
+            var isActive = filter === currentFilter;
+            btn.className = 'filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border transition-colors';
+            if (isActive) {
+                if (filter === 'Service & Spoed') btn.classList.add('bg-red-600', 'text-white', 'shadow-sm', 'border-transparent');
+                else if (filter === 'Gepland') btn.classList.add('bg-green-600', 'text-white', 'shadow-sm', 'border-transparent');
+                else btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'border-transparent');
+            } else {
+                if (filter === 'Service & Spoed') btn.classList.add('bg-red-50', 'text-red-800', 'hover:bg-red-100', 'border-red-200');
+                else if (filter === 'Gepland') btn.classList.add('bg-green-50', 'text-green-800', 'hover:bg-green-100', 'border-green-200');
+                else btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200', 'border-transparent');
+            }
+        });
+    }
+
+    function setFilter(filter) {
+        currentFilter = filter;
+        updateFilterButtonStyles();
+        renderOrders();
+    }
+
+    function renderOrders() {
+        dom.container.innerHTML = '';
+        var searchTerm = dom.searchInput.value.toLowerCase().trim();
+        var visibleCount = 0;
+        allOrders.forEach(function(order) {
+            if (order.status.toLowerCase() === 'opgeleverd') return;
+            if (!matchesFilter(order, currentFilter)) return;
+            if (searchTerm) {
+                var haystack = (order.ordernummer + ' ' + order.naam + ' ' + order.producten).toLowerCase();
+                if (!haystack.includes(searchTerm)) return;
+            }
+            visibleCount++;
+            dom.container.appendChild(buildOrderCard(order));
+        });
+        if (visibleCount === 0) {
+            dom.container.innerHTML = '<div class="text-center py-8 text-gray-400 font-bold">Geen openstaande orders gevonden in dit overzicht.</div>';
+        }
+    }
+
+    function buildOrderCard(order) {
+        var cat = getStatusCategory(order.status);
+        var badgeClass = getStatusBadgeClass(cat);
+        var isReedsGepland = cat === 'definitief' || cat === 'service-gepland';
+
+        var planTekst = "Nog niet ingepland";
+        if (order.planningsBericht && /Gepland op|Geplanned op|Handmatig/.test(order.planningsBericht)) {
+            planTekst = order.planningsBericht.replace("Gepland op ", "").replace("Geplanned op ", "").split("\n")[0].replace(/'/g, "");
+        }
+
+        var tijdTekst = "";
+        if (order.vasteTijd) tijdTekst = ' | \u{1F552} ' + escapeHTML(order.vasteTijd);
+        else if (order.voorkeur && order.voorkeur !== "Geen") tijdTekst = ' | \u{1F552} ' + escapeHTML(order.voorkeur);
+
+        var bronPill = "";
+        if (order.bron && order.bron !== "Sombre") {
+            bronPill = '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded ml-2 font-bold border border-blue-200">\u{1F3E2} ' + escapeHTML(order.bron) + '</span>';
+        }
+
+        var mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(order.adres || '');
+        var div = document.createElement('div');
+        div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
+        div.dataset.ordernummer = order.ordernummer;
+
+        var actieKnoppen = '';
+        if (!isReedsGepland) {
+            actieKnoppen = '<button data-action="markPartial" class="action-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm border border-transparent transition-colors">\u26A0\uFE0F Deels</button>' +
+                '<button data-action="markBinnen" class="action-btn bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm border border-transparent transition-colors">\u2705 Binnen</button>' +
+                '<button data-action="markGreen" class="action-btn col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm mt-1 border border-transparent transition-colors">\u{1F91D} Akkoord (Maak Definitief)</button>';
+        }
+
+        var colClass = isReedsGepland ? 'col-span-1' : 'col-span-2';
+
+        div.innerHTML = '<div class="flex justify-between items-start mb-2"><div><div class="text-xs text-gray-500 font-bold mb-1 flex items-center">ORD: ' + escapeHTML(order.ordernummer) + ' ' + bronPill + '</div><div class="text-lg font-extrabold text-gray-900">' + escapeHTML(order.naam) + '</div></div><span class="status-badge ' + badgeClass + ' text-center leading-tight">' + escapeHTML(order.status) + '</span></div>' +
+        '<div class="text-sm text-blue-800 bg-blue-50 p-2 rounded-lg border border-blue-100 font-bold mb-3 flex items-center shadow-inner">\u{1F4C5} ' + escapeHTML(planTekst) + tijdTekst + '</div>' +
+        '<div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100 whitespace-pre-wrap">\u{1F4E6} ' + escapeHTML(order.producten) + '</div>' +
+        '<div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">' + actieKnoppen +
+            '<button data-action="herplan" class="' + colClass + ' action-btn bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded-lg font-bold text-sm mt-1 border border-purple-200 transition-colors">\u{1F4C5} Herplannen</button>' +
+            '<a href="' + mapUrl + '" target="_blank" rel="noopener" class="' + colClass + ' bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold text-sm border border-gray-300 flex items-center justify-center mt-1 transition-colors">\u{1F5FA}\uFE0F Navigeer</a>' +
+            '<button data-action="markFinished" class="action-btn col-span-2 bg-gray-800 hover:bg-black text-white py-3 rounded-lg font-bold text-sm mt-2 border border-gray-700 transition-colors shadow-md">\u{1F3C1} Klus Afronden (Verberg)</button>' +
+        '</div>';
+
+        return div;
+    }
+
+    dom.container.addEventListener('click', function(e) {
+        var btn = e.target.closest('.action-btn');
+        if (!btn) return;
+        var card = btn.closest('[data-ordernummer]');
+        if (!card) return;
+        var ordernummer = card.dataset.ordernummer;
+        var action = btn.dataset.action;
+        if (action === 'herplan') openHerplanModal(ordernummer);
+        else if (action === 'markBinnen' || action === 'markPartial') openLocatieModal(ordernummer, action);
+        else if (action === 'markGreen' || action === 'markFinished') updateStatus(ordernummer, action, btn);
     });
+
+    dom.filterButtons.addEventListener('click', function(e) {
+        var btn = e.target.closest('.filter-btn');
+        if (!btn) return;
+        setFilter(btn.dataset.filter);
+    });
+
+    function openLocatieModal(ordernummer, action) {
+        dom.locatieOrderNr.value = ordernummer;
+        dom.locatieAction.value = action;
+        dom.locatieInput.value = '';
+        dom.locatieModal.classList.remove('hidden');
+        setTimeout(function() { dom.locatieInput.focus(); }, 50);
+    }
+
+    function closeLocatieModal() { dom.locatieModal.classList.add('hidden'); }
+
+    document.getElementById('locatieCancel').addEventListener('click', closeLocatieModal);
+    document.getElementById('locatieModalBackdrop').addEventListener('click', closeLocatieModal);
+    document.getElementById('locatieSubmit').addEventListener('click', function() {
+        var ordernummer = dom.locatieOrderNr.value;
+        var action = dom.locatieAction.value;
+        var locatie = dom.locatieInput.value.trim();
+        closeLocatieModal();
+        updateStatus(ordernummer, action, null, locatie);
+    });
+    dom.locatieInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('locatieSubmit').click(); });
+
+    function updateStatus(ordernummer, action, btnElement, locatie) {
+        var isCritical = (action === 'markFinished' || action === 'markGreen');
+        var oldBtnText = '';
+        var previousStatus = null;
+        var order = allOrders.find(function(o) { return o.ordernummer === ordernummer; });
+        if (order) previousStatus = order.status;
+
+        if (order) {
+            if (action === 'markBinnen') order.status = "Producten Binnen (Klant Bellen)";
+            if (action === 'markPartial') order.status = "Deels Binnen";
+            if (action === 'markGreen') order.status = "Definitief";
+            if (action === 'markFinished') order.status = "Opgeleverd";
+        }
+
+        if (isCritical && btnElement) { oldBtnText = btnElement.innerText; btnElement.innerText = "\u23F3..."; btnElement.disabled = true; }
+
+        renderOrders();
+        saveToCache(allOrders);
+
+        var url = WEB_APP_URL + '?action=' + encodeURIComponent(action) + '&ordernummer=' + encodeURIComponent(ordernummer) + '&locatieInfo=' + encodeURIComponent(locatie || '');
+
+        if (!navigator.onLine) {
+            queueAction({ url: url, action: action, ordernummer: ordernummer, timestamp: Date.now() });
+            showToast('\u{1F4E5} Offline opgeslagen, wordt verstuurd bij verbinding', 'warning', 4000);
+            return;
+        }
+
+        fetchWithTimeout(url).then(function(res) { return res.json(); }).then(function(resultaat) {
+            if (resultaat.status === "ok") {
+                showToast('\u2705 Order ' + ordernummer + ' bijgewerkt', 'success');
+                saveToCache(allOrders);
+            } else {
+                if (order && previousStatus) { order.status = previousStatus; renderOrders(); saveToCache(allOrders); }
+                if (isCritical && btnElement) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
+                showToast('\u274C ' + (resultaat.message || 'Onbekende fout'), 'error', 5000);
+            }
+        }).catch(function() {
+            queueAction({ url: url, action: action, ordernummer: ordernummer, timestamp: Date.now() });
+            if (isCritical && btnElement) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
+            showToast('\u{1F4E5} Opgeslagen in wachtrij', 'warning', 4000);
+        });
+    }
+
+    function openHerplanModal(ordernummer) {
+        dom.herplanOrderNr.value = ordernummer;
+        if (kalenderInstance) kalenderInstance.setDate(new Date(), false);
+        dom.kalenderFeedback.classList.add('hidden');
+        dom.kalenderFeedback.style.opacity = "0";
+        dom.herplanModal.classList.remove('hidden');
+    }
+
+    function sluitHerplanModal() { dom.herplanModal.classList.add('hidden'); dom.nieuweTijd.value = ''; }
+
+    dom.herplanCancelBtn.addEventListener('click', sluitHerplanModal);
+
+    document.getElementById('snelkeuzeContainer').addEventListener('click', function(e) {
+        var btn = e.target.closest('.snelkeuze-btn');
+        if (!btn) return;
+        var dagen = parseInt(btn.dataset.dagen, 10);
+        var doelDatum = new Date();
+        doelDatum.setDate(doelDatum.getDate() + dagen);
+        if (kalenderInstance) kalenderInstance.setDate(doelDatum, true);
+    });
+
+    dom.herplanSubmitBtn.addEventListener('click', function() {
+        var ordernummer = dom.herplanOrderNr.value;
+        var datum = kalenderInstance ? kalenderInstance.input.value : "";
+        var tijd = dom.nieuweTijd.value;
+        if (!datum) { showToast('\u26A0\uFE0F Selecteer een datum!', 'warning'); return; }
+
+        var btn = dom.herplanSubmitBtn;
+        var oudeTekst = btn.innerText;
+        btn.innerText = "\u23F3 Bezig met verplaatsen...";
+        btn.disabled = true;
+
+        var url = WEB_APP_URL + '?action=herplanDefinitief&ordernummer=' + encodeURIComponent(ordernummer) + '&nieuweDatum=' + encodeURIComponent(datum) + '&nieuweTijd=' + encodeURIComponent(tijd);
+
+        var order = allOrders.find(function(o) { return o.ordernummer === ordernummer; });
+        if (order) {
+            order.status = "Definitief";
+            order.planningsBericht = "Gepland op " + formatDatumLeesbaar(datum);
+            if (tijd) order.vasteTijd = tijd;
+        }
+
+        if (!navigator.onLine) {
+            renderOrders();
+            saveToCache(allOrders);
+            queueAction({ url: url, action: 'herplanDefinitief', ordernummer: ordernummer, timestamp: Date.now() });
+            sluitHerplanModal();
+            showToast('\u{1F4E5} Herplanning offline opgeslagen', 'warning', 4000);
+            btn.innerText = oudeTekst; btn.disabled = false;
+            return;
+        }
+
+        fetchWithTimeout(url).then(function(res) { return res.json(); }).then(function(resultaat) {
+            if (resultaat.status === "ok") {
+                sluitHerplanModal();
+                renderOrders();
+                saveToCache(allOrders);
+                showToast('\u{1F4C5} Order ' + ordernummer + ' herplannd naar ' + formatDatumLeesbaar(datum), 'success');
+            } else {
+                showToast('\u274C ' + (resultaat.message || resultaat.bericht || 'Planning geweigerd'), 'error', 5000);
+            }
+        }).catch(function() {
+            queueAction({ url: url, action: 'herplanDefinitief', ordernummer: ordernummer, timestamp: Date.now() });
+            renderOrders();
+            saveToCache(allOrders);
+            sluitHerplanModal();
+            showToast('\u{1F4E5} Opgeslagen in wachtrij', 'warning', 4000);
+        }).finally(function() { btn.innerText = oudeTekst; btn.disabled = false; });
+    });
+
+    function startScanner() {
+        dom.scannerContainer.classList.remove('hidden');
+        html5QrcodeInstance = new Html5Qrcode("reader");
+        html5QrcodeInstance.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } },
+            function(decodedText) { stopScanner(); dom.searchInput.value = decodedText; setFilter('Alles'); },
+            function() {}
+        ).catch(function() { showToast('\u274C Camera kon niet worden gestart', 'error'); dom.scannerContainer.classList.add('hidden'); });
+    }
+
+    function stopScanner() {
+        if (html5QrcodeInstance) { html5QrcodeInstance.stop().then(function() { html5QrcodeInstance.clear(); html5QrcodeInstance = null; }).catch(function() {}); }
+        dom.scannerContainer.classList.add('hidden');
+    }
+
+    document.getElementById('scanBtn').addEventListener('click', startScanner);
+    document.getElementById('stopScanBtn').addEventListener('click', stopScanner);
+
+    dom.searchInput.addEventListener('input', debounce(renderOrders, DEBOUNCE_MS));
+
+    function setupPullToRefresh() {
+        var touchstartY = 0;
+        document.addEventListener('touchstart', function(e) { if (window.scrollY === 0) touchstartY = e.touches[0].clientY; }, { passive: true });
+        document.addEventListener('touchmove', function(e) { if (window.scrollY === 0 && touchstartY > 0) { if (e.touches[0].clientY - touchstartY > 60) dom.ptr.style.height = '40px'; } }, { passive: true });
+        document.addEventListener('touchend', function(e) {
+            if (window.scrollY === 0 && touchstartY > 0) {
+                if (e.changedTouches[0].clientY - touchstartY > 80) {
+                    dom.ptr.innerText = "\u{1F504} Vernieuwen...";
+                    loadOrders().then(function() { dom.ptr.style.height = '0'; setTimeout(function() { dom.ptr.innerText = "\u2B07\uFE0F Laat los om te vernieuwen..."; }, 300); });
+                } else { dom.ptr.style.height = '0'; }
+                touchstartY = 0;
+            }
+        }, { passive: true });
+    }
+
+    function loadOrders() {
+        dom.loader.classList.remove('hidden');
+        dom.loader.innerText = "Orders inladen vanaf server... \u23F3";
+        return fetchWithTimeout(WEB_APP_URL + "?action=getOrders").then(function(res) { return res.json(); }).then(function(data) {
+            allOrders = data;
+            dom.loader.classList.add('hidden');
+            saveToCache(allOrders);
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlOrder = urlParams.get('order');
+            if (urlOrder) dom.searchInput.value = urlOrder;
+            renderOrders();
+        }).catch(function(e) {
+            var cached = loadFromCache();
+            if (cached && cached.length > 0) {
+                allOrders = cached;
+                dom.loader.classList.add('hidden');
+                var age = getCacheAge();
+                var ageTekst = age !== null ? ' (' + age + ' min. oud)' : '';
+                showToast('\u{1F4E1} Offline modus: cache geladen' + ageTekst, 'warning', 4000);
+                renderOrders();
+            } else {
+                if (e.name === 'AbortError') dom.loader.innerText = "\u274C Server reageert niet (Timeout).";
+                else dom.loader.innerText = "\u274C Fout bij inladen. Geen cached data beschikbaar.";
+            }
+        });
+    }
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        if (!localStorage.getItem('pwa_install_dismissed')) {
+            setTimeout(function() { dom.installPrompt.classList.add('show'); }, 3000);
+        }
+    });
+
+    document.getElementById('install-accept').addEventListener('click', function() {
+        if (deferredInstallPrompt) { deferredInstallPrompt.prompt(); deferredInstallPrompt.userChoice.then(function() { deferredInstallPrompt = null; }); }
+        dom.installPrompt.classList.remove('show');
+    });
+
+    document.getElementById('install-dismiss').addEventListener('click', function() {
+        dom.installPrompt.classList.remove('show');
+        localStorage.setItem('pwa_install_dismissed', 'true');
+    });
+
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(function() {}); }
+
+    function init() {
+        kalenderInstance = flatpickr("#visueleKalenderInput", {
+            inline: true, locale: "nl", dateFormat: "Y-m-d", minDate: "today", defaultDate: "today",
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0) {
+                    var mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+                    dom.kalenderFeedback.innerText = '\u2705 Geselecteerd: ' + mooieDatum;
+                    dom.kalenderFeedback.classList.remove("hidden");
+                    dom.kalenderFeedback.style.opacity = "1";
+                }
+            }
+        });
+        updateFilterButtonStyles();
+        updateOnlineStatus();
+        setupPullToRefresh();
+        loadOrders();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
 </script>
 </body>
 </html>
