@@ -1,637 +1,441 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#1f2937">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Magazijn Pro">
-<link rel="manifest" href="/manifest.json">
-<title>Magazijn Pro | Sombre ERP</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/nl.js"></script>
-<style>
-body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior-y: contain; }
-.hidden { display: none !important; }
-.status-badge { font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
-.status-binnen { background-color: #fef08a; color: #854d0e; }
-.status-wacht { background-color: #e5e7eb; color: #374151; }
-.status-bellen { background-color: #fecaca; color: #991b1b; }
-.status-deels { background-color: #fef9c3; color: #a16207; }
-.status-service { background-color: #bfdbfe; color: #1e3a8a; }
-.status-definitief { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.status-service-gepland { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-#reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
-.flatpickr-calendar { margin: 0 auto; box-shadow: none !important; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
-#ptr-indicator { height: 0; overflow: hidden; transition: height 0.2s; text-align: center; color: #6b7280; font-weight: bold; }
-#offline-banner { position: fixed; top: 0; left: 0; right: 0; background: #fef3c7; color: #92400e; text-align: center; padding: 8px; font-weight: bold; font-size: 0.8rem; z-index: 10000; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-#offline-banner.show { transform: translateY(0); }
-.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 0.875rem; z-index: 9999; opacity: 0; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; pointer-events: none; max-width: 90vw; text-align: center; }
-.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-.toast-success { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.toast-error { background-color: #fecaca; color: #991b1b; border: 1px solid #fca5a5; }
-.toast-warning { background-color: #fef9c3; color: #a16207; border: 1px solid #fde047; }
-.modal-backdrop { background: rgba(17, 24, 39, 0.6); }
-#install-prompt { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(100px); background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 9998; opacity: 0; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; max-width: 90vw; width: 320px; }
-#install-prompt.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Magazijn Pro | Sombre ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/nl.js"></script>
+
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior-y: contain; }
+        .hidden { display: none !important; }
+        .status-badge { font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
+        .status-binnen { background-color: #fef08a; color: #854d0e; } 
+        .status-wacht { background-color: #e5e7eb; color: #374151; }  
+        .status-bellen { background-color: #fecaca; color: #991b1b; } 
+        .status-deels { background-color: #fef9c3; color: #a16207; }
+        .status-service { background-color: #bfdbfe; color: #1e3a8a; }
+        .status-definitief { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status-service-gepland { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
+        .flatpickr-calendar { margin: 0 auto; box-shadow: none !important; border: 1px solid #e5e7eb; border-radius: 0.5rem; }
+        #ptr-indicator { height: 0; overflow: hidden; transition: height 0.2s; text-align: center; color: #6b7280; font-weight: bold; }
+    </style>
 </head>
 <body class="p-4">
 
-<div id="offline-banner">📡 Geen internet. Je ziet de laatst geladen orders.</div>
-<div id="ptr-indicator" class="flex items-center justify-center text-sm">⬇️ Laat los om te vernieuwen...</div>
-
-<div class="max-w-2xl mx-auto mb-6 flex justify-between items-center mt-2">
-    <div>
-        <h1 class="text-3xl font-extrabold text-gray-800">Magazijn & Intake</h1>
-        <p class="text-gray-500">Sombre ERP Systeem</p>
+    <div id="ptr-indicator" class="flex items-center justify-center text-sm">
+        ⬇️ Laat los om te vernieuwen...
     </div>
-    <a href="/intake-order.html" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors text-sm shadow-sm flex items-center">⬅️ Order Intake</a>
-</div>
 
-<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
-    <div class="flex gap-2 mb-4">
-        <input type="text" id="searchInput" placeholder="🔍 Zoek op klant of order..." class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 shadow-inner">
-        <button id="scanBtn" class="bg-gray-800 hover:bg-gray-700 text-white rounded-lg px-4 py-2 font-bold shadow-md transition-all flex items-center justify-center">📷 Scan</button>
-    </div>
-    <div id="scanner-container" class="hidden mb-4 p-2 bg-gray-900 rounded-lg">
-        <div id="reader"></div>
-        <button id="stopScanBtn" class="mt-2 w-full bg-red-600 text-white py-2 rounded-lg font-bold">Sluit Camera</button>
-    </div>
-    <div class="flex overflow-x-auto gap-2 pb-2" id="filter-buttons">
-        <button data-filter="Alles" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">Alles Tonen</button>
-        <button data-filter="Gepland" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">✅ Gepland Klaarzetten</button>
-        <button data-filter="Service & Spoed" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">🛠️ Service & Spoed</button>
-        <button data-filter="Wacht op Prod." class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Wacht op Prod.</button>
-        <button data-filter="Klant Bellen" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Klant Bellen</button>
-        <button data-filter="Deels Binnen" class="filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap">Deels Binnen</button>
-    </div>
-</div>
-
-<div id="loader" class="text-center py-10 font-bold text-gray-500">Orders inladen vanaf server... ⏳</div>
-<div id="order-container" class="max-w-2xl mx-auto space-y-4"></div>
-
-<div id="toast" class="toast" aria-live="polite"></div>
-
-<div id="install-prompt">
-    <div class="flex items-center gap-3 mb-3">
-        <div class="text-2xl">📲</div>
+    <div class="max-w-2xl mx-auto mb-6 flex justify-between items-center mt-2">
         <div>
-            <div class="font-extrabold text-gray-800 text-sm">Installeer Magazijn Pro</div>
-            <div class="text-xs text-gray-500">Werkt ook offline, sneller opstarten</div>
+            <h1 class="text-3xl font-extrabold text-gray-800">Magazijn & Intake</h1>
+            <p class="text-gray-500">Sombre ERP Systeem</p>
         </div>
+        <a href="intake-order.html" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors text-sm shadow-sm flex items-center">
+            ⬅️ Order Intake
+        </a>
     </div>
-    <div class="flex gap-2">
-        <button id="install-dismiss" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg text-xs border border-gray-200 transition-colors">Later</button>
-        <button id="install-accept" class="flex-1 bg-gray-800 hover:bg-black text-white font-bold py-2 rounded-lg text-xs transition-colors shadow-sm">Installeer</button>
-    </div>
-</div>
 
-<div id="locatieModal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-50">
-    <div class="modal-backdrop absolute inset-0" id="locatieModalBackdrop"></div>
-    <div class="bg-white rounded-xl shadow-lg p-5 max-w-sm w-full border-2 border-gray-300 relative z-10">
-        <h3 class="text-lg font-extrabold text-gray-800 mb-1">📍 Magazijn Locatie</h3>
-        <p class="text-xs text-gray-500 mb-4">Optioneel: geef aan waar het opgeslagen wordt.</p>
-        <input type="text" id="locatieInput" placeholder="Bijv. Stelling A3, Rek 2" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 mb-4" maxlength="100">
-        <input type="hidden" id="locatieOrderNr">
-        <input type="hidden" id="locatieAction">
-        <div class="flex gap-2">
-            <button id="locatieCancel" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg border border-gray-300 text-sm transition-colors">Annuleer</button>
-            <button id="locatieSubmit" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg shadow-md text-sm transition-colors">✅ Bevestig</button>
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="searchInput" placeholder="🔍 Zoek op klant of order..." class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 shadow-inner">
+            <button onclick="startScanner()" class="bg-gray-800 hover:bg-gray-700 text-white rounded-lg px-4 py-2 font-bold shadow-md transition-all flex items-center justify-center">📷 Scan</button>
         </div>
-    </div>
-</div>
+        
+        <div id="scanner-container" class="hidden mb-4 p-2 bg-gray-900 rounded-lg">
+            <div id="reader"></div>
+            <button onclick="stopScanner()" class="mt-2 w-full bg-red-600 text-white py-2 rounded-lg font-bold">Sluit Camera</button>
+        </div>
 
-<div id="herplanModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-lg p-5 max-w-sm w-full border-2 border-blue-500 max-h-[95vh] overflow-y-auto">
-        <h3 class="text-xl font-extrabold text-gray-800 mb-1">📅 Klant Herplannen</h3>
-        <p class="text-xs text-gray-500 mb-4 border-b pb-2">Verplaatst de order direct en maakt de status definitief (Akkoord).</p>
-        <input type="hidden" id="herplanOrderNr">
-        <label class="block text-xs font-bold text-gray-700 mb-1.5">Snelkeuze datum:</label>
-        <div class="grid grid-cols-3 gap-1.5 mb-4" id="snelkeuzeContainer">
-            <button type="button" data-dagen="1" class="snelkeuze-btn bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">Morgen</button>
-            <button type="button" data-dagen="7" class="snelkeuze-btn bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">Volgende week</button>
-            <button type="button" data-dagen="14" class="snelkeuze-btn bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">+2 Weken</button>
-        </div>
-        <label class="block text-xs font-bold text-gray-700 mb-1">Of selecteer in maandoverzicht:</label>
-        <div class="mb-2 flex justify-center">
-            <input type="text" id="visueleKalenderInput" class="hidden">
-        </div>
-        <div id="kalenderFeedback" class="text-center text-sm font-bold text-green-700 bg-green-100 py-2 mt-2 rounded-lg transition-all opacity-0 hidden"></div>
-        <label class="block text-xs font-bold text-gray-700 mb-1 mt-4">Specifieke Tijd (Optioneel)</label>
-        <input type="time" id="nieuweTijd" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 mb-5 focus:ring-blue-500 text-sm">
-        <div class="flex gap-2">
-            <button id="herplanCancelBtn" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg border border-gray-300 text-sm transition-colors">Annuleer</button>
-            <button id="herplanSubmitBtn" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md text-sm transition-colors">✅ Verplaats Order</button>
+        <div class="flex overflow-x-auto gap-2 pb-2" id="filter-buttons">
+            <button onclick="setFilter('Alles')" class="filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent">Alles Tonen</button>
+            <button onclick="setFilter('Gepland')" class="filter-btn bg-green-100 text-green-800 hover:bg-green-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-green-200">✅ Gepland Klaarzetten</button>
+            <button onclick="setFilter('Service & Spoed')" class="filter-btn bg-red-100 text-red-800 hover:bg-red-200 border border-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">🛠️ Service & Spoed</button>
+            <button onclick="setFilter('Wacht op Prod.')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Wacht op Prod.</button>
+            <button onclick="setFilter('Klant Bellen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Klant Bellen</button>
+            <button onclick="setFilter('Deels Binnen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Deels Binnen</button>
         </div>
     </div>
-</div>
+
+    <div id="loader" class="text-center py-10 font-bold text-gray-500">Orders inladen vanaf server... ⏳</div>
+    <div id="order-container" class="max-w-2xl mx-auto space-y-4"></div>
+
+    <div id="herplanModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg p-5 max-w-sm w-full border-2 border-blue-500 max-h-[95vh] overflow-y-auto">
+            <h3 class="text-xl font-extrabold text-gray-800 mb-1">📅 Klant Herplannen</h3>
+            <p class="text-xs text-gray-500 mb-4 border-b pb-2">Verplaatst de order direct en maakt de status definitief (Akkoord).</p>
+            
+            <input type="hidden" id="herplanOrderNr">
+            
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">Snelkeuze datum:</label>
+            <div class="grid grid-cols-3 gap-1.5 mb-4">
+                <button type="button" onclick="setSnelkeuzeDatum(1)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">Morgen</button>
+                <button type="button" onclick="setSnelkeuzeDatum(7)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">Volgende week</button>
+                <button type="button" onclick="setSnelkeuzeDatum(14)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded text-xs border border-blue-200 transition-colors">+2 Weken</button>
+            </div>
+            
+            <label class="block text-xs font-bold text-gray-700 mb-1">Of selecteer in maandoverzicht:</label>
+            <div class="mb-2 flex justify-center">
+                <input type="text" id="visueleKalenderInput" class="hidden">
+            </div>
+            <div id="kalenderFeedback" class="text-center text-sm font-bold text-green-700 bg-green-100 py-2 mt-2 rounded-lg transition-all opacity-0 hidden"></div>
+            
+            <label class="block text-xs font-bold text-gray-700 mb-1 mt-4">Specifieke Tijd (Optioneel)</label>
+            <input type="time" id="nieuweTijd" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 mb-5 focus:ring-blue-500 text-sm">
+            
+            <div class="flex gap-2">
+                <button onclick="sluitHerplanModal()" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg border border-gray-300 text-sm transition-colors">Annuleer</button>
+                <button id="herplanSubmitBtn" onclick="verstuurHerplanning()" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md text-sm transition-colors">✅ Verplaats Order</button>
+            </div>
+        </div>
+    </div>
 
 <script>
-;(function() {
-    'use strict';
+    // VUL HIER JOUW NIEUWE GOOGLE APPS SCRIPT URL IN
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8XNAycvrJWLnKYxP5ulFmbCZUrLNtb0Etc9-HteUcsdtLU9P90QiKhqumPaKxaqc/exec";
+    
+    let allOrders = [];
+    let currentFilter = 'Alles';
+    let html5QrcodeScanner = null;
+    let kalenderInstance = null; 
+    let scanErrorTimeout = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlOrderToLoad = urlParams.get('order'); 
 
-    var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8XNAycvrJWLnKYxP5ulFmbCZUrLNtb0Etc9-HteUcsdtLU9P90QiKhqumPaKxaqc/exec";
-    var FETCH_TIMEOUT = 15000;
-    var DEBOUNCE_MS = 150;
-    var CACHE_KEY = 'magazijn_orders_cache';
-    var QUEUE_KEY = 'magazijn_pending_actions';
-
-    var allOrders = [];
-    var currentFilter = 'Alles';
-    var html5QrcodeInstance = null;
-    var kalenderInstance = null;
-    var debounceTimer = null;
-    var deferredInstallPrompt = null;
-
-    var dom = {
-        loader: document.getElementById('loader'),
-        container: document.getElementById('order-container'),
-        searchInput: document.getElementById('searchInput'),
-        scannerContainer: document.getElementById('scanner-container'),
-        filterButtons: document.getElementById('filter-buttons'),
-        herplanModal: document.getElementById('herplanModal'),
-        herplanOrderNr: document.getElementById('herplanOrderNr'),
-        herplanSubmitBtn: document.getElementById('herplanSubmitBtn'),
-        herplanCancelBtn: document.getElementById('herplanCancelBtn'),
-        kalenderFeedback: document.getElementById('kalenderFeedback'),
-        nieuweTijd: document.getElementById('nieuweTijd'),
-        locatieModal: document.getElementById('locatieModal'),
-        locatieInput: document.getElementById('locatieInput'),
-        locatieOrderNr: document.getElementById('locatieOrderNr'),
-        locatieAction: document.getElementById('locatieAction'),
-        toast: document.getElementById('toast'),
-        ptr: document.getElementById('ptr-indicator'),
-        offlineBanner: document.getElementById('offline-banner'),
-        installPrompt: document.getElementById('install-prompt'),
-    };
-
+    // FIX: Syntax fout met enkele aanhalingstekens verholpen.
     function escapeHTML(str) {
         if (!str) return "";
-        var el = document.createElement('span');
-        el.textContent = str.toString();
-        return el.innerHTML;
+        return str.toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
-    function showToast(message, type, duration) {
-        type = type || 'success';
-        duration = duration || 3000;
-        dom.toast.textContent = message;
-        dom.toast.className = 'toast toast-' + type + ' show';
-        setTimeout(function() { dom.toast.classList.remove('show'); }, duration);
-    }
-
-    function debounce(fn, ms) {
-        return function() {
-            var args = arguments;
-            var context = this;
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(function() { fn.apply(context, args); }, ms);
-        };
-    }
-
-    function fetchWithTimeout(url, timeout) {
-        timeout = timeout || FETCH_TIMEOUT;
-        var controller = new AbortController();
-        var timeoutId = setTimeout(function() { controller.abort(); }, timeout);
-        return fetch(url, { signal: controller.signal }).then(function(res) {
-            clearTimeout(timeoutId);
-            return res;
-        }).catch(function(e) {
-            clearTimeout(timeoutId);
-            throw e;
+    document.addEventListener("DOMContentLoaded", function() {
+        kalenderInstance = flatpickr("#visueleKalenderInput", {
+            inline: true,          
+            locale: "nl",          
+            dateFormat: "Y-m-d",   
+            minDate: "today",      
+            defaultDate: "today",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length > 0) {
+                    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                    const mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', options);
+                    let feedbackDiv = document.getElementById("kalenderFeedback");
+                    feedbackDiv.innerText = `✅ Geselecteerd: ${mooieDatum}`;
+                    feedbackDiv.classList.remove("hidden");
+                    feedbackDiv.style.opacity = "1"; 
+                }
+            }
         });
+        setupPullToRefresh();
+        loadOrders();
+    });
+
+    function setupPullToRefresh() {
+        let touchstartY = 0;
+        const ptr = document.getElementById('ptr-indicator');
+        
+        document.addEventListener('touchstart', e => { if (window.scrollY === 0) touchstartY = e.touches[0].clientY; }, {passive: true});
+        document.addEventListener('touchmove', e => { if (window.scrollY === 0 && touchstartY > 0) { let currentY = e.touches[0].clientY; if (currentY - touchstartY > 60) ptr.style.height = '40px'; } }, {passive: true});
+        document.addEventListener('touchend', e => {
+            if (window.scrollY === 0 && touchstartY > 0) {
+                let touchendY = e.changedTouches[0].clientY;
+                if (touchendY - touchstartY > 80) {
+                    ptr.innerText = "🔄 Vernieuwen...";
+                    loadOrders().then(() => { ptr.style.height = '0'; setTimeout(() => ptr.innerText = "⬇️ Laat los om te vernieuwen...", 300); });
+                } else { ptr.style.height = '0'; }
+                touchstartY = 0;
+            }
+        }, {passive: true});
     }
 
-    function formatDatumLeesbaar(dateStr) {
+    function setSnelkeuzeDatum(dagenErbij) {
+        let doelDatum = new Date(); doelDatum.setDate(doelDatum.getDate() + dagenErbij);
+        if (kalenderInstance) kalenderInstance.setDate(doelDatum, true); 
+    }
+
+    async function loadOrders() {
+        document.getElementById('loader').classList.remove('hidden');
+        document.getElementById('loader').innerText = "Orders inladen vanaf server... ⏳";
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); 
+
         try {
-            var parts = dateStr.split('-');
-            var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-            return d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
-        } catch(e) { return dateStr; }
-    }
-
-    function saveToCache(orders) {
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), orders: orders })); } catch(e) {}
-    }
-
-    function loadFromCache() {
-        try { var c = localStorage.getItem(CACHE_KEY); if (!c) return null; return JSON.parse(c).orders || null; } catch(e) { return null; }
-    }
-
-    function getCacheAge() {
-        try { var c = localStorage.getItem(CACHE_KEY); if (!c) return null; return Math.round((Date.now() - JSON.parse(c).timestamp) / 60000); } catch(e) { return null; }
-    }
-
-    function queueAction(actionData) {
-        try { var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); q.push(actionData); localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch(e) {}
-    }
-
-    function getQueuedActions() {
-        try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e) { return []; }
-    }
-
-    function clearQueue() { localStorage.removeItem(QUEUE_KEY); }
-
-    function processQueue() {
-        var queue = getQueuedActions();
-        if (queue.length === 0) return;
-        showToast('\u{1F4E4} ' + queue.length + ' wachtende actie(s) worden verstuurd...', 'warning', 2000);
-        var promises = queue.map(function(item) {
-            return fetchWithTimeout(item.url).then(function(res) { return res.json(); });
-        });
-        Promise.allSettled(promises).then(function(results) {
-            var succeeded = results.filter(function(r) { return r.status === 'fulfilled' && r.value && r.value.status === 'ok'; }).length;
-            var failed = results.length - succeeded;
-            clearQueue();
-            if (failed > 0) showToast('\u26A0\uFE0F ' + succeeded + ' gelukt, ' + failed + ' mislukt', 'warning', 4000);
-            else showToast('\u2705 Alle ' + succeeded + ' wachtende actie(s) verstuurd!', 'success');
-            loadOrders();
-        });
-    }
-
-    function updateOnlineStatus() {
-        if (navigator.onLine) { dom.offlineBanner.classList.remove('show'); processQueue(); }
-        else { dom.offlineBanner.classList.add('show'); }
-    }
-
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-
-    function getStatusCategory(statusStr) {
-        var s = statusStr.toLowerCase();
-        if (s.includes('service gepland')) return 'service-gepland';
-        if (s.includes('definitief')) return 'definitief';
-        if (s.includes('deels')) return 'deels';
-        if (s.includes('bellen') || s.includes('spoed')) return 'bellen';
-        if (s === 'service' || s.includes('service nodig')) return 'service';
-        if (s.includes('binnen')) return 'binnen';
-        if (s.includes('wacht')) return 'wacht';
-        return 'wacht';
-    }
-
-    function getStatusBadgeClass(category) {
-        var map = { 'binnen': 'status-binnen', 'wacht': 'status-wacht', 'bellen': 'status-bellen', 'deels': 'status-deels', 'service': 'status-service', 'definitief': 'status-definitief', 'service-gepland': 'status-service-gepland' };
-        return map[category] || 'status-wacht';
-    }
-
-    function matchesFilter(order, filter) {
-        if (filter === 'Alles') return true;
-        var cat = getStatusCategory(order.status);
-        switch(filter) {
-            case 'Gepland': return cat === 'definitief' || cat === 'service-gepland';
-            case 'Service & Spoed': return cat === 'service' || cat === 'bellen';
-            case 'Wacht op Prod.': return cat === 'wacht';
-            case 'Klant Bellen': return cat === 'bellen';
-            case 'Deels Binnen': return cat === 'deels';
-            default: return true;
+            const res = await fetch(WEB_APP_URL + "?action=getOrders", { signal: controller.signal });
+            clearTimeout(timeoutId);
+            allOrders = await res.json();
+            document.getElementById('loader').classList.add('hidden');
+            if (urlOrderToLoad) document.getElementById('searchInput').value = escapeHTML(urlOrderToLoad);
+            renderOrders();
+        } catch(e) {
+            clearTimeout(timeoutId);
+            if (e.name === 'AbortError') document.getElementById('loader').innerText = "❌ Server reageert niet (Timeout). Probeer het later opnieuw.";
+            else document.getElementById('loader').innerText = "❌ Fout bij inladen. Controleer URL of internetverbinding.";
         }
     }
 
-    function updateFilterButtonStyles() {
-        dom.filterButtons.querySelectorAll('.filter-btn').forEach(function(btn) {
-            var filter = btn.dataset.filter;
-            var isActive = filter === currentFilter;
-            btn.className = 'filter-btn px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border transition-colors';
-            if (isActive) {
-                if (filter === 'Service & Spoed') btn.classList.add('bg-red-600', 'text-white', 'shadow-sm', 'border-transparent');
-                else if (filter === 'Gepland') btn.classList.add('bg-green-600', 'text-white', 'shadow-sm', 'border-transparent');
-                else btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'border-transparent');
+    function setFilter(status) {
+        currentFilter = status;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.innerText.includes(status) || (status === 'Alles' && btn.innerText === 'Alles Tonen')) {
+                btn.className = "filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
+                if (status === 'Service & Spoed') btn.className = "filter-btn bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
+                if (status === 'Gepland') btn.className = "filter-btn bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent";
             } else {
-                if (filter === 'Service & Spoed') btn.classList.add('bg-red-50', 'text-red-800', 'hover:bg-red-100', 'border-red-200');
-                else if (filter === 'Gepland') btn.classList.add('bg-green-50', 'text-green-800', 'hover:bg-green-100', 'border-green-200');
-                else btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200', 'border-transparent');
+                btn.className = "filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent";
+                if (btn.innerText.includes('Service & Spoed')) btn.className = "filter-btn bg-red-50 text-red-800 hover:bg-red-100 border border-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap";
+                if (btn.innerText.includes('Gepland')) btn.className = "filter-btn bg-green-50 text-green-800 hover:bg-green-100 border border-green-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap";
             }
         });
-    }
-
-    function setFilter(filter) {
-        currentFilter = filter;
-        updateFilterButtonStyles();
         renderOrders();
     }
 
+    document.getElementById('searchInput').addEventListener('keyup', renderOrders);
+
     function renderOrders() {
-        dom.container.innerHTML = '';
-        var searchTerm = dom.searchInput.value.toLowerCase().trim();
-        var visibleCount = 0;
-        allOrders.forEach(function(order) {
-            if (order.status.toLowerCase() === 'opgeleverd') return;
-            if (!matchesFilter(order, currentFilter)) return;
-            if (searchTerm) {
-                var haystack = (order.ordernummer + ' ' + order.naam + ' ' + order.producten).toLowerCase();
-                if (!haystack.includes(searchTerm)) return;
+        const container = document.getElementById('order-container'); container.innerHTML = '';
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        let visibleCount = 0;
+        
+        allOrders.forEach(order => {
+            if (order.status === "Opgeleverd") return; 
+
+            let matchStatus = false;
+            let orderStatLower = order.status.toLowerCase();
+
+            if (currentFilter === 'Alles') matchStatus = true;
+            else if (currentFilter === 'Wacht op Prod.' && orderStatLower.includes('wacht')) matchStatus = true;
+            else if (currentFilter === 'Klant Bellen' && orderStatLower.includes('bellen')) matchStatus = true;
+            else if (currentFilter === 'Deels Binnen' && orderStatLower.includes('deels')) matchStatus = true;
+            else if (currentFilter === 'Service & Spoed' && (orderStatLower.includes('service') || orderStatLower.includes('spoed'))) matchStatus = true;
+            else if (currentFilter === 'Gepland' && (orderStatLower.includes('definitief') || orderStatLower.includes('gepland'))) matchStatus = true;
+
+            let matchSearch = true;
+            if (searchTerm !== "") {
+                const textStr = (order.ordernummer + " " + order.naam + " " + order.producten).toLowerCase();
+                if (!textStr.includes(searchTerm)) matchSearch = false;
             }
-            visibleCount++;
-            dom.container.appendChild(buildOrderCard(order));
+
+            if (matchStatus && matchSearch) {
+                visibleCount++; 
+                container.appendChild(buildOrderCard(order));
+            }
         });
+
         if (visibleCount === 0) {
-            dom.container.innerHTML = '<div class="text-center py-8 text-gray-400 font-bold">Geen openstaande orders gevonden in dit overzicht.</div>';
+            container.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold">Geen openstaande orders gevonden in dit overzicht.</div>`;
         }
     }
 
     function buildOrderCard(order) {
-        var cat = getStatusCategory(order.status);
-        var badgeClass = getStatusBadgeClass(cat);
-        var isReedsGepland = cat === 'definitief' || cat === 'service-gepland';
+        const safeOrderNummer = escapeHTML(order.ordernummer);
+        const safeNaam = escapeHTML(order.naam);
+        const safeStatus = escapeHTML(order.status);
+        const safeProducten = escapeHTML(order.producten);
+        const safeBron = escapeHTML(order.bron);
+        const safeAdres = escapeHTML(order.adres);
+        
+        let badgeClass = 'status-wacht';
+        let orderStatLower = safeStatus.toLowerCase();
+        
+        if (orderStatLower.includes('binnen')) badgeClass = 'status-binnen';
+        if (orderStatLower.includes('bellen') || orderStatLower.includes('spoed')) badgeClass = 'status-bellen';
+        if (orderStatLower.includes('deels')) badgeClass = 'status-deels';
+        if (orderStatLower.includes('service nodig') || orderStatLower === 'service') badgeClass = 'status-service';
+        if (orderStatLower.includes('definitief')) badgeClass = 'status-definitief';
+        if (orderStatLower.includes('service gepland')) badgeClass = 'status-service-gepland';
 
-        var planTekst = "Nog niet ingepland";
-        if (order.planningsBericht && /Gepland op|Geplanned op|Handmatig/.test(order.planningsBericht)) {
-            planTekst = order.planningsBericht.replace("Gepland op ", "").replace("Geplanned op ", "").split("\n")[0].replace(/'/g, "");
+        let planTekst = "Nog niet ingepland";
+        if (order.planningsBericht && (order.planningsBericht.includes("Gepland op") || order.planningsBericht.includes("Geplanned op") || order.planningsBericht.includes("Handmatig"))) {
+            planTekst = escapeHTML(order.planningsBericht.replace("Gepland op ", "").replace("Geplanned op ", "").split("\n")[0].replace(/'/g, ""));
+        }
+        
+        let tijdTekst = "";
+        if (order.vasteTijd) tijdTekst = ` | 🕒 ${escapeHTML(order.vasteTijd)}`;
+        else if (order.voorkeur && order.voorkeur !== "Geen") tijdTekst = ` | 🕒 ${escapeHTML(order.voorkeur)}`;
+
+        let bronPill = "";
+        if (safeBron && safeBron !== "Sombre") {
+            bronPill = `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded ml-2 font-bold border border-blue-200">🏢 ${safeBron}</span>`;
         }
 
-        var tijdTekst = "";
-        if (order.vasteTijd) tijdTekst = ' | \u{1F552} ' + escapeHTML(order.vasteTijd);
-        else if (order.voorkeur && order.voorkeur !== "Geen") tijdTekst = ' | \u{1F552} ' + escapeHTML(order.voorkeur);
+        // FIX: Google Maps link syntaxis hersteld
+        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.adres || '')}`;
+        
+        const isReedsGepland = orderStatLower.includes('definitief') || orderStatLower.includes('service gepland');
 
-        var bronPill = "";
-        if (order.bron && order.bron !== "Sombre") {
-            bronPill = '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded ml-2 font-bold border border-blue-200">\u{1F3E2} ' + escapeHTML(order.bron) + '</span>';
-        }
-
-        var mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(order.adres || '');
-        var div = document.createElement('div');
-        div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
-        div.dataset.ordernummer = order.ordernummer;
-
-        var actieKnoppen = '';
+        let actieKnoppen = '';
         if (!isReedsGepland) {
-            actieKnoppen = '<button data-action="markPartial" class="action-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm border border-transparent transition-colors">\u26A0\uFE0F Deels</button>' +
-                '<button data-action="markBinnen" class="action-btn bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm border border-transparent transition-colors">\u2705 Binnen</button>' +
-                '<button data-action="markGreen" class="action-btn col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm mt-1 border border-transparent transition-colors">\u{1F91D} Akkoord (Maak Definitief)</button>';
+            actieKnoppen = `
+                <button onclick="updateStatus('${safeOrderNummer}', 'markPartial', this)" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-lg font-bold text-sm border border-transparent">⚠️ Deels</button>
+                <button onclick="updateStatus('${safeOrderNummer}', 'markBinnen', this)" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm border border-transparent">✅ Binnen</button>
+                <button onclick="updateStatus('${safeOrderNummer}', 'markGreen', this)" class="col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold text-sm mt-1 border border-transparent">🤝 Akkoord (Maak Definitief)</button>
+            `;
         }
 
-        var colClass = isReedsGepland ? 'col-span-1' : 'col-span-2';
+        const div = document.createElement('div'); 
+        div.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5";
+        div.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <div class="text-xs text-gray-500 font-bold mb-1 flex items-center">ORD: ${safeOrderNummer} ${bronPill}</div>
+                    <div class="text-lg font-extrabold text-gray-900">${safeNaam}</div>
+                </div>
+                <span class="status-badge ${badgeClass} text-center leading-tight">${safeStatus}</span>
+            </div>
+            
+            <div class="text-sm text-blue-800 bg-blue-50 p-2 rounded-lg border border-blue-100 font-bold mb-3 flex items-center shadow-inner">
+                📅 ${planTekst}${tijdTekst}
+            </div>
 
-        div.innerHTML = '<div class="flex justify-between items-start mb-2"><div><div class="text-xs text-gray-500 font-bold mb-1 flex items-center">ORD: ' + escapeHTML(order.ordernummer) + ' ' + bronPill + '</div><div class="text-lg font-extrabold text-gray-900">' + escapeHTML(order.naam) + '</div></div><span class="status-badge ' + badgeClass + ' text-center leading-tight">' + escapeHTML(order.status) + '</span></div>' +
-        '<div class="text-sm text-blue-800 bg-blue-50 p-2 rounded-lg border border-blue-100 font-bold mb-3 flex items-center shadow-inner">\u{1F4C5} ' + escapeHTML(planTekst) + tijdTekst + '</div>' +
-        '<div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100 whitespace-pre-wrap">\u{1F4E6} ' + escapeHTML(order.producten) + '</div>' +
-        '<div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">' + actieKnoppen +
-            '<button data-action="herplan" class="' + colClass + ' action-btn bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded-lg font-bold text-sm mt-1 border border-purple-200 transition-colors">\u{1F4C5} Herplannen</button>' +
-            '<a href="' + mapUrl + '" target="_blank" rel="noopener" class="' + colClass + ' bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold text-sm border border-gray-300 flex items-center justify-center mt-1 transition-colors">\u{1F5FA}\uFE0F Navigeer</a>' +
-            '<button data-action="markFinished" class="action-btn col-span-2 bg-gray-800 hover:bg-black text-white py-3 rounded-lg font-bold text-sm mt-2 border border-gray-700 transition-colors shadow-md">\u{1F3C1} Klus Afronden (Verberg)</button>' +
-        '</div>';
+            <div class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded border border-gray-100 whitespace-pre-wrap">📦 ${safeProducten}</div>
+            
+            <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
+                ${actieKnoppen}
+                
+                <button onclick="openHerplanModal('${safeOrderNummer}')" class="${isReedsGepland ? 'col-span-1' : 'col-span-2'} bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 rounded-lg font-bold text-sm mt-1 border border-purple-200">📅 Herplannen</button>
+                
+                <a href="${mapUrl}" target="_blank" class="${isReedsGepland ? 'col-span-1' : 'col-span-2'} bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-bold text-sm border border-gray-300 flex items-center justify-center mt-1 transition-colors">
+                    🗺️ Navigeer
+                </a>
 
+                <button onclick="updateStatus('${safeOrderNummer}', 'markFinished', this)" class="col-span-2 bg-gray-800 hover:bg-black text-white py-3 rounded-lg font-bold text-sm mt-2 border border-gray-700 transition-colors shadow-md">
+                    🏁 Klus Afronden (Verberg)
+                </button>
+            </div>
+        `; 
         return div;
     }
 
-    dom.container.addEventListener('click', function(e) {
-        var btn = e.target.closest('.action-btn');
-        if (!btn) return;
-        var card = btn.closest('[data-ordernummer]');
-        if (!card) return;
-        var ordernummer = card.dataset.ordernummer;
-        var action = btn.dataset.action;
-        if (action === 'herplan') openHerplanModal(ordernummer);
-        else if (action === 'markBinnen' || action === 'markPartial') openLocatieModal(ordernummer, action);
-        else if (action === 'markGreen' || action === 'markFinished') updateStatus(ordernummer, action, btn);
-    });
-
-    dom.filterButtons.addEventListener('click', function(e) {
-        var btn = e.target.closest('.filter-btn');
-        if (!btn) return;
-        setFilter(btn.dataset.filter);
-    });
-
-    function openLocatieModal(ordernummer, action) {
-        dom.locatieOrderNr.value = ordernummer;
-        dom.locatieAction.value = action;
-        dom.locatieInput.value = '';
-        dom.locatieModal.classList.remove('hidden');
-        setTimeout(function() { dom.locatieInput.focus(); }, 50);
-    }
-
-    function closeLocatieModal() { dom.locatieModal.classList.add('hidden'); }
-
-    document.getElementById('locatieCancel').addEventListener('click', closeLocatieModal);
-    document.getElementById('locatieModalBackdrop').addEventListener('click', closeLocatieModal);
-    document.getElementById('locatieSubmit').addEventListener('click', function() {
-        var ordernummer = dom.locatieOrderNr.value;
-        var action = dom.locatieAction.value;
-        var locatie = dom.locatieInput.value.trim();
-        closeLocatieModal();
-        updateStatus(ordernummer, action, null, locatie);
-    });
-    dom.locatieInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('locatieSubmit').click(); });
-
-    function updateStatus(ordernummer, action, btnElement, locatie) {
-        var isCritical = (action === 'markFinished' || action === 'markGreen');
-        var oldBtnText = '';
-        var previousStatus = null;
-        var order = allOrders.find(function(o) { return o.ordernummer === ordernummer; });
-        if (order) previousStatus = order.status;
-
-        if (order) {
-            if (action === 'markBinnen') order.status = "Producten Binnen (Klant Bellen)";
-            if (action === 'markPartial') order.status = "Deels Binnen";
-            if (action === 'markGreen') order.status = "Definitief";
-            if (action === 'markFinished') order.status = "Opgeleverd";
+    async function updateStatus(ordernummer, action, btnElement) {
+        let loc = "";
+        if(action === 'markBinnen' || action === 'markPartial') {
+            loc = prompt(`Magazijn Locatie (optioneel) voor ORD ${ordernummer}:`);
+            if (loc === null) return;
         }
 
-        if (isCritical && btnElement) { oldBtnText = btnElement.innerText; btnElement.innerText = "\u23F3..."; btnElement.disabled = true; }
+        const isCriticalAction = (action === 'markFinished' || action === 'markGreen');
+        const oldBtnText = btnElement.innerText;
 
-        renderOrders();
-        saveToCache(allOrders);
-
-        var url = WEB_APP_URL + '?action=' + encodeURIComponent(action) + '&ordernummer=' + encodeURIComponent(ordernummer) + '&locatieInfo=' + encodeURIComponent(locatie || '');
-
-        if (!navigator.onLine) {
-            queueAction({ url: url, action: action, ordernummer: ordernummer, timestamp: Date.now() });
-            showToast('\u{1F4E5} Offline opgeslagen, wordt verstuurd bij verbinding', 'warning', 4000);
-            return;
+        if (isCriticalAction) {
+            btnElement.innerText = "⏳...";
+            btnElement.disabled = true;
+        } else {
+            allOrders.forEach(o => {
+                if(o.ordernummer === ordernummer) {
+                    if (action === 'markBinnen') o.status = "Producten Binnen (Klant Bellen)";
+                    if (action === 'markPartial') o.status = "Deels Binnen";
+                }
+            });
+            renderOrders();
         }
+        
+        try {
+            const res = await fetch(WEB_APP_URL + "?action=" + action + "&ordernummer=" + encodeURIComponent(ordernummer) + "&locatieInfo=" + encodeURIComponent(loc || ""));
+            const resultaat = await res.json();
 
-        fetchWithTimeout(url).then(function(res) { return res.json(); }).then(function(resultaat) {
-            if (resultaat.status === "ok") {
-                showToast('\u2705 Order ' + ordernummer + ' bijgewerkt', 'success');
-                saveToCache(allOrders);
-            } else {
-                if (order && previousStatus) { order.status = previousStatus; renderOrders(); saveToCache(allOrders); }
-                if (isCritical && btnElement) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
-                showToast('\u274C ' + (resultaat.message || 'Onbekende fout'), 'error', 5000);
+            if (resultaat.status === "ok" && isCriticalAction) {
+                allOrders.forEach(o => {
+                    if(o.ordernummer === ordernummer) {
+                        if (action === 'markGreen') o.status = "Definitief"; 
+                        if (action === 'markFinished') o.status = "Opgeleverd"; 
+                    }
+                });
+                renderOrders();
+            } else if (resultaat.status !== "ok") {
+                alert("❌ Fout vanuit de backend: " + resultaat.message);
+                if (isCriticalAction) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
             }
-        }).catch(function() {
-            queueAction({ url: url, action: action, ordernummer: ordernummer, timestamp: Date.now() });
-            if (isCritical && btnElement) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
-            showToast('\u{1F4E5} Opgeslagen in wachtrij', 'warning', 4000);
-        });
+        } catch(e) {
+            alert("❌ Netwerkfout bij het updaten van de status.");
+            if (isCriticalAction) { btnElement.innerText = oldBtnText; btnElement.disabled = false; }
+        }
     }
 
     function openHerplanModal(ordernummer) {
-        dom.herplanOrderNr.value = ordernummer;
-        if (kalenderInstance) kalenderInstance.setDate(new Date(), false);
-        dom.kalenderFeedback.classList.add('hidden');
-        dom.kalenderFeedback.style.opacity = "0";
-        dom.herplanModal.classList.remove('hidden');
+        document.getElementById('herplanOrderNr').value = ordernummer;
+        if (kalenderInstance) kalenderInstance.setDate(new Date(), false); 
+        let feedbackDiv = document.getElementById("kalenderFeedback");
+        if (feedbackDiv) { feedbackDiv.classList.add("hidden"); feedbackDiv.style.opacity = "0"; }
+        document.getElementById('herplanModal').classList.remove('hidden');
     }
 
-    function sluitHerplanModal() { dom.herplanModal.classList.add('hidden'); dom.nieuweTijd.value = ''; }
+    function sluitHerplanModal() {
+        document.getElementById('herplanModal').classList.add('hidden');
+        document.getElementById('nieuweTijd').value = '';
+    }
 
-    dom.herplanCancelBtn.addEventListener('click', sluitHerplanModal);
-
-    document.getElementById('snelkeuzeContainer').addEventListener('click', function(e) {
-        var btn = e.target.closest('.snelkeuze-btn');
-        if (!btn) return;
-        var dagen = parseInt(btn.dataset.dagen, 10);
-        var doelDatum = new Date();
-        doelDatum.setDate(doelDatum.getDate() + dagen);
-        if (kalenderInstance) kalenderInstance.setDate(doelDatum, true);
-    });
-
-    dom.herplanSubmitBtn.addEventListener('click', function() {
-        var ordernummer = dom.herplanOrderNr.value;
-        var datum = kalenderInstance ? kalenderInstance.input.value : "";
-        var tijd = dom.nieuweTijd.value;
-        if (!datum) { showToast('\u26A0\uFE0F Selecteer een datum!', 'warning'); return; }
-
-        var btn = dom.herplanSubmitBtn;
-        var oudeTekst = btn.innerText;
-        btn.innerText = "\u23F3 Bezig met verplaatsen...";
+    // FIX: Volledig herschreven en beveiligde herplanningsfunctie
+    async function verstuurHerplanning() {
+        const ordernummer = document.getElementById('herplanOrderNr').value;
+        const tijd = document.getElementById('nieuweTijd').value;
+        
+        // Betrouwbare manier om de datum uit Flatpickr te trekken
+        let datum = "";
+        if (kalenderInstance && kalenderInstance.selectedDates.length > 0) {
+            datum = flatpickr.formatDate(kalenderInstance.selectedDates[0], "Y-m-d");
+        }
+        
+        if (!datum) { alert("⚠️ Selecteer a.u.b. een nieuwe datum!"); return; }
+        
+        const btn = document.getElementById('herplanSubmitBtn');
+        const oudeTekst = btn.innerText;
+        btn.innerText = "⏳ Bezig met verplaatsen...";
         btn.disabled = true;
-
-        var url = WEB_APP_URL + '?action=herplanDefinitief&ordernummer=' + encodeURIComponent(ordernummer) + '&nieuweDatum=' + encodeURIComponent(datum) + '&nieuweTijd=' + encodeURIComponent(tijd);
-
-        var order = allOrders.find(function(o) { return o.ordernummer === ordernummer; });
-        if (order) {
-            order.status = "Definitief";
-            order.planningsBericht = "Gepland op " + formatDatumLeesbaar(datum);
-            if (tijd) order.vasteTijd = tijd;
-        }
-
-        if (!navigator.onLine) {
-            renderOrders();
-            saveToCache(allOrders);
-            queueAction({ url: url, action: 'herplanDefinitief', ordernummer: ordernummer, timestamp: Date.now() });
-            sluitHerplanModal();
-            showToast('\u{1F4E5} Herplanning offline opgeslagen', 'warning', 4000);
-            btn.innerText = oudeTekst; btn.disabled = false;
-            return;
-        }
-
-        fetchWithTimeout(url).then(function(res) { return res.json(); }).then(function(resultaat) {
+        
+        try {
+            const response = await fetch(WEB_APP_URL + "?action=herplanDefinitief&ordernummer=" + encodeURIComponent(ordernummer) + "&nieuweDatum=" + encodeURIComponent(datum) + "&nieuweTijd=" + encodeURIComponent(tijd));
+            const resultaat = await response.json(); 
+            
             if (resultaat.status === "ok") {
                 sluitHerplanModal();
+                allOrders.forEach(o => { if(o.ordernummer === ordernummer) o.status = "Definitief"; });
                 renderOrders();
-                saveToCache(allOrders);
-                showToast('\u{1F4C5} Order ' + ordernummer + ' herplannd naar ' + formatDatumLeesbaar(datum), 'success');
             } else {
-                showToast('\u274C ' + (resultaat.message || resultaat.bericht || 'Planning geweigerd'), 'error', 5000);
+                alert("❌ De planning is geweigerd door de sheet:\n" + escapeHTML(resultaat.message || resultaat.bericht || "Onbekende fout"));
             }
-        }).catch(function() {
-            queueAction({ url: url, action: 'herplanDefinitief', ordernummer: ordernummer, timestamp: Date.now() });
-            renderOrders();
-            saveToCache(allOrders);
-            sluitHerplanModal();
-            showToast('\u{1F4E5} Opgeslagen in wachtrij', 'warning', 4000);
-        }).finally(function() { btn.innerText = oudeTekst; btn.disabled = false; });
-    });
+        } catch(e) {
+            alert("❌ Netwerkfout. Controleer je internetverbinding.");
+        } finally {
+            btn.innerText = oudeTekst;
+            btn.disabled = false;
+        }
+    }
 
     function startScanner() {
-        dom.scannerContainer.classList.remove('hidden');
-        html5QrcodeInstance = new Html5Qrcode("reader");
-        html5QrcodeInstance.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } },
-            function(decodedText) { stopScanner(); dom.searchInput.value = decodedText; setFilter('Alles'); },
-            function() {}
-        ).catch(function() { showToast('\u274C Camera kon niet worden gestart', 'error'); dom.scannerContainer.classList.add('hidden'); });
+        document.getElementById('scanner-container').classList.remove('hidden');
+        if (!html5QrcodeScanner) html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 100} }, false);
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     }
-
-    function stopScanner() {
-        if (html5QrcodeInstance) { html5QrcodeInstance.stop().then(function() { html5QrcodeInstance.clear(); html5QrcodeInstance = null; }).catch(function() {}); }
-        dom.scannerContainer.classList.add('hidden');
+    
+    function stopScanner() { 
+        if (html5QrcodeScanner) html5QrcodeScanner.clear(); 
+        document.getElementById('scanner-container').classList.add('hidden'); 
     }
-
-    document.getElementById('scanBtn').addEventListener('click', startScanner);
-    document.getElementById('stopScanBtn').addEventListener('click', stopScanner);
-
-    dom.searchInput.addEventListener('input', debounce(renderOrders, DEBOUNCE_MS));
-
-    function setupPullToRefresh() {
-        var touchstartY = 0;
-        document.addEventListener('touchstart', function(e) { if (window.scrollY === 0) touchstartY = e.touches[0].clientY; }, { passive: true });
-        document.addEventListener('touchmove', function(e) { if (window.scrollY === 0 && touchstartY > 0) { if (e.touches[0].clientY - touchstartY > 60) dom.ptr.style.height = '40px'; } }, { passive: true });
-        document.addEventListener('touchend', function(e) {
-            if (window.scrollY === 0 && touchstartY > 0) {
-                if (e.changedTouches[0].clientY - touchstartY > 80) {
-                    dom.ptr.innerText = "\u{1F504} Vernieuwen...";
-                    loadOrders().then(function() { dom.ptr.style.height = '0'; setTimeout(function() { dom.ptr.innerText = "\u2B07\uFE0F Laat los om te vernieuwen..."; }, 300); });
-                } else { dom.ptr.style.height = '0'; }
-                touchstartY = 0;
-            }
-        }, { passive: true });
+    
+    function onScanSuccess(decodedText) { 
+        stopScanner(); 
+        document.getElementById('searchInput').value = escapeHTML(decodedText); 
+        setFilter('Alles'); 
     }
-
-    function loadOrders() {
-        dom.loader.classList.remove('hidden');
-        dom.loader.innerText = "Orders inladen vanaf server... \u23F3";
-        return fetchWithTimeout(WEB_APP_URL + "?action=getOrders").then(function(res) { return res.json(); }).then(function(data) {
-            allOrders = data;
-            dom.loader.classList.add('hidden');
-            saveToCache(allOrders);
-            var urlParams = new URLSearchParams(window.location.search);
-            var urlOrder = urlParams.get('order');
-            if (urlOrder) dom.searchInput.value = urlOrder;
-            renderOrders();
-        }).catch(function(e) {
-            var cached = loadFromCache();
-            if (cached && cached.length > 0) {
-                allOrders = cached;
-                dom.loader.classList.add('hidden');
-                var age = getCacheAge();
-                var ageTekst = age !== null ? ' (' + age + ' min. oud)' : '';
-                showToast('\u{1F4E1} Offline modus: cache geladen' + ageTekst, 'warning', 4000);
-                renderOrders();
-            } else {
-                if (e.name === 'AbortError') dom.loader.innerText = "\u274C Server reageert niet (Timeout).";
-                else dom.loader.innerText = "\u274C Fout bij inladen. Geen cached data beschikbaar.";
-            }
-        });
+    
+    function onScanFailure(error) {
+        clearTimeout(scanErrorTimeout);
+        scanErrorTimeout = setTimeout(() => { console.debug("Scan fout/bezig:", error); }, 1000);
     }
-
-    window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredInstallPrompt = e;
-        if (!localStorage.getItem('pwa_install_dismissed')) {
-            setTimeout(function() { dom.installPrompt.classList.add('show'); }, 3000);
-        }
-    });
-
-    document.getElementById('install-accept').addEventListener('click', function() {
-        if (deferredInstallPrompt) { deferredInstallPrompt.prompt(); deferredInstallPrompt.userChoice.then(function() { deferredInstallPrompt = null; }); }
-        dom.installPrompt.classList.remove('show');
-    });
-
-    document.getElementById('install-dismiss').addEventListener('click', function() {
-        dom.installPrompt.classList.remove('show');
-        localStorage.setItem('pwa_install_dismissed', 'true');
-    });
-
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(function() {}); }
-
-    function init() {
-        kalenderInstance = flatpickr("#visueleKalenderInput", {
-            inline: true, locale: "nl", dateFormat: "Y-m-d", minDate: "today", defaultDate: "today",
-            onChange: function(selectedDates) {
-                if (selectedDates.length > 0) {
-                    var mooieDatum = selectedDates[0].toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
-                    dom.kalenderFeedback.innerText = '\u2705 Geselecteerd: ' + mooieDatum;
-                    dom.kalenderFeedback.classList.remove("hidden");
-                    dom.kalenderFeedback.style.opacity = "1";
-                }
-            }
-        });
-        updateFilterButtonStyles();
-        updateOnlineStatus();
-        setupPullToRefresh();
-        loadOrders();
-    }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-})();
 </script>
 </body>
 </html>
