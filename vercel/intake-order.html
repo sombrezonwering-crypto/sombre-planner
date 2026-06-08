@@ -216,32 +216,27 @@
     </div>
 
 <script>
-    // VUL HIER JOUW LIVE WEB APP URL IN!
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
 
     let isService = false;
     let totaleServiceTijd = 0;
     let totaleMontageTijd = 0;
-    let laatsteZoekopdracht = ""; // Voorkomt dubbele API calls
+    let laatsteZoekopdracht = "";
 
-    // --- PDOK POSTCODE API (Gerepareerd) ---
+    // --- PDOK POSTCODE API ---
     async function haalAdresOp() {
         const rawPc = document.getElementById('postcode').value.trim();
         const pcInput = rawPc.replace(/\s+/g, '').toUpperCase();
         const hnInput = document.getElementById('huisnummer').value.trim();
         const straatVeld = document.getElementById('straatEnWoonplaats');
 
-        // We zoeken pas als BEIDE velden logisch gevuld lijken.
         if (pcInput.length >= 6 && hnInput.length >= 1) {
-            
-            // Check op geldige formaten
             const isPcGeldig = /^[1-9][0-9]{3}[A-Z]{2}$/.test(pcInput);
             const isHnGeldig = /^[1-9]\d*[A-Za-z0-9\-\s]*$/.test(hnInput);
 
             if (isPcGeldig && isHnGeldig) {
-                // Maak een unieke zoekstring om onnodige calls te voorkomen (bijv. als iemand typt)
                 const huidigeZoekopdracht = `${pcInput}-${hnInput}`;
-                if (laatsteZoekopdracht === huidigeZoekopdracht) return; // Al gezocht!
+                if (laatsteZoekopdracht === huidigeZoekopdracht) return;
                 
                 laatsteZoekopdracht = huidigeZoekopdracht;
 
@@ -252,7 +247,6 @@
                     if (data.response.docs.length > 0) {
                         const doc = data.response.docs[0];
                         if (doc.straatnaam && doc.woonplaatsnaam) {
-                            // Vul het adres in, direct in het gewenste formaat "Straat 12, Plaats"
                             straatVeld.value = `${doc.straatnaam} ${hnInput}, ${doc.woonplaatsnaam}`;
                             straatVeld.classList.add('bg-green-100', 'border-green-400');
                             setTimeout(() => straatVeld.classList.remove('bg-green-100', 'border-green-400'), 2000);
@@ -559,7 +553,8 @@
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        // FIX: Timeout verhoogd van 15 seconden naar 40 seconden om Apps Script vertragingen op te vangen
+        const timeoutId = setTimeout(() => controller.abort(), 40000);
 
         try {
             const response = await fetch(WEB_APP_URL, {
