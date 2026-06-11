@@ -240,11 +240,14 @@
                 
                 laatsteZoekopdracht = huidigeZoekopdracht;
 
-                try {
-                    const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?fq=postcode:${pcInput}&fq=huisnummer:${hnInput}&rows=1`);
-                    const data = await res.json();
+              try {
+                // FIX: We sturen nu de straatnaam én het huisnummer samen naar het Kadaster, 
+                // anders geeft PDOK geen postcode terug!
+                const pdokQuery = straatInput + " " + hnInput;
+                const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${encodeURIComponent(pdokQuery)}&rows=1`);
+                const data = await res.json();
 
-                    if (data.response.docs.length > 0) {
+                if (data.response.docs.length > 0) {
                         const doc = data.response.docs[0];
                         if (doc.straatnaam && doc.woonplaatsnaam) {
                             straatVeld.value = `${doc.straatnaam} ${hnInput}, ${doc.woonplaatsnaam}`;
