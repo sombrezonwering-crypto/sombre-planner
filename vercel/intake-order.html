@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Order Intake Enterprise | Sombre ERP</title>
+    <title>Order Intake Enterprise | Sombre Planner Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -21,7 +21,7 @@
     <div class="max-w-3xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="text-center md:text-left">
             <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Nieuwe Order</h1>
-            <p class="text-gray-500 font-medium mt-1">Sombre ERP Intake Module</p>
+            <p class="text-gray-500 font-medium mt-1">Sombre ERP Intake Module V9.6</p>
         </div>
         <a href="magazijn.html" class="bg-gray-800 hover:bg-black text-white font-bold py-2.5 px-5 rounded-xl transition-all text-sm shadow-lg flex items-center gap-2 transform hover:-translate-y-0.5">
             📦 Open Magazijn App ➡️
@@ -35,14 +35,16 @@
                 <label class="block text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">1. Type Order & Afdeling</label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="grid grid-cols-2 gap-3">
-                        <button type="button" id="btnMontage" onclick="setType('Montage')" class="font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2">🏗️ Montage-opdracht</button>
-                        <button type="button" id="btnService" onclick="setType('Service')" class="font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2">🛠️ Service</button>
+                        <button type="button" id="btnMontage" class="type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2">🏗️ Montage</button>
+                        <button type="button" id="btnService" class="type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2">🛠️ Service</button>
                     </div>
                     <div>
                         <select id="afdelingSource" class="w-full bg-white border-2 border-gray-200 rounded-xl p-3 text-sm font-bold text-gray-800 focus:border-blue-500 shadow-sm input-focus h-full">
-                            <option value="Sombre">🏢 Sombre Zonwering</option>
-                            <option value="Degalux Zakelijk">🏢 Degalux Zakelijk</option>
-                            <option value="Degalux Online">🏢 Degalux Online</option>
+                            <option value="Sombre-zonwering">🏢 Sombre-zonwering</option>
+                            <option value="Zonweringfabriek">🏢 Zonweringfabriek</option>
+                            <option value="Degalux online">🏢 Degalux online</option>
+                            <option value="Dupro-Kozijnen">🏢 Dupro-Kozijnen</option>
+                            <option value="Elite-Gordijn">🏢 Elite-Gordijn</option>
                         </select>
                     </div>
                 </div>
@@ -51,23 +53,30 @@
             <div>
                 <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">👤 Klant & Locatie</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide" id="ordernummerLabel">Ordernummer *</label>
+                        <input type="text" id="ordernummer" required placeholder="Bijv. SO-2026-01" class="input-focus w-full md:w-1/2 bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-mono uppercase">
+                    </div>
+                    <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Naam Klant *</label>
                         <input type="text" id="naam" required class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm">
                     </div>
                     <div class="grid grid-cols-3 gap-3 md:col-span-2">
                         <div class="col-span-2">
-                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Postcode *</label>
-                            <input type="text" id="postcode" required placeholder="1312 AB" onblur="haalAdresOp()" onkeyup="haalAdresOp()" class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm uppercase">
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Postcode</label>
+                            <input type="text" id="postcode" placeholder="1312 AB" class="adres-trigger input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm uppercase">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Huisnr *</label>
-                            <input type="text" id="huisnummer" required onblur="haalAdresOp()" onkeyup="haalAdresOp()" class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm">
+                            <input type="text" id="huisnummer" required class="adres-trigger input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm">
                         </div>
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Straat & Woonplaats *</label>
-                        <input type="text" id="straatEnWoonplaats" required placeholder="Bijv. Hoofdstraat 12, Amsterdam" class="transition-bg input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-medium text-gray-900">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Straat & Woonplaats *</label>
+                            <span id="validationBadge" class="text-[10px] font-bold text-gray-400 bg-gray-200 px-2 py-0.5 rounded transition-all">Niet geverifieerd</span>
+                        </div>
+                        <input type="text" id="straatEnWoonplaats" required placeholder="Bijv. Kerkstraat 12, Almere" class="adres-trigger transition-bg input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-medium text-gray-900">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Telefoonnummer *</label>
@@ -78,87 +87,66 @@
 
             <div id="montageSectie" class="bg-white rounded-xl">
                 <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">📦 Montage Calculator</h3>
-                <div class="grid grid-cols-1 gap-5 mb-5">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Ordernummer *</label>
-                        <input type="text" id="ordernummerMontage" placeholder="Bijv. SO-2026-01" class="input-focus w-full md:w-1/2 bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-mono">
-                    </div>
-                </div>
-
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-5">
-                    <label class="block text-sm font-bold text-gray-800 mb-3">🛠️ Producten Toevoegen</label>
+                    <label class="block text-sm font-bold text-gray-800 mb-3">🛠️ Montageproducten Toevoegen</label>
                     <div id="montageTakenContainer" class="space-y-3 mb-4"></div>
-                    <button type="button" onclick="voegMontageKlusToe()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 text-sm transition-colors flex items-center justify-center gap-2">
+                    <button type="button" id="btnAddMontage" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 text-sm transition-colors flex items-center justify-center gap-2">
                         <span class="text-lg leading-none">+</span> Extra product toevoegen
                     </button>
                 </div>
-
                 <div class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4 flex justify-between items-center mb-5 shadow-sm">
                     <span class="text-sm font-bold text-blue-900 uppercase tracking-wide">Berekende Montagetijd:</span>
-                    <div class="flex items-center gap-2">
-                        <span id="displayMontageTijd" class="text-2xl font-black text-blue-700">0 min</span>
-                        <input type="hidden" id="montagetijdMontage" value="0">
-                    </div>
+                    <span id="displayMontageTijd" class="text-2xl font-black text-blue-700">0 min</span>
                 </div>
-
-                <input type="hidden" id="verborgenBestellijstMontage">
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Specifieke Opmerkingen / Instructies (Optioneel)</label>
-                    <textarea id="opmerkingenMontage" rows="3" placeholder="Typ hier bijzonderheden, afwijkende afmetingen, of instructies voor het montageteam..." class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm"></textarea>
-                </div>
+                <textarea id="opmerkingenMontage" rows="3" placeholder="Bijzonderheden, kleur, afmetingen..." class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm"></textarea>
             </div>
 
             <div id="serviceSectie" class="hidden bg-white rounded-xl">
                 <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">🛠️ Service Details</h3>
-                <div class="grid grid-cols-1 gap-5 mb-5">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Notion Ordernummer *</label>
-                        <input type="text" id="ordernummerService" placeholder="Bijv. 251931" class="input-focus w-full md:w-1/2 bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-mono">
-                    </div>
-                </div>
-
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-5">
                     <label class="block text-sm font-bold text-gray-800 mb-3">🔧 Service Taken</label>
                     <div id="serviceTakenContainer" class="space-y-3 mb-4"></div>
-                    <button type="button" onclick="voegServiceKlusToe()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 text-sm transition-colors flex items-center justify-center gap-2">
+                    <button type="button" id="btnAddService" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 rounded-xl border border-blue-200 text-sm transition-colors flex items-center justify-center gap-2">
                         <span class="text-lg leading-none">+</span> Extra servicetaak toevoegen
                     </button>
                 </div>
-
                 <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-xl p-4 flex justify-between items-center mb-5 shadow-sm">
                     <span class="text-sm font-bold text-indigo-900 uppercase tracking-wide">Berekende Servicetijd:</span>
                     <span id="displayServiceTijd" class="text-2xl font-black text-indigo-700">0 min</span>
                 </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Klachtomschrijving / Onderdelen *</label>
-                    <textarea id="klachtService" rows="3" placeholder="Wat is er precies defect? Welke onderdelen zijn verstuurd naar de monteur/klant?" class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm"></textarea>
-                </div>
+                <textarea id="klachtService" rows="3" placeholder="Klachtomschrijving & Onderdelen..." class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm"></textarea>
             </div>
 
             <hr class="border-gray-200">
 
             <div>
                 <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">🚧 Hulpmiddelen & Vereisten</h3>
-                <p class="text-sm text-gray-500 mb-4">Selecteer wat van toepassing is. Dit wordt gemarkeerd op het planbord.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <label class="checkbox-card flex items-center bg-white p-4 rounded-xl border-2 border-gray-200 shadow-sm">
-                        <input id="reqHoogwerker" type="checkbox" onchange="herbereken()" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="ml-3 text-sm font-bold text-gray-800">🏗️ Hoogwerker Nodig</span>
+                        <input id="reqHoogwerker" type="checkbox" class="modifier-trigger w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-bold text-gray-800">🏗️ Hoogwerker Nodig (+60m)</span>
                     </label>
                     <label class="checkbox-card flex items-center bg-white p-4 rounded-xl border-2 border-gray-200 shadow-sm">
-                        <input id="reqSteiger" type="checkbox" onchange="herbereken()" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="ml-3 text-sm font-bold text-gray-800">🪜 Steiger(s) Nodig</span>
+                        <input id="reqSteiger" type="checkbox" class="modifier-trigger w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-bold text-gray-800">🪜 Steiger Nodig (+60m)</span>
                     </label>
                     <label class="checkbox-card flex items-center bg-white p-4 rounded-xl border-2 border-gray-200 shadow-sm">
-                        <input id="reqExtraMan" type="checkbox" onchange="herbereken()" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="ml-3 text-sm font-bold text-gray-800">💪 Extra Monteur Mee</span>
+                        <input id="reqExtraMan" type="checkbox" class="modifier-trigger w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-bold text-gray-800">💪 Extra Monteur (+30m)</span>
                     </label>
                     <label class="checkbox-card flex items-center bg-white p-4 rounded-xl border-2 border-gray-200 shadow-sm">
-                        <input id="demontage" type="checkbox" onchange="herbereken()" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="ml-3 text-sm font-bold text-gray-800">🔨 Demontage (Oud product)</span>
+                        <input id="demontage" type="checkbox" class="modifier-trigger w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-bold text-gray-800">🔨 Demontage Oud (+60m)</span>
                     </label>
+                </div>
+
+                <div class="md:col-span-2 mt-4 bg-white p-4 rounded-xl border-2 border-gray-200 shadow-sm">
+                    <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Lange ladder mee?</label>
+                    <select id="langeLadder" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-sm font-medium focus:border-blue-500 transition-colors">
+                        <option value="Geen">Geen</option>
+                        <option value="1 stuk">1 stuk</option>
+                        <option value="2 stuks">2 stuks</option>
+                    </select>
                 </div>
             </div>
 
@@ -166,20 +154,18 @@
 
             <div>
                 <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">📅 Planning & Rittijd</h3>
-                
                 <label class="flex items-center mb-5 bg-red-50 p-4 rounded-xl border-2 border-red-200 cursor-pointer hover:bg-red-100 transition-colors shadow-sm">
-                    <input id="spoed" type="checkbox" class="w-6 h-6 text-red-600 bg-white border-gray-300 rounded focus:ring-red-500 focus:ring-2">
+                    <input id="spoed" type="checkbox" class="w-6 h-6 text-red-600 bg-white border-gray-300 rounded">
                     <span class="ml-3 text-base font-black text-red-700 tracking-wide uppercase">🔥 Dit is een SPOED opdracht</span>
                 </label>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Gewenste Datum (Optioneel)</label>
                         <input type="date" id="gewensteDatum" class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Tijd Voorkeur (Optioneel)</label>
-                        <select id="tijdVoorkeur" onchange="toggleVasteTijd()" class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-medium">
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Tijd Voorkeur</label>
+                        <select id="tijdVoorkeur" class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-medium">
                             <option value="Geen">Geen specifieke voorkeur</option>
                             <option value="Ochtend">Ochtend</option>
                             <option value="Middag">Middag</option>
@@ -191,11 +177,8 @@
                         <input type="time" id="vasteTijd" class="input-focus w-full bg-white border border-blue-300 rounded-xl p-3 text-sm text-blue-900 font-bold">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Afwijkende Reistijd (Optioneel)</label>
-                        <div class="flex items-center gap-3">
-                            <input type="number" id="afwijkendeReistijd" min="0" max="300" placeholder="Bijv. 45" class="input-focus w-32 bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-bold text-center">
-                            <span class="text-sm text-gray-500 font-medium">minuten <br><span class="text-xs text-gray-400">(Overschrijft de standaard reistijd van de regio)</span></span>
-                        </div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Afwijkende Reistijd (Optioneel, min.)</label>
+                        <input type="number" id="afwijkendeReistijd" min="0" max="300" placeholder="Overschrijft regio reistijd" class="input-focus w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm font-bold">
                     </div>
                 </div>
             </div>
@@ -208,399 +191,464 @@
         <div id="successMsg" class="hidden mt-8 bg-green-50 border-2 border-green-400 p-8 rounded-2xl text-center shadow-lg">
             <div class="text-5xl mb-4">✅</div>
             <h3 class="text-2xl font-black text-green-800 mb-2">Order Succesvol Opgeslagen!</h3>
-            <p class="text-green-700 font-medium mb-6">De order staat veilig in de database en is verwerkt in de planning.</p>
-            <button onclick="location.reload()" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md transform hover:-translate-y-0.5">
-                + Nieuwe Order Invoeren
-            </button>
+            <button onclick="location.reload()" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl mt-4">Nieuwe Order Invoeren</button>
         </div>
     </div>
 
-<script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+        
+        let isServiceMode = false;
+        let totalTime = 0;
+        let isSubmitting = false;
 
-    let isService = false;
-    let totaleServiceTijd = 0;
-    let totaleMontageTijd = 0;
-    let laatsteZoekopdracht = "";
+        // Berekentijden geüpdatet met de lagere basiswaarden!
+        const CONFIG = {
+            PRODUCT_TIMES: { knikarm: 60, screen: 45, rolluik: 45, uitval: 60, markies: 60, hor: 15, overkapping: 480, veranda: 480, overig: 30 },
+            SERVICE_TIMES: { motor_stroom: 45, motor_solar: 30, motor_hand: 60, doek: 60, lamellen: 45, armen: 60, inregelen: 30 },
+            MODIFIERS: { hoogwerker: 60, steiger: 60, demontage: 60, extraMonteur: 30 },
+            BEDIENING_TIMES: { solar: 0, afstandsbediening: 15, schakelaar: 30, handbediend: 30 },
+            ONDERGROND_TIMES: { kozijn: 0, muur: 15 }
+        };
 
-    // --- PDOK POSTCODE API ---
-    async function haalAdresOp() {
-        const rawPc = document.getElementById('postcode').value.trim();
-        const pcInput = rawPc.replace(/\s+/g, '').toUpperCase();
-        const hnInput = document.getElementById('huisnummer').value.trim();
-        const straatVeld = document.getElementById('straatEnWoonplaats');
+        const addressCache = {};
+        let lastQuery = "";
 
-        if (pcInput.length >= 6 && hnInput.length >= 1) {
-            const isPcGeldig = /^[1-9][0-9]{3}[A-Z]{2}$/.test(pcInput);
-            const isHnGeldig = /^[1-9]\d*[A-Za-z0-9\-\s]*$/.test(hnInput);
-
-            if (isPcGeldig && isHnGeldig) {
-                const huidigeZoekopdracht = `${pcInput}-${hnInput}`;
-                if (laatsteZoekopdracht === huidigeZoekopdracht) return;
-                
-                laatsteZoekopdracht = huidigeZoekopdracht;
-
-              try {
-                // FIX: We sturen nu de straatnaam én het huisnummer samen naar het Kadaster, 
-                // anders geeft PDOK geen postcode terug!
-                const pdokQuery = straatInput + " " + hnInput;
-                const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${encodeURIComponent(pdokQuery)}&rows=1`);
-                const data = await res.json();
-
-                if (data.response.docs.length > 0) {
-                        const doc = data.response.docs[0];
-                        if (doc.straatnaam && doc.woonplaatsnaam) {
-                            straatVeld.value = `${doc.straatnaam} ${hnInput}, ${doc.woonplaatsnaam}`;
-                            straatVeld.classList.add('bg-green-100', 'border-green-400');
-                            setTimeout(() => straatVeld.classList.remove('bg-green-100', 'border-green-400'), 2000);
-                        }
-                    }
-                } catch (e) {
-                    console.error("Adres ophalen mislukt:", e);
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnMontage').addEventListener('click', () => setMode(false));
+            document.getElementById('btnService').addEventListener('click', () => setMode(true));
+            document.getElementById('btnAddMontage').addEventListener('click', renderMontageRow);
+            document.getElementById('btnAddService').addEventListener('click', renderServiceRow);
+            
+            document.getElementById('tijdVoorkeur').addEventListener('change', (e) => {
+                const vastContainer = document.getElementById('vasteTijdContainer');
+                const vastInput = document.getElementById('vasteTijd');
+                if (e.target.value === 'Vast') {
+                    vastContainer.classList.remove('hidden');
+                    vastInput.required = true;
+                } else {
+                    vastContainer.classList.add('hidden');
+                    vastInput.value = '';
+                    vastInput.required = false;
                 }
-            }
-        }
-    }
+            });
 
-    function toggleVasteTijd() {
-        const val = document.getElementById('tijdVoorkeur').value;
-        if (val === 'Vast') {
-            document.getElementById('vasteTijdContainer').classList.remove('hidden');
-            document.getElementById('vasteTijd').required = true;
-        } else {
-            document.getElementById('vasteTijdContainer').classList.add('hidden');
-            document.getElementById('vasteTijd').value = '';
-            document.getElementById('vasteTijd').required = false;
-        }
-    }
+            document.querySelectorAll('.adres-trigger').forEach(el => el.addEventListener('blur', processAddressInput));
+            document.querySelectorAll('.modifier-trigger').forEach(el => el.addEventListener('change', updateTotals));
+            document.getElementById('orderForm').addEventListener('submit', handleFormSubmit);
 
-    function setType(type) {
-        isService = (type === 'Service');
-
-        const btnMontage = document.getElementById('btnMontage');
-        const btnService = document.getElementById('btnService');
-        const activeClass = "bg-blue-50 border-blue-400 text-blue-700 shadow-md";
-        const inactiveClass = "bg-white border-gray-200 text-gray-500 hover:bg-gray-50";
-
-        if (isService) {
-            btnService.className = `font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${activeClass}`;
-            btnMontage.className = `font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${inactiveClass}`;
-
-            document.getElementById('serviceSectie').classList.remove('hidden');
-            document.getElementById('montageSectie').classList.add('hidden');
-
-            document.getElementById('ordernummerService').required = true;
-            document.getElementById('klachtService').required = true;
-            document.getElementById('ordernummerMontage').required = false;
-
-            if (document.querySelectorAll('.service-task').length === 0) voegServiceKlusToe();
-            calculateServiceTime();
-        } else {
-            btnMontage.className = `font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${activeClass}`;
-            btnService.className = `font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${inactiveClass}`;
-
-            document.getElementById('montageSectie').classList.remove('hidden');
-            document.getElementById('serviceSectie').classList.add('hidden');
-
-            document.getElementById('ordernummerMontage').required = true;
-            document.getElementById('ordernummerService').required = false;
-            document.getElementById('klachtService').required = false;
-
-            if (document.querySelectorAll('.montage-task').length === 0) voegMontageKlusToe();
-            calculateMontageTime();
-        }
-    }
-
-    // --- DYNAMISCHE MONTAGE TAKEN ---
-    function voegMontageKlusToe() {
-        const container = document.getElementById('montageTakenContainer');
-        const template = `
-            <div class="montage-task bg-white border border-gray-200 p-3 rounded-xl shadow-sm flex flex-col md:flex-row gap-3 items-end mt-3">
-                <div class="flex-1 w-full">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Product Type</label>
-                    <select onchange="calculateMontageTime()" class="mntProduct w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:border-blue-500 font-medium input-focus">
-                        <option value="knikarm">Knikarmscherm (120 min)</option>
-                        <option value="screen">Screen (60 min)</option>
-                        <option value="rolluik">Rolluik (60 min)</option>
-                        <option value="uitval">Uitvalscherm (60 min)</option>
-                        <option value="markies">Markies (60 min)</option>
-                        <option value="hor">Horren (30 min)</option>
-                        <option value="overig">Overig / Anders (30 min)</option>
-                    </select>
-                </div>
-                <div class="w-full md:w-24">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Aantal</label>
-                    <input type="number" value="1" min="1" onchange="calculateMontageTime()" onkeyup="calculateMontageTime()" class="mntAantal w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:border-blue-500 text-center font-bold input-focus">
-                </div>
-                <button type="button" onclick="verwijderMontageKlus(this)" class="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-4 py-2.5 rounded-lg border border-red-200 font-bold text-sm w-full md:w-auto transition-colors">Verwijder</button>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', template);
-        calculateMontageTime();
-    }
-
-    function verwijderMontageKlus(btnElement) {
-        const rows = document.querySelectorAll('.montage-task');
-        if (rows.length === 1) {
-            alert("Je moet minimaal 1 product in de lijst laten staan.");
-            return;
-        }
-        btnElement.closest('.montage-task').remove();
-        calculateMontageTime();
-    }
-
-    function calculateMontageTime() {
-        let total = 0;
-        let lijst = [];
-        document.querySelectorAll('.montage-task').forEach(taak => {
-            const selectEl = taak.querySelector('.mntProduct');
-            const prodText = selectEl.options[selectEl.selectedIndex].text.split(' (')[0];
-            const prodVal = selectEl.value;
-            let inputAantal = taak.querySelector('.mntAantal');
-            let aantal = parseInt(inputAantal.value);
-            if (isNaN(aantal) || aantal < 1) aantal = 1;
-
-            let rowTime = 60;
-            if (prodVal === 'knikarm') rowTime = 120;
-            else if (prodVal === 'hor' || prodVal === 'overig') rowTime = 30;
-
-            total += (rowTime * aantal);
-            lijst.push(`- ${aantal}x ${prodText}`);
+            setMode(false);
         });
 
-        if (document.getElementById('reqSteiger').checked) {
-            total += 60; lijst.push('- Steiger(s) bouwen/afbreken (+60 min)');
-        }
-        if (document.getElementById('reqHoogwerker').checked) {
-            total += 30; lijst.push('- Hoogwerker inzetten (+30 min)');
-        }
-        if (document.getElementById('demontage').checked) {
-            total += 60; lijst.push('- Demontage oud product (+60 min)');
+        function setMode(toService) {
+            isServiceMode = toService;
+            const btnMnt = document.getElementById('btnMontage');
+            const btnSrv = document.getElementById('btnService');
+            const activeCls = "bg-blue-50 border-blue-400 text-blue-700 shadow-md";
+            const inactiveCls = "bg-white border-gray-200 text-gray-500 hover:bg-gray-50";
+
+            if (isServiceMode) {
+                btnSrv.className = `type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${activeCls}`;
+                btnMnt.className = `type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${inactiveCls}`;
+                document.getElementById('ordernummerLabel').innerText = "Notion Ordernummer *";
+                document.getElementById('serviceSectie').classList.remove('hidden');
+                document.getElementById('montageSectie').classList.add('hidden');
+                document.getElementById('klachtService').required = true;
+                if (document.querySelectorAll('.service-task').length === 0) renderServiceRow();
+            } else {
+                btnMnt.className = `type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${activeCls}`;
+                btnSrv.className = `type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${inactiveCls}`;
+                document.getElementById('ordernummerLabel').innerText = "Ordernummer *";
+                document.getElementById('montageSectie').classList.remove('hidden');
+                document.getElementById('serviceSectie').classList.add('hidden');
+                document.getElementById('klachtService').required = false;
+                if (document.querySelectorAll('.montage-task').length === 0) renderMontageRow();
+            }
+            updateTotals();
         }
 
-        totaleMontageTijd = total;
-        document.getElementById('displayMontageTijd').innerText = total + " min";
-        document.getElementById('montagetijdMontage').value = total;
-        document.getElementById('verborgenBestellijstMontage').value = lijst.join('\n');
-    }
-
-    // --- DYNAMISCHE SERVICE TAKEN ---
-    function voegServiceKlusToe() {
-        const container = document.getElementById('serviceTakenContainer');
-        const template = `
-            <div class="service-task bg-white border border-gray-200 p-3 rounded-xl shadow-sm flex flex-col md:flex-row gap-3 items-end mt-3">
-                <div class="flex-1 w-full">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Type Klus</label>
-                    <select onchange="calculateServiceTime()" class="srvType w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:border-blue-500 font-medium input-focus">
-                        <option value="motor">Motor Vervangen</option>
-                        <option value="doek">Doek Vervangen</option>
-                        <option value="lamellen">Lamellen Vervangen/Schuiven</option>
-                        <option value="armen">Armen Vervangen</option>
-                        <option value="inregelen">Inregelen (Hub/AB)</option>
+        function renderMontageRow() {
+            const container = document.getElementById('montageTakenContainer');
+            const row = document.createElement('div');
+            row.className = "montage-task bg-white border border-gray-200 p-3 rounded-xl shadow-sm grid grid-cols-1 md:grid-cols-5 gap-3 items-end mt-3";
+            row.innerHTML = `
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Product</label>
+                    <select class="mntProduct trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm font-medium input-focus">
+                        <option value="knikarm">Knikarmscherm</option>
+                        <option value="screen">Screen</option>
+                        <option value="rolluik">Rolluik</option>
+                        <option value="uitval">Uitvalscherm</option>
+                        <option value="markies">Markies</option>
+                        <option value="hor">Horren</option>
+                        <option value="overkapping">Overkapping</option>
+                        <option value="veranda">Veranda</option>
+                        <option value="overig">Overig</option>
                     </select>
                 </div>
-                <div class="flex-1 w-full">
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Ondergrond</label>
+                    <select class="mntOndergrond trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm font-medium input-focus">
+                        <option value="kozijn">Kozijn</option>
+                        <option value="muur">Muur (+15m)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Bediening</label>
+                    <select class="mntBediening trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm font-medium input-focus">
+                        <option value="solar">Solar (Geen boren)</option>
+                        <option value="afstandsbediening">Afstandsbediening (+15m)</option>
+                        <option value="schakelaar">Schakelaar (+30m)</option>
+                        <option value="handbediend">Handbediend (Band) (+30m)</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 md:col-span-1">
+                    <div class="w-1/2">
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Aantal</label>
+                        <input type="number" value="1" min="1" class="mntAantal trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm text-center font-bold input-focus">
+                    </div>
+                    <button type="button" class="del-btn w-1/2 mt-5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 font-bold text-sm">X</button>
+                </div>
+            `;
+            bindRowEvents(row, '.montage-task');
+            container.appendChild(row);
+            updateTotals();
+        }
+
+        function renderServiceRow() {
+            const container = document.getElementById('serviceTakenContainer');
+            const row = document.createElement('div');
+            row.className = "service-task bg-white border border-gray-200 p-3 rounded-xl shadow-sm grid grid-cols-1 md:grid-cols-4 gap-3 items-end mt-3";
+            row.innerHTML = `
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Type Klus</label>
+                    <select class="srvType trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm font-medium input-focus">
+                        <option value="motor">Motor</option>
+                        <option value="doek">Doek</option>
+                        <option value="lamellen">Lamellen</option>
+                        <option value="armen">Armen</option>
+                        <option value="inregelen">Inregelen</option>
+                        <option value="ander_werk">Andere werkzaamheden...</option>
+                    </select>
+                </div>
+                <div class="md:col-span-1 srvProductCol">
                     <label class="block text-xs font-bold text-gray-500 mb-1">Product</label>
-                    <select onchange="calculateServiceTime()" class="srvProduct w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:border-blue-500 font-medium input-focus">
+                    <select class="srvProduct trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm font-medium input-focus">
                         <option value="screen_rolluik">Screen / Rolluik</option>
                         <option value="zonnescherm">Zonnescherm</option>
+                        <option value="uitvalscherm">Uitvalscherm</option>
                         <option value="nvt">N.v.t. / Overig</option>
                     </select>
                 </div>
-                <div class="flex-1 w-full">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Aandrijving</label>
-                    <select onchange="calculateServiceTime()" class="srvVoeding w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:border-blue-500 font-medium input-focus">
+                <div class="md:col-span-1 srvVoedingCol">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Voeding/Details</label>
+                    <select class="srvVoeding trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm font-medium input-focus">
+                        <option value="stroom">230V / Standaard</option>
                         <option value="solar">Solar</option>
-                        <option value="stroom">Stroom (230V)</option>
-                        <option value="hand">Handbediend (Band)</option>
-                        <option value="nvt">N.v.t.</option>
+                        <option value="hand">Handbediend</option>
                     </select>
                 </div>
-                <button type="button" onclick="verwijderServiceKlus(this)" class="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-4 py-2.5 rounded-lg border border-red-200 font-bold text-sm w-full md:w-auto transition-colors">Verwijder</button>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', template);
-        calculateServiceTime();
-    }
+                <div class="flex gap-2 md:col-span-1">
+                    <div class="w-2/3">
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Aantal</label>
+                        <input type="number" value="1" min="1" class="srvAantal trigger-calc w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm text-center font-bold input-focus">
+                    </div>
+                    <button type="button" class="del-btn w-1/3 mt-5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg border border-red-200 font-bold text-sm">X</button>
+                </div>
+                
+                <div class="custom-werk-container hidden md:col-span-4 bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-2 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-bold text-indigo-700 mb-1">Beschrijf werkzaamheden</label>
+                        <input type="text" class="srvCustomDesc w-full bg-white border border-indigo-200 rounded-lg p-2.5 text-sm input-focus" placeholder="Bijv. bandopvinder vervangen of profiel kitten...">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-bold text-indigo-700 mb-1">Tijd (min per stuk)</label>
+                        <input type="number" value="30" min="0" class="srvCustomTime trigger-calc w-full bg-white border border-indigo-200 rounded-lg p-2.5 text-sm text-center font-bold input-focus">
+                    </div>
+                </div>
+            `;
+            
+            row.querySelector('.srvType').addEventListener('change', (e) => {
+                const customContainer = row.querySelector('.custom-werk-container');
+                const prodCol = row.querySelector('.srvProductCol');
+                const voedingCol = row.querySelector('.srvVoedingCol');
+                
+                if (e.target.value === 'ander_werk') {
+                    customContainer.classList.remove('hidden');
+                    prodCol.classList.add('hidden');
+                    voedingCol.classList.add('hidden');
+                } else {
+                    customContainer.classList.add('hidden');
+                    prodCol.classList.remove('hidden');
+                    voedingCol.classList.remove('hidden');
+                }
+            });
 
-    function verwijderServiceKlus(btnElement) {
-        const rows = document.querySelectorAll('.service-task');
-        if (rows.length === 1) {
-            alert("Je moet minimaal 1 klus in de lijst laten staan.");
-            return;
-        }
-        btnElement.closest('.service-task').remove();
-        calculateServiceTime();
-    }
-
-    function calculateServiceTime() {
-        let total = 0;
-        document.querySelectorAll('.service-task').forEach(taak => {
-            const type = taak.querySelector('.srvType').value;
-            const prod = taak.querySelector('.srvProduct').value;
-            const voeding = taak.querySelector('.srvVoeding').value;
-            let rowTime = 30;
-
-            if (type === 'motor') {
-                if (voeding === 'hand') rowTime = 60;
-                else if (prod === 'zonnescherm') rowTime = (voeding === 'stroom') ? 60 : 45;
-                else rowTime = (voeding === 'stroom') ? 45 : 30;
-            }
-            else if (type === 'doek') rowTime = (prod === 'zonnescherm') ? 60 : 45;
-            else if (type === 'lamellen') rowTime = 45;
-            else if (type === 'armen') rowTime = 60;
-            else if (type === 'inregelen') rowTime = 30;
-
-            total += rowTime;
-        });
-
-        if (document.getElementById('reqSteiger').checked) total += 60;
-        if (document.getElementById('reqHoogwerker').checked) total += 30;
-
-        totaleServiceTijd = total;
-        document.getElementById('displayServiceTijd').innerText = total + " min";
-    }
-
-    function herbereken() {
-        if (isService) calculateServiceTime(); else calculateMontageTime();
-    }
-
-    // --- FORM SUBMIT LOGICA ---
-    document.getElementById('orderForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const telefoon = document.getElementById('telefoon').value;
-        if (!/^[\d\s+\-()]{8,20}$/.test(telefoon)) {
-            alert("⚠️ Ongeldig telefoonnummer. Controleer de invoer.");
-            return;
+            bindRowEvents(row, '.service-task');
+            container.appendChild(row);
+            updateTotals();
         }
 
-        const postcode = document.getElementById('postcode').value.trim();
-        if (!/^[1-9][0-9]{3}\s?[A-Za-z]{2}$/i.test(postcode)) {
-            alert("⚠️ Ongeldig postcode formaat. Gebruik 4 cijfers en 2 letters (bijv. 1312 AB).");
-            return;
+        function bindRowEvents(row, rowSelector) {
+            row.querySelectorAll('.trigger-calc').forEach(el => el.addEventListener('change', updateTotals));
+            row.querySelectorAll('.trigger-calc').forEach(el => el.addEventListener('keyup', updateTotals));
+            row.querySelector('.del-btn').addEventListener('click', () => {
+                if (document.querySelectorAll(rowSelector).length > 1) { row.remove(); updateTotals(); }
+                else { alert("Minimaal 1 item verplicht."); }
+            });
         }
 
-        const huisnummer = document.getElementById('huisnummer').value.trim();
-        if (!/^[1-9]\d*[A-Za-z0-9\-\s]*$/.test(huisnummer)) {
-            alert("⚠️ Ongeldig huisnummer. Begin met een cijfer.");
-            return;
+        function updateTotals() {
+            totalTime = isServiceMode ? calcService() : calcMontage();
+            if (isServiceMode) document.getElementById('displayServiceTijd').innerText = totalTime + " min";
+            else document.getElementById('displayMontageTijd').innerText = totalTime + " min";
         }
 
-        const reistijd = document.getElementById('afwijkendeReistijd').value;
-        if (reistijd !== "" && (reistijd < 0 || reistijd > 300)) {
-            alert("⚠️ Afwijkende reistijd moet tussen 0 en 300 minuten liggen.");
-            return;
+        function calcMontage() {
+            let total = 0;
+            document.querySelectorAll('.montage-task').forEach(taak => {
+                const prodVal = taak.querySelector('.mntProduct').value;
+                const ondVal = taak.querySelector('.mntOndergrond').value;
+                const bedVal = taak.querySelector('.mntBediening').value;
+                const aantal = parseInt(taak.querySelector('.mntAantal').value) || 1;
+                
+                let baseTime = CONFIG.PRODUCT_TIMES[prodVal] || 30;
+                let ondExtra = CONFIG.ONDERGROND_TIMES[ondVal] || 0;
+                let bedExtra = CONFIG.BEDIENING_TIMES[bedVal] || 0;
+                
+                total += ((baseTime + ondExtra + bedExtra) * aantal);
+            });
+            return addModifiers(total);
         }
 
-        const ordNrMontage = document.getElementById('ordernummerMontage').value.trim();
-        const ordNrService = document.getElementById('ordernummerService').value.trim();
-
-        if (!isService && !ordNrMontage) { alert("⚠️ Vul een ordernummer in."); return; }
-        if (isService && !ordNrService) { alert("⚠️ Vul een Notion ordernummer in."); return; }
-
-        if (document.getElementById('tijdVoorkeur').value === 'Vast' && !document.getElementById('vasteTijd').value) {
-            alert("⚠️ Je hebt 'Vaste tijd' geselecteerd. Vul a.u.b. de specifieke tijd in.");
-            return;
-        }
-
-        const btn = document.getElementById('submitBtn');
-        btn.innerHTML = "⏳ Order wordt verwerkt...";
-        btn.disabled = true;
-        btn.classList.replace("bg-blue-600", "bg-gray-400");
-        btn.classList.replace("hover:-translate-y-1", "opacity-75");
-
-        let extraTags = [];
-        if (document.getElementById('reqHoogwerker').checked) extraTags.push("🏗️ HOOGWERKER");
-        if (document.getElementById('reqSteiger').checked) extraTags.push("🪜 STEIGER");
-        if (document.getElementById('reqExtraMan').checked) extraTags.push("💪 EXTRA MONTEUR");
-
-        let payload = {
-            naam: document.getElementById('naam').value,
-            telefoon: telefoon,
-            postcode: postcode,
-            huisnummer: huisnummer,
-            straatEnWoonplaats: document.getElementById('straatEnWoonplaats').value,
-            afdelingSource: document.getElementById('afdelingSource').value,
-            gewenste_datum: document.getElementById('gewensteDatum').value,
-            tijd_voorkeur: document.getElementById('tijdVoorkeur').value,
-            vaste_tijd: document.getElementById('vasteTijd').value,
-            afwijkende_reistijd: reistijd,
-            spoed: document.getElementById('spoed').checked,
-            demontage: document.getElementById('demontage').checked,
-            isServiceNotion: isService
-        };
-
-        let basisOpmerking = isService ? document.getElementById('klachtService').value : document.getElementById('opmerkingenMontage').value;
-        if (extraTags.length > 0) {
-            payload.opmerkingen = "⚠️ VEREISTEN: " + extraTags.join(" | ") + "\n\n" + basisOpmerking;
-        } else {
-            payload.opmerkingen = basisOpmerking;
-        }
-
-        if (isService) {
-            payload.ordernummer = ordNrService;
-            let samengesteldeLijst = [];
+        function calcService() {
+            let total = 0;
             document.querySelectorAll('.service-task').forEach(taak => {
-                const typeText = taak.querySelector('.srvType').options[taak.querySelector('.srvType').selectedIndex].text;
-                const prodText = taak.querySelector('.srvProduct').options[taak.querySelector('.srvProduct').selectedIndex].text;
-                const voedingText = taak.querySelector('.srvVoeding').options[taak.querySelector('.srvVoeding').selectedIndex].text;
-                samengesteldeLijst.push(`- ${typeText} | ${prodText} | ${voedingText}`);
+                const type = taak.querySelector('.srvType').value;
+                const voeding = taak.querySelector('.srvVoeding').value;
+                const aantal = parseInt(taak.querySelector('.srvAantal').value) || 1;
+                let baseTime = 30;
+                
+                if (type === 'motor') baseTime = CONFIG.SERVICE_TIMES[`motor_${voeding}`] || 45;
+                else if (type === 'ander_werk') baseTime = parseInt(taak.querySelector('.srvCustomTime').value) || 0;
+                else baseTime = CONFIG.SERVICE_TIMES[type] || 30;
+
+                total += (baseTime * aantal);
             });
-            payload.bestellijst = `SERVICE TAKEN:\n${samengesteldeLijst.join('\n')}`;
-            payload.montagetijd_minuten = totaleServiceTijd;
-        } else {
-            payload.ordernummer = ordNrMontage;
-            payload.bestellijst = "MONTAGE PRODUCTEN:\n" + document.getElementById('verborgenBestellijstMontage').value;
-            payload.montagetijd_minuten = totaleMontageTijd;
+            return addModifiers(total);
         }
 
-        const controller = new AbortController();
-        // FIX: Timeout verhoogd van 15 seconden naar 40 seconden om Apps Script vertragingen op te vangen
-        const timeoutId = setTimeout(() => controller.abort(), 40000);
-
-        try {
-            const response = await fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-            const text = await response.text();
-
-            if (text.includes("OK")) {
-                document.getElementById('orderForm').classList.add('hidden');
-                document.getElementById('successMsg').classList.remove('hidden');
-            } else if (text.includes("Bestaat al")) {
-                alert("❌ Ordernummer bestaat al in het systeem! Gebruik een uniek nummer.");
-                resetButton();
-            } else {
-                alert("❌ Fout bij opslaan: " + text);
-                resetButton();
-            }
-        } catch (err) {
-            clearTimeout(timeoutId);
-            if (err.name === 'AbortError') {
-                alert("❌ Server reageert niet (Timeout). Controleer het planbord of probeer opnieuw.");
-            } else {
-                alert("❌ Netwerkfout. Controleer je internetverbinding.");
-            }
-            resetButton();
+        function addModifiers(total) {
+            if (document.getElementById('reqSteiger').checked) total += CONFIG.MODIFIERS.steiger;
+            if (document.getElementById('reqHoogwerker').checked) total += CONFIG.MODIFIERS.hoogwerker;
+            if (document.getElementById('demontage').checked) total += CONFIG.MODIFIERS.demontage;
+            if (document.getElementById('reqExtraMan').checked) total += CONFIG.MODIFIERS.extraMonteur;
+            return total;
         }
 
-        function resetButton() {
+        // PDOK LOGICA (2-WEG MET OPSCHONING)
+        async function processAddressInput() {
+            const pcField = document.getElementById('postcode');
+            const hnField = document.getElementById('huisnummer');
+            const straatField = document.getElementById('straatEnWoonplaats');
+            const pc = pcField.value.trim().replace(/\s+/g, '').toUpperCase();
+            const hn = hnField.value.trim();
+            const straat = straatField.value.trim();
+
+            if (pc.length === 6 && hn.length >= 1) {
+                const query = `FWD-${pc}-${hn}`;
+                if (lastQuery === query) return;
+                lastQuery = query;
+                if (addressCache[query]) return applyResult(addressCache[query]);
+
+                try {
+                    const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?fq=postcode:${pc}&fq=huisnummer:${hn}&rows=1`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.response.docs.length > 0) {
+                        const doc = data.response.docs[0];
+                        const result = { success: true, straat: `${doc.straatnaam} ${hn}, ${doc.woonplaatsnaam}`, msg: "Geverifieerd via PC" };
+                        addressCache[query] = result; applyResult(result);
+                    } else applyResult({ success: false, msg: "Adres onbekend" });
+                } catch (e) { console.error("PDOK Error:", e); }
+            }
+            else if (pc.length === 0 && hn.length >= 1 && straat.length >= 5) {
+                const query = `REV-${hn}-${straat}`;
+                if (lastQuery === query) return;
+                lastQuery = query;
+                if (addressCache[query]) return applyResult(addressCache[query]);
+
+                try {
+                    const cleanStraat = straat.replace(/,/g, '');
+                    const pdokQuery = cleanStraat + " " + hn;
+                    const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${encodeURIComponent(pdokQuery)}&rows=1`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.response.docs.length > 0) {
+                        const doc = data.response.docs[0];
+                        if (doc.postcode) {
+                            const formattedPc = doc.postcode.substring(0, 4) + " " + doc.postcode.substring(4);
+                            const result = { success: true, postcode: formattedPc, straat: `${doc.straatnaam} ${hn}, ${doc.woonplaatsnaam}`, msg: "Postcode gevonden" };
+                            addressCache[query] = result; applyResult(result);
+                        }
+                    } else applyResult({ success: false, msg: "Postcode niet gevonden" });
+                } catch (e) { console.error("PDOK Error:", e); }
+            }
+        }
+
+        function applyResult(res) {
+            const straatField = document.getElementById('straatEnWoonplaats');
+            const pcField = document.getElementById('postcode');
+            const badge = document.getElementById('validationBadge');
+            badge.innerText = res.msg;
+            if (res.success) {
+                if (res.straat) straatField.value = res.straat;
+                if (res.postcode) pcField.value = res.postcode;
+                straatField.classList.add('bg-green-50', 'border-green-400');
+                badge.className = "text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded transition-all";
+            } else {
+                straatField.classList.remove('bg-green-50', 'border-green-400');
+                badge.className = "text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded transition-all";
+            }
+        }
+
+        // VALIDATIE & SUBMIT
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (isSubmitting) return;
+
+            const telefoon = document.getElementById('telefoon').value.trim();
+            if (!/^[\d\s+\-()]{8,20}$/.test(telefoon)) return alert("⚠️ Ongeldig telefoonnummer.");
+            
+            const postcode = document.getElementById('postcode').value.trim();
+            if (postcode === "" && document.getElementById('straatEnWoonplaats').value !== "") {
+                return alert("⚠️ De postcode wordt nog opgevraagd bij het Kadaster. Klik even buiten het veld en probeer het opnieuw.");
+            }
+            if (!/^[1-9][0-9]{3}\s?[A-Za-z]{2}$/i.test(postcode)) return alert("⚠️ Ongeldig postcode formaat.");
+            
+            const huisnummer = document.getElementById('huisnummer').value.trim();
+            if (!/^[1-9]\d*[A-Za-z0-9\-\s]*$/.test(huisnummer)) return alert("⚠️ Ongeldig huisnummer.");
+            
+            if (document.getElementById('tijdVoorkeur').value === 'Vast' && !document.getElementById('vasteTijd').value) {
+                return alert("⚠️ Vul de specifieke Vaste Tijd in.");
+            }
+
+            // CLEANUP: Zorg dat het huisnummer er niet dubbel achter staat ("Almere 158")
+            let netAdres = document.getElementById('straatEnWoonplaats').value.trim();
+            if (huisnummer && netAdres.endsWith(huisnummer)) {
+                netAdres = netAdres.slice(0, -huisnummer.length).trim();
+            }
+
+            isSubmitting = true;
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = "⏳ Order wordt verwerkt...";
+            btn.disabled = true;
+            btn.classList.replace("bg-blue-600", "bg-gray-400");
+            btn.classList.replace("hover:-translate-y-1", "opacity-75");
+
+            let jsonBestellijst = [];
+            if (isServiceMode) {
+                document.querySelectorAll('.service-task').forEach(t => {
+                    let typeKey = t.querySelector('.srvType').value;
+                    let typeText = t.querySelector('.srvType').options[t.querySelector('.srvType').selectedIndex].text;
+                    let detailsText = t.querySelector('.srvVoeding').options[t.querySelector('.srvVoeding').selectedIndex].text;
+                    
+                    if (typeKey === 'ander_werk') {
+                        typeText = "Ander werk: " + (t.querySelector('.srvCustomDesc').value || "Niet gespecificeerd");
+                        detailsText = "N.v.t.";
+                    }
+                    jsonBestellijst.push({
+                        type: typeText,
+                        details: detailsText,
+                        aantal: parseInt(t.querySelector('.srvAantal').value) || 1
+                    });
+                });
+            } else {
+                document.querySelectorAll('.montage-task').forEach(t => {
+                    let product = t.querySelector('.mntProduct').options[t.querySelector('.mntProduct').selectedIndex].text;
+                    let ondergrond = t.querySelector('.mntOndergrond').options[t.querySelector('.mntOndergrond').selectedIndex].text;
+                    let bediening = t.querySelector('.mntBediening').options[t.querySelector('.mntBediening').selectedIndex].text;
+                    
+                    jsonBestellijst.push({
+                        type: product,
+                        details: `${ondergrond} | ${bediening}`,
+                        aantal: parseInt(t.querySelector('.mntAantal').value) || 1
+                    });
+                });
+            }
+
+            let leesbareLijst = jsonBestellijst.map(item => `- ${item.aantal}x ${item.type} (${item.details})`).join('\n');
+
+            let extraTags = [];
+            if (document.getElementById('reqHoogwerker').checked) extraTags.push("🏗️ HOOGWERKER");
+            if (document.getElementById('reqSteiger').checked) extraTags.push("🪜 STEIGER");
+            if (document.getElementById('reqExtraMan').checked) extraTags.push("💪 EXTRA MONTEUR");
+            
+            const ladderSelect = document.getElementById('langeLadder').value;
+            if (ladderSelect !== "Geen") extraTags.push(`⚠️ LANGE LADDER (${ladderSelect})`);
+
+            let baseOpmerking = isServiceMode ? document.getElementById('klachtService').value : document.getElementById('opmerkingenMontage').value;
+            let finalOpmerking = extraTags.length > 0 ? "⚠️ VEREISTEN: " + extraTags.join(" | ") + "\n\n" + baseOpmerking : baseOpmerking;
+
+            const payload = {
+                ordernummer: document.getElementById('ordernummer').value.trim(),
+                naam: document.getElementById('naam').value,
+                // FIX: Voorkom dat Google Sheets de 0 van een telefoonnummer weghaalt
+                telefoon: "'" + telefoon,
+                postcode: postcode,
+                huisnummer: huisnummer,
+                straatEnWoonplaats: netAdres,
+                afdelingSource: document.getElementById('afdelingSource').value,
+                gewenste_datum: document.getElementById('gewensteDatum').value,
+                tijd_voorkeur: document.getElementById('tijdVoorkeur').value,
+                vaste_tijd: document.getElementById('vasteTijd').value,
+                afwijkende_reistijd: document.getElementById('afwijkendeReistijd').value,
+                spoed: document.getElementById('spoed').checked,
+                demontage: document.getElementById('demontage').checked,
+                isServiceNotion: isServiceMode,
+                bestellijst: (isServiceMode ? "SERVICE TAKEN:\n" : "MONTAGE PRODUCTEN:\n") + leesbareLijst,
+                montagetijd_minuten: totalTime,
+                opmerkingen: finalOpmerking
+            };
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 40000);
+
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const text = await response.text();
+
+                if (text.includes("OK")) {
+                    document.getElementById('orderForm').classList.add('hidden');
+                    document.getElementById('successMsg').classList.remove('hidden');
+                } else if (text.includes("Bestaat al")) {
+                    alert("❌ Ordernummer bestaat al in het systeem! Gebruik een uniek nummer.");
+                    resetSubmitButton(btn);
+                } else {
+                    alert("❌ Fout bij opslaan: " + text);
+                    resetSubmitButton(btn);
+                }
+            } catch (err) {
+                clearTimeout(timeoutId);
+                if (err.name === 'AbortError') alert("❌ Server reageert niet. De Google-wachtrij zit vol of de verbinding liep vast.");
+                else alert("❌ Netwerkfout. Controleer je internetverbinding.");
+                resetSubmitButton(btn);
+            }
+        }
+
+        function resetSubmitButton(btn) {
+            isSubmitting = false;
             btn.innerHTML = "🚀 Order Opslaan & Inplannen";
             btn.disabled = false;
             btn.classList.replace("bg-gray-400", "bg-blue-600");
             btn.classList.replace("opacity-75", "hover:-translate-y-1");
         }
-    });
-
-    // Start UI
-    setType('Montage');
-</script>
-
+    </script>
 </body>
 </html>
