@@ -119,7 +119,7 @@
 
     // AUTOMATISCH KLUSSEN INLADEN UIT PLANNING
     function laadActieveKlussen() {
-        fetch(SCRIPT_URL + "?action=getMonteurOrders")
+        fetch(SCRIPT_URL + "?action=getOrders")
             .then(res => res.json())
             .then(data => {
                 alleActieveOrders = data;
