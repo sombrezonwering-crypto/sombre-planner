@@ -228,8 +228,14 @@
         fetch(`${SCRIPT_URL}?action=${actieScript}&ordernummer=${ordernummer}&notitie=${encodeURIComponent(notitieInfo)}`)
         .then(res => res.json())
         .then(data => {
-            alert("✅ Status succesvol verwerkt! Agenda op kantoor is direct bijgewerkt.");
-            location.reload(); 
+            if(data.status === "ok") {
+                alert("✅ Status succesvol verwerkt! Agenda op kantoor is direct bijgewerkt.");
+                location.reload(); 
+            } else {
+                alert("❌ Fout vanuit kantoor: " + data.message + "\n\n(Heb je de Nieuwe Implementatie in Google Apps Script wel gepubliceerd?)");
+                btn.disabled = false;
+                btn.innerText = "📤 MELDING VERZENDEN NAAR KANTOOR";
+            }
         }).catch(err => {
             alert("❌ Er ging iets mis met de verbinding. Probeer het opnieuw.");
             btn.disabled = false;
