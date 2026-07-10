@@ -21,7 +21,7 @@
     <div class="max-w-3xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="text-center md:text-left">
             <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Nieuwe Order</h1>
-            <p class="text-gray-500 font-medium mt-1">Sombre ERP Intake Module V9.6</p>
+            <p class="text-gray-500 font-medium mt-1">Sombre ERP Intake Module V11.4</p>
         </div>
         <a href="magazijn.html" class="bg-gray-800 hover:bg-black text-white font-bold py-2.5 px-5 rounded-xl transition-all text-sm shadow-lg flex items-center gap-2 transform hover:-translate-y-0.5">
             📦 Open Magazijn App ➡️
@@ -196,43 +196,37 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
-        
-        let isServiceMode = false;
-        let totalTime = 0;
-        let isSubmitting = false;
-
-        // Berekentijden geüpdatet met de lagere basiswaarden!
-        const CONFIG = {
-            PRODUCT_TIMES: { knikarm: 60, screen: 45, rolluik: 45, uitval: 60, markies: 60, hor: 15, overkapping: 480, veranda: 480, overig: 30 },
-            SERVICE_TIMES: { motor_stroom: 45, motor_solar: 30, motor_hand: 60, doek: 60, lamellen: 45, armen: 60, inregelen: 30 },
-            MODIFIERS: { hoogwerker: 60, steiger: 60, demontage: 60, extraMonteur: 30 },
-            BEDIENING_TIMES: { solar: 0, afstandsbediening: 15, schakelaar: 30, handbediend: 30 },
-            ONDERGROND_TIMES: { kozijn: 0, muur: 15 }
+        // --- 1. CONFIGURATION ---
+        const APP_CONFIG = {
+            // FIX: De actuele, correcte URL ingevuld (exact gelijk aan de Magazijn App!)
+            WEB_APP_URL: "https://script.google.com/macros/s/AKfycbw8XNAycvrJWLnKYxP5ulFmbCZUrLNtb0Etc9-HteUcsdtLU9P90QiKhqumPaKxaqc/exec",
+            FETCH_TIMEOUT_MS: 40000,
+            TIMES: {
+                PRODUCT: { knikarm: 60, screen: 45, rolluik: 45, uitval: 60, markies: 60, hor: 15, overkapping: 480, veranda: 480, overig: 30 },
+                SERVICE: { motor_stroom: 45, motor_solar: 30, motor_hand: 60, doek: 60, lamellen: 45, armen: 60, inregelen: 30 },
+                MODIFIERS: { hoogwerker: 60, steiger: 60, demontage: 60, extraMonteur: 30 },
+                BEDIENING: { solar: 0, afstandsbediening: 15, schakelaar: 30, handbediend: 30 },
+                ONDERGROND: { kozijn: 0, muur: 15 }
+            }
         };
 
-        const addressCache = {};
-        let lastQuery = "";
+        // --- 2. STATE ---
+        const AppState = {
+            isServiceMode: false,
+            totalTime: 0,
+            isSubmitting: false,
+            addressCache: {},
+            lastQuery: ""
+        };
 
+        // --- 3. INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btnMontage').addEventListener('click', () => setMode(false));
             document.getElementById('btnService').addEventListener('click', () => setMode(true));
             document.getElementById('btnAddMontage').addEventListener('click', renderMontageRow);
             document.getElementById('btnAddService').addEventListener('click', renderServiceRow);
             
-            document.getElementById('tijdVoorkeur').addEventListener('change', (e) => {
-                const vastContainer = document.getElementById('vasteTijdContainer');
-                const vastInput = document.getElementById('vasteTijd');
-                if (e.target.value === 'Vast') {
-                    vastContainer.classList.remove('hidden');
-                    vastInput.required = true;
-                } else {
-                    vastContainer.classList.add('hidden');
-                    vastInput.value = '';
-                    vastInput.required = false;
-                }
-            });
-
+            document.getElementById('tijdVoorkeur').addEventListener('change', handleTijdVoorkeurChange);
             document.querySelectorAll('.adres-trigger').forEach(el => el.addEventListener('blur', processAddressInput));
             document.querySelectorAll('.modifier-trigger').forEach(el => el.addEventListener('change', updateTotals));
             document.getElementById('orderForm').addEventListener('submit', handleFormSubmit);
@@ -240,14 +234,15 @@
             setMode(false);
         });
 
+        // --- 4. UI LOGIC ---
         function setMode(toService) {
-            isServiceMode = toService;
+            AppState.isServiceMode = toService;
             const btnMnt = document.getElementById('btnMontage');
             const btnSrv = document.getElementById('btnService');
             const activeCls = "bg-blue-50 border-blue-400 text-blue-700 shadow-md";
             const inactiveCls = "bg-white border-gray-200 text-gray-500 hover:bg-gray-50";
 
-            if (isServiceMode) {
+            if (AppState.isServiceMode) {
                 btnSrv.className = `type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${activeCls}`;
                 btnMnt.className = `type-btn font-bold py-3 rounded-xl border-2 transition-all text-sm flex items-center justify-center gap-2 ${inactiveCls}`;
                 document.getElementById('ordernummerLabel').innerText = "Notion Ordernummer *";
@@ -267,6 +262,36 @@
             updateTotals();
         }
 
+        function handleTijdVoorkeurChange(e) {
+            const vastContainer = document.getElementById('vasteTijdContainer');
+            const vastInput = document.getElementById('vasteTijd');
+            if (e.target.value === 'Vast') {
+                vastContainer.classList.remove('hidden');
+                vastInput.required = true;
+            } else {
+                vastContainer.classList.add('hidden');
+                vastInput.value = '';
+                vastInput.required = false;
+            }
+        }
+
+        function toggleCustomWork(e, row) {
+            const customContainer = row.querySelector('.custom-werk-container');
+            const prodCol = row.querySelector('.srvProductCol');
+            const voedingCol = row.querySelector('.srvVoedingCol');
+            
+            if (e.target.value === 'ander_werk') {
+                customContainer.classList.remove('hidden');
+                prodCol.classList.add('hidden');
+                voedingCol.classList.add('hidden');
+            } else {
+                customContainer.classList.add('hidden');
+                prodCol.classList.remove('hidden');
+                voedingCol.classList.remove('hidden');
+            }
+        }
+
+        // --- 5. DOM BUILDERS ---
         function renderMontageRow() {
             const container = document.getElementById('montageTakenContainer');
             const row = document.createElement('div');
@@ -368,40 +393,28 @@
                 </div>
             `;
             
-            row.querySelector('.srvType').addEventListener('change', (e) => {
-                const customContainer = row.querySelector('.custom-werk-container');
-                const prodCol = row.querySelector('.srvProductCol');
-                const voedingCol = row.querySelector('.srvVoedingCol');
-                
-                if (e.target.value === 'ander_werk') {
-                    customContainer.classList.remove('hidden');
-                    prodCol.classList.add('hidden');
-                    voedingCol.classList.add('hidden');
-                } else {
-                    customContainer.classList.add('hidden');
-                    prodCol.classList.remove('hidden');
-                    voedingCol.classList.remove('hidden');
-                }
-            });
-
+            row.querySelector('.srvType').addEventListener('change', (e) => toggleCustomWork(e, row));
             bindRowEvents(row, '.service-task');
             container.appendChild(row);
             updateTotals();
         }
 
         function bindRowEvents(row, rowSelector) {
-            row.querySelectorAll('.trigger-calc').forEach(el => el.addEventListener('change', updateTotals));
-            row.querySelectorAll('.trigger-calc').forEach(el => el.addEventListener('keyup', updateTotals));
+            row.querySelectorAll('.trigger-calc').forEach(el => {
+                el.addEventListener('change', updateTotals);
+                el.addEventListener('keyup', updateTotals);
+            });
             row.querySelector('.del-btn').addEventListener('click', () => {
                 if (document.querySelectorAll(rowSelector).length > 1) { row.remove(); updateTotals(); }
-                else { alert("Minimaal 1 item verplicht."); }
+                else { alert("⚠️ Er is minimaal 1 item verplicht."); }
             });
         }
 
+        // --- 6. CALCULATIONS ---
         function updateTotals() {
-            totalTime = isServiceMode ? calcService() : calcMontage();
-            if (isServiceMode) document.getElementById('displayServiceTijd').innerText = totalTime + " min";
-            else document.getElementById('displayMontageTijd').innerText = totalTime + " min";
+            AppState.totalTime = AppState.isServiceMode ? calcService() : calcMontage();
+            if (AppState.isServiceMode) document.getElementById('displayServiceTijd').innerText = AppState.totalTime + " min";
+            else document.getElementById('displayMontageTijd').innerText = AppState.totalTime + " min";
         }
 
         function calcMontage() {
@@ -412,9 +425,9 @@
                 const bedVal = taak.querySelector('.mntBediening').value;
                 const aantal = parseInt(taak.querySelector('.mntAantal').value) || 1;
                 
-                let baseTime = CONFIG.PRODUCT_TIMES[prodVal] || 30;
-                let ondExtra = CONFIG.ONDERGROND_TIMES[ondVal] || 0;
-                let bedExtra = CONFIG.BEDIENING_TIMES[bedVal] || 0;
+                let baseTime = APP_CONFIG.TIMES.PRODUCT[prodVal] || 30;
+                let ondExtra = APP_CONFIG.TIMES.ONDERGROND[ondVal] || 0;
+                let bedExtra = APP_CONFIG.TIMES.BEDIENING[bedVal] || 0;
                 
                 total += ((baseTime + ondExtra + bedExtra) * aantal);
             });
@@ -429,9 +442,9 @@
                 const aantal = parseInt(taak.querySelector('.srvAantal').value) || 1;
                 let baseTime = 30;
                 
-                if (type === 'motor') baseTime = CONFIG.SERVICE_TIMES[`motor_${voeding}`] || 45;
+                if (type === 'motor') baseTime = APP_CONFIG.TIMES.SERVICE[`motor_${voeding}`] || 45;
                 else if (type === 'ander_werk') baseTime = parseInt(taak.querySelector('.srvCustomTime').value) || 0;
-                else baseTime = CONFIG.SERVICE_TIMES[type] || 30;
+                else baseTime = APP_CONFIG.TIMES.SERVICE[type] || 30;
 
                 total += (baseTime * aantal);
             });
@@ -439,57 +452,58 @@
         }
 
         function addModifiers(total) {
-            if (document.getElementById('reqSteiger').checked) total += CONFIG.MODIFIERS.steiger;
-            if (document.getElementById('reqHoogwerker').checked) total += CONFIG.MODIFIERS.hoogwerker;
-            if (document.getElementById('demontage').checked) total += CONFIG.MODIFIERS.demontage;
-            if (document.getElementById('reqExtraMan').checked) total += CONFIG.MODIFIERS.extraMonteur;
+            if (document.getElementById('reqSteiger').checked) total += APP_CONFIG.TIMES.MODIFIERS.steiger;
+            if (document.getElementById('reqHoogwerker').checked) total += APP_CONFIG.TIMES.MODIFIERS.hoogwerker;
+            if (document.getElementById('demontage').checked) total += APP_CONFIG.TIMES.MODIFIERS.demontage;
+            if (document.getElementById('reqExtraMan').checked) total += APP_CONFIG.TIMES.MODIFIERS.extraMonteur;
             return total;
         }
 
-        // PDOK LOGICA (2-WEG MET OPSCHONING)
+        // --- 7. PDOK ADDRESS VALIDATION ---
         async function processAddressInput() {
             const pcField = document.getElementById('postcode');
             const hnField = document.getElementById('huisnummer');
             const straatField = document.getElementById('straatEnWoonplaats');
+            
             const pc = pcField.value.trim().replace(/\s+/g, '').toUpperCase();
             const hn = hnField.value.trim();
             const straat = straatField.value.trim();
 
             if (pc.length === 6 && hn.length >= 1) {
                 const query = `FWD-${pc}-${hn}`;
-                if (lastQuery === query) return;
-                lastQuery = query;
-                if (addressCache[query]) return applyResult(addressCache[query]);
+                if (AppState.lastQuery === query) return;
+                AppState.lastQuery = query;
+                
+                if (AppState.addressCache[query]) return applyResult(AppState.addressCache[query]);
 
                 try {
-                    const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?fq=postcode:${pc}&fq=huisnummer:${hn}&rows=1`;
-                    const res = await fetch(url);
+                    const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?fq=postcode:${pc}&fq=huisnummer:${hn}&rows=1`);
                     const data = await res.json();
                     if (data.response.docs.length > 0) {
                         const doc = data.response.docs[0];
                         const result = { success: true, straat: `${doc.straatnaam} ${hn}, ${doc.woonplaatsnaam}`, msg: "Geverifieerd via PC" };
-                        addressCache[query] = result; applyResult(result);
+                        AppState.addressCache[query] = result; applyResult(result);
                     } else applyResult({ success: false, msg: "Adres onbekend" });
                 } catch (e) { console.error("PDOK Error:", e); }
             }
             else if (pc.length === 0 && hn.length >= 1 && straat.length >= 5) {
                 const query = `REV-${hn}-${straat}`;
-                if (lastQuery === query) return;
-                lastQuery = query;
-                if (addressCache[query]) return applyResult(addressCache[query]);
+                if (AppState.lastQuery === query) return;
+                AppState.lastQuery = query;
+                
+                if (AppState.addressCache[query]) return applyResult(AppState.addressCache[query]);
 
                 try {
                     const cleanStraat = straat.replace(/,/g, '');
-                    const pdokQuery = cleanStraat + " " + hn;
-                    const url = `https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${encodeURIComponent(pdokQuery)}&rows=1`;
-                    const res = await fetch(url);
+                    const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${encodeURIComponent(cleanStraat + " " + hn)}&rows=1`);
                     const data = await res.json();
+                    
                     if (data.response.docs.length > 0) {
                         const doc = data.response.docs[0];
                         if (doc.postcode) {
                             const formattedPc = doc.postcode.substring(0, 4) + " " + doc.postcode.substring(4);
                             const result = { success: true, postcode: formattedPc, straat: `${doc.straatnaam} ${hn}, ${doc.woonplaatsnaam}`, msg: "Postcode gevonden" };
-                            addressCache[query] = result; applyResult(result);
+                            AppState.addressCache[query] = result; applyResult(result);
                         }
                     } else applyResult({ success: false, msg: "Postcode niet gevonden" });
                 } catch (e) { console.error("PDOK Error:", e); }
@@ -500,6 +514,7 @@
             const straatField = document.getElementById('straatEnWoonplaats');
             const pcField = document.getElementById('postcode');
             const badge = document.getElementById('validationBadge');
+            
             badge.innerText = res.msg;
             if (res.success) {
                 if (res.straat) straatField.value = res.straat;
@@ -512,17 +527,18 @@
             }
         }
 
-        // VALIDATIE & SUBMIT
+        // --- 8. SUBMISSION LOGIC ---
         async function handleFormSubmit(e) {
             e.preventDefault();
-            if (isSubmitting) return;
+            if (AppState.isSubmitting) return;
 
+            // Basic Validation
             const telefoon = document.getElementById('telefoon').value.trim();
             if (!/^[\d\s+\-()]{8,20}$/.test(telefoon)) return alert("⚠️ Ongeldig telefoonnummer.");
             
             const postcode = document.getElementById('postcode').value.trim();
             if (postcode === "" && document.getElementById('straatEnWoonplaats').value !== "") {
-                return alert("⚠️ De postcode wordt nog opgevraagd bij het Kadaster. Klik even buiten het veld en probeer het opnieuw.");
+                return alert("⚠️ De postcode wordt nog opgevraagd bij het Kadaster. Klik buiten het veld en probeer het opnieuw.");
             }
             if (!/^[1-9][0-9]{3}\s?[A-Za-z]{2}$/i.test(postcode)) return alert("⚠️ Ongeldig postcode formaat.");
             
@@ -533,21 +549,23 @@
                 return alert("⚠️ Vul de specifieke Vaste Tijd in.");
             }
 
-            // CLEANUP: Zorg dat het huisnummer er niet dubbel achter staat ("Almere 158")
+            // Cleanup address string
             let netAdres = document.getElementById('straatEnWoonplaats').value.trim();
             if (huisnummer && netAdres.endsWith(huisnummer)) {
                 netAdres = netAdres.slice(0, -huisnummer.length).trim();
             }
 
-            isSubmitting = true;
+            // UI State updates
+            AppState.isSubmitting = true;
             const btn = document.getElementById('submitBtn');
             btn.innerHTML = "⏳ Order wordt verwerkt...";
             btn.disabled = true;
             btn.classList.replace("bg-blue-600", "bg-gray-400");
             btn.classList.replace("hover:-translate-y-1", "opacity-75");
 
+            // Compile Payload
             let jsonBestellijst = [];
-            if (isServiceMode) {
+            if (AppState.isServiceMode) {
                 document.querySelectorAll('.service-task').forEach(t => {
                     let typeKey = t.querySelector('.srvType').value;
                     let typeText = t.querySelector('.srvType').options[t.querySelector('.srvType').selectedIndex].text;
@@ -557,23 +575,14 @@
                         typeText = "Ander werk: " + (t.querySelector('.srvCustomDesc').value || "Niet gespecificeerd");
                         detailsText = "N.v.t.";
                     }
-                    jsonBestellijst.push({
-                        type: typeText,
-                        details: detailsText,
-                        aantal: parseInt(t.querySelector('.srvAantal').value) || 1
-                    });
+                    jsonBestellijst.push({ type: typeText, details: detailsText, aantal: parseInt(t.querySelector('.srvAantal').value) || 1 });
                 });
             } else {
                 document.querySelectorAll('.montage-task').forEach(t => {
                     let product = t.querySelector('.mntProduct').options[t.querySelector('.mntProduct').selectedIndex].text;
                     let ondergrond = t.querySelector('.mntOndergrond').options[t.querySelector('.mntOndergrond').selectedIndex].text;
                     let bediening = t.querySelector('.mntBediening').options[t.querySelector('.mntBediening').selectedIndex].text;
-                    
-                    jsonBestellijst.push({
-                        type: product,
-                        details: `${ondergrond} | ${bediening}`,
-                        aantal: parseInt(t.querySelector('.mntAantal').value) || 1
-                    });
+                    jsonBestellijst.push({ type: product, details: `${ondergrond} | ${bediening}`, aantal: parseInt(t.querySelector('.mntAantal').value) || 1 });
                 });
             }
 
@@ -587,13 +596,12 @@
             const ladderSelect = document.getElementById('langeLadder').value;
             if (ladderSelect !== "Geen") extraTags.push(`⚠️ LANGE LADDER (${ladderSelect})`);
 
-            let baseOpmerking = isServiceMode ? document.getElementById('klachtService').value : document.getElementById('opmerkingenMontage').value;
+            let baseOpmerking = AppState.isServiceMode ? document.getElementById('klachtService').value : document.getElementById('opmerkingenMontage').value;
             let finalOpmerking = extraTags.length > 0 ? "⚠️ VEREISTEN: " + extraTags.join(" | ") + "\n\n" + baseOpmerking : baseOpmerking;
 
             const payload = {
                 ordernummer: document.getElementById('ordernummer').value.trim(),
                 naam: document.getElementById('naam').value,
-                // FIX: Voorkom dat Google Sheets de 0 van een telefoonnummer weghaalt
                 telefoon: "'" + telefoon,
                 postcode: postcode,
                 huisnummer: huisnummer,
@@ -605,22 +613,24 @@
                 afwijkende_reistijd: document.getElementById('afwijkendeReistijd').value,
                 spoed: document.getElementById('spoed').checked,
                 demontage: document.getElementById('demontage').checked,
-                isServiceNotion: isServiceMode,
-                bestellijst: (isServiceMode ? "SERVICE TAKEN:\n" : "MONTAGE PRODUCTEN:\n") + leesbareLijst,
-                montagetijd_minuten: totalTime,
+                bestellijst: (AppState.isServiceMode ? "SERVICE TAKEN:\n" : "MONTAGE PRODUCTEN:\n") + leesbareLijst,
+                montagetijd_minuten: AppState.totalTime,
                 opmerkingen: finalOpmerking
             };
 
+            // Network Request
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 40000);
+            const timeoutId = setTimeout(() => controller.abort(), APP_CONFIG.FETCH_TIMEOUT_MS);
 
             try {
-                const response = await fetch(WEB_APP_URL, {
+                // FIX: Veiligere fetch instellingen voor brede compatibiliteit
+                const response = await fetch(APP_CONFIG.WEB_APP_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
+                
                 clearTimeout(timeoutId);
                 const text = await response.text();
 
@@ -628,7 +638,7 @@
                     document.getElementById('orderForm').classList.add('hidden');
                     document.getElementById('successMsg').classList.remove('hidden');
                 } else if (text.includes("Bestaat al")) {
-                    alert("❌ Ordernummer bestaat al in het systeem! Gebruik een uniek nummer.");
+                    alert("❌ Ordernummer bestaat al in de database! Controleer het nummer en probeer het opnieuw.");
                     resetSubmitButton(btn);
                 } else {
                     alert("❌ Fout bij opslaan: " + text);
@@ -636,14 +646,17 @@
                 }
             } catch (err) {
                 clearTimeout(timeoutId);
-                if (err.name === 'AbortError') alert("❌ Server reageert niet. De Google-wachtrij zit vol of de verbinding liep vast.");
-                else alert("❌ Netwerkfout. Controleer je internetverbinding.");
+                if (err.name === 'AbortError') {
+                    alert("❌ De server deed er te lang over om te reageren. Controleer in Google Sheets of de order is doorgekomen.");
+                } else {
+                    alert("❌ Netwerkfout of Serverfout. Controleer of de URL klopt en je internetverbinding werkt.");
+                }
                 resetSubmitButton(btn);
             }
         }
 
         function resetSubmitButton(btn) {
-            isSubmitting = false;
+            AppState.isSubmitting = false;
             btn.innerHTML = "🚀 Order Opslaan & Inplannen";
             btn.disabled = false;
             btn.classList.replace("bg-gray-400", "bg-blue-600");
