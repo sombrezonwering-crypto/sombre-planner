@@ -58,9 +58,9 @@
         </div>
 
         <div class="flex overflow-x-auto gap-2 pb-2" id="filter-buttons">
-            <button onclick="setFilter('Alles')" class="filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">Alles Tonen</button>
-            <button onclick="setFilter('Gepland')" class="filter-btn bg-green-100 text-green-800 hover:bg-green-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-green-200">✅ Gepland Klaarzetten</button>
-            <button onclick="setFilter('Service & Spoed')" class="filter-btn bg-red-100 text-red-800 border border-red-200 hover:bg-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">🛠️ Service & Spoed</button>
+            <button onclick="setFilter('Alles')" class="filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm border border-transparent">Alles Tonen</button>
+            <button onclick="setFilter('Gepland')" class="filter-btn bg-green-50 text-green-800 hover:bg-green-100 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-green-200">✅ Gepland Klaarzetten</button>
+            <button onclick="setFilter('Service & Spoed')" class="filter-btn bg-red-50 text-red-800 hover:bg-red-100 border border-red-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap shadow-sm">🛠️ Service & Spoed</button>
             <button onclick="setFilter('Wacht op Prod.')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Wacht op Prod.</button>
             <button onclick="setFilter('Klant Bellen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Klant Bellen</button>
             <button onclick="setFilter('Deels Binnen')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-transparent">Deels Binnen</button>
@@ -115,7 +115,7 @@
     function escapeHTML(str) {
         if (!str) return "";
         return str.toString().replace(/[&<>'"]/g, 
-            tag => ({ '&': '&', '<': '<', '>': '>', "'": ''', '"': '"' }[tag] || tag)
+            tag => ({ '&': '&', '<': '<', '>': '>', "'": '&#39;', '"': '&quot;' }[tag] || tag)
         );
     }
 
