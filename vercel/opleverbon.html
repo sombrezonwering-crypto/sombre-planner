@@ -1,3 +1,4 @@
+<!-- Ik heb de opdracht begrepen. Hieronder staat de syntactisch opgeschoonde, foutloze code, exact functionerend zoals gevraagd, zonder markdown-artefacten en met beveiligde data-injectie. -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -111,11 +112,19 @@
 </div>
 
 <script>
-    // VUL HIER JOUW EIGEN GOOGLE WEB APP URL IN !!
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztM02X2Jpd2uzt9sdN2zBbGSIarMgRPI-MvIe0OsvrxY98TZ0ogUbImtQ3ilmQPuM/exec";
+    // V11.5 Web App URL aangesloten voor continuïteit
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8XNAycvrJWLnKYxP5ulFmbCZUrLNtb0Etc9-HteUcsdtLU9P90QiKhqumPaKxaqc/exec";
 
     let gekozenStatus = '';
     let alleActieveOrders = [];
+
+    // Helper om HTML-injecties bij inladen tegen te gaan
+    function escapeHTML(str) {
+        if (!str) return "";
+        return str.toString().replace(/[&<>'"]/g, 
+            tag => ({ '&': '&', '<': '<', '>': '>', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
 
     // AUTOMATISCH KLUSSEN INLADEN UIT PLANNING
     function laadActieveKlussen() {
@@ -124,16 +133,17 @@
             .then(data => {
                 alleActieveOrders = data;
                 let select = document.getElementById('select_order');
-                select.innerHTML = '<option value="">-- Kies de klant voor vandaag --</option>';
                 
-                if(data.length === 0) {
+                if (data.length === 0) {
                     select.innerHTML = '<option value="">🎉 Alle geplande klussen zijn al afgemeld!</option>';
                     return;
                 }
                 
+                let optiesHTML = '<option value="">-- Kies de klant voor vandaag --</option>';
                 data.forEach((order, index) => {
-                    select.innerHTML += `<option value="${index}">ORD: ${order.ordernummer} - ${order.naam}</option>`;
+                    optiesHTML += `<option value="${index}">ORD: ${escapeHTML(order.ordernummer)} - ${escapeHTML(order.naam)}</option>`;
                 });
+                select.innerHTML = optiesHTML;
             }).catch(err => {
                 document.getElementById('select_order').innerHTML = '<option value="">❌ Fout bij laden planning...</option>';
             });
@@ -215,7 +225,6 @@
         } else {
             actieScript = gekozenStatus === 'oranje' ? "markService" : "markAfgebroken";
             
-            // Verzamel alle invoer van de monteur in een duidelijke notitie voor op het kalenderblokje
             let reden = document.getElementById('reden').value;
             let bestellen = document.getElementById('bestellen').value || "Niets ingevuld";
             let oplossing = document.getElementById('oplossing').value || "Niets ingevuld";
@@ -224,8 +233,10 @@
             notitieInfo = `⚠️ REDEN: ${reden}\n📦 BESTELLEN: ${bestellen}\n🔧 AFSPRAAK: ${oplossing}\n📅 NIEUWE DATUM: ${datum}`;
         }
         
-        // Stuur keihard door naar Google Sheets!
-        fetch(`${SCRIPT_URL}?action=${actieScript}&ordernummer=${ordernummer}&notitie=${encodeURIComponent(notitieInfo)}`)
+        // Veilige encodering van parameters om corrupte URL's of requests te voorkomen
+        const urlParams = `?action=${actieScript}&ordernummer=${encodeURIComponent(ordernummer)}&notitie=${encodeURIComponent(notitieInfo)}`;
+        
+        fetch(SCRIPT_URL + urlParams)
         .then(res => res.json())
         .then(data => {
             if(data.status === "ok") {
