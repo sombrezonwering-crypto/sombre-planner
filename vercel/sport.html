@@ -1,438 +1,600 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zapply v25 BEAST MODE</title>
-    <style>
-        :root { --primary: #ff4757; --bg: #050a14; --card: #1e293b; --accent: #1db954; --rest: #ffa502; --text: #f8fafc; --gold: #f1c40f; --core: #0984e3; }
-        body { font-family: 'Arial Black', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); touch-action: manipulation; overflow-x: hidden; }
-        .container { max-width: 450px; margin: auto; }
-        
-        /* Spotify & Header */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .spotify-link { background: #1db954; padding: 8px 15px; border-radius: 20px; text-decoration: none; color: black; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; font-weight: 900; }
-        
-        .dashboard { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; border-bottom: 5px solid var(--primary); transition: 0.3s; }
-        .dashboard.resting { border-bottom-color: var(--rest); background: #2c3e50; }
-        .dashboard.core-mode { border-bottom-color: var(--core); background: #062b4a; }
-        
-        #timer { font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; }
-        
-        #prep-area { background: #0f172a; padding: 15px; border-radius: 10px; margin: 15px 0; border: 2px dashed var(--accent); }
-        #prep-list { font-size: 0.95rem; color: #fff; text-align: left; display: block; margin-top: 10px; line-height: 1.6; }
-        .prep-eq-title { color: var(--gold); font-size: 0.9rem; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; }
-        .history-text { font-size: 0.8rem; color: #94a3b8; font-weight: normal; display: block; margin-bottom: 5px; }
+<!-- skill:chrome -->
+<style>
+/* Credit line — bottom-right */
+.design-ui-credit {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  font: 11px/1 system-ui, sans-serif;
+  color: rgba(128,128,128,0.5);
+  pointer-events: none;
+  z-index: 2147483647;
+  transition: opacity 0.4s ease;
+  user-select: none;
+  letter-spacing: 0.02em;
+}
 
-        .visual-card { background: #0f172a; border-radius: 15px; padding: 12px; margin: 10px 0; border: 2px solid var(--primary); min-height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .ascii-art { font-family: monospace; background: #000; color: var(--accent); padding: 8px; border-radius: 8px; font-size: 10px; white-space: pre; line-height: 1.1; width: 100%; text-align: center; }
-        
-        #ex-title { font-size: 1.4rem; color: var(--accent); font-weight: 900; text-transform: uppercase; margin-bottom: 5px; text-align: center; }
-        #ex-eq { font-size: 0.8rem; color: var(--gold); font-weight: bold; margin-bottom: 5px; }
+/* Hide chrome on touch devices */
+@media (hover: none) {
+  .design-ui-credit { display: none; }
+}
 
-        /* Input Controls */
-        .stepper-group { display: flex; justify-content: space-around; align-items: center; background: #0f172a; padding: 10px; border-radius: 15px; margin-bottom: 10px; }
-        .stepper-val { font-size: 1.8rem; font-weight: 900; min-width: 80px; text-align: center; }
-        .btn-step { background: #334155; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; border: none; font-weight: 900; cursor: pointer; }
-        .btn-step:active { background: #475569; transform: scale(0.95); }
+/* Print fixes */
+@media print {
+  * {
+    transition: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .design-ui-credit { display: none !important; }
+}
 
-        .btn-main { width: 100%; padding: 20px; border-radius: 15px; border: none; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 10px; transition: 0.1s; cursor: pointer; }
-        .btn-log { background: var(--accent); color: white; box-shadow: 0 6px 0 #15833b; }
-        .btn-log:active { box-shadow: 0 2px 0 #15833b; transform: translateY(4px); }
-        .btn-skip { background: var(--rest); color: black; margin-top: 15px; font-size: 1.4rem; padding: 20px; box-shadow: 0 6px 0 #b37300; }
-        .btn-skip:active { box-shadow: 0 2px 0 #b37300; transform: translateY(4px); }
-        
-        /* Rest / Transition Timer Controls */
-        #rest-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid var(--rest); text-align: center; }
-        #rest-label { font-size: 1.2rem; font-weight: bold; color: var(--rest); letter-spacing: 2px; }
-        #rest-display { font-size: 6rem; font-weight: 900; color: var(--rest); line-height: 1; text-shadow: 0 0 15px rgba(255, 165, 2, 0.4); margin: 10px 0; }
-
-        /* Core Mode */
-        #core-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid var(--core); text-align: center; }
-        #core-label { font-size: 1.5rem; font-weight: 900; color: var(--core); letter-spacing: 1px; margin-bottom: 5px; }
-        #core-display { font-size: 6rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 15px rgba(9, 132, 227, 0.5); margin: 10px 0; }
-        #core-next { font-size: 0.9rem; color: #cbd5e1; margin-top: 10px; }
-
-        .hidden { display: none !important; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="header">
-        <div style="color: var(--primary); font-weight: 900;">ZAPPLY v25</div>
-        <a href="spotify:open" class="spotify-link">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.508 17.302c-.218.358-.684.474-1.042.255-2.887-1.764-6.521-2.164-10.803-1.184-.41.094-.817-.164-.911-.574-.094-.41.164-.817.574-.911 4.69-1.071 8.706-.615 11.927 1.353.358.218.474.684.255 1.042zm1.472-3.262c-.274.446-.856.588-1.302.314-3.303-2.03-8.337-2.617-12.245-1.429-.502.153-1.03-.131-1.183-.633-.153-.502.131-1.03.633-1.183 4.47-1.358 10.02-.705 13.782 1.606.446.274.588.856.314 1.302zm.127-3.414c-3.963-2.353-10.517-2.57-14.321-1.415-.608.184-1.248-.162-1.432-.77-.184-.608.162-1.248.77-1.432 4.385-1.332 11.607-1.077 16.172 1.631.547.325.727 1.033.402 1.58-.325.547-1.033.727-1.58.402z"/></svg>
-            SPOTIFY
-        </a>
-    </div>
-
-    <div class="dashboard" id="db-panel">
-        <div id="status-label" style="font-size:0.9rem; font-weight: 900; color: var(--accent);">BEAST MODE READY</div>
-        
-        <!-- Voorbereidingsoverzicht -->
-        <div id="prep-area">
-            <div style="color: var(--accent); font-size: 1.1rem; font-weight: 900;">PRE-WORKOUT BRIEFING</div>
-            <div id="prep-list"></div>
-        </div>
-        
-        <div id="timer">15:00</div>
-        <button class="btn-main" style="background:#fff; color:#000;" onclick="startApp()" id="startBtn">START TRAINING</button>
-    </div>
-
-    <!-- Visuele kaart (Hoofd oefeningen) -->
-    <div class="visual-card" id="visual-card" style="display:none;">
-        <div id="ex-title">OEFENING NAAM</div>
-        <div id="ex-eq">GEWICHT KLAARZETTEN</div>
-        <div id="visualContent" class="ascii-art">KIES OEFENING</div>
-        <div id="instruction" style="font-size: 0.8rem; margin-top: 5px; text-align: center;">...</div>
-    </div>
-
-    <div id="input-ui" class="hidden">
-        
-        <!-- Workout Controls -->
-        <div id="workout-controls">
-            <div class="stepper-group">
-                <button class="btn-step" onclick="adj('w',-2)">-</button>
-                <div class="stepper-val" id="val-w">10 kg</div>
-                <button class="btn-step" onclick="adj('w',2)">+</button>
-            </div>
-            <div class="stepper-group">
-                <button class="btn-step" onclick="adj('r',-1)">-</button>
-                <div class="stepper-val" id="val-r">12 reps</div>
-                <button class="btn-step" onclick="adj('r',1)">+</button>
-            </div>
-            <button class="btn-main btn-log" id="logBtn" onclick="logSet()">SLA SET OP</button>
-        </div>
-        
-        <!-- Rest / Transition UI -->
-        <div id="rest-container" class="hidden">
-            <div id="rest-label">HERSTEL FASE</div>
-            <div id="rest-display">30</div>
-            <button class="btn-main btn-skip" id="skipBtn" onclick="skipTimer()">SKIP - GO!</button>
-        </div>
-
-        <!-- Core Circuit UI -->
-        <div id="core-container" class="hidden">
-            <div id="core-label">ACTIE</div>
-            <div id="core-display">40</div>
-            <div id="core-next">Maak je klaar...</div>
-        </div>
-
-    </div>
-</div>
-
+</style>
 <script>
-    let timeLeft = 900; // 15 minuten
-    let globalTimerInterval;
-    let mode = 'IDLE'; // IDLE, WORK, REST, TRANS, CORE
-    let localTimeRemaining = 0;
-    
-    let currentMainIndex = 0;
-    let currentSet = 1;
-    let weight = 10, reps = 12;
-
-    let mainExercises = [];
-    let coreExercises = ["Russian Twists", "Crunches", "Plank"];
-    let coreCircuitQueue = []; // Bepaalt de flow van het core blok
-
-    // QUOTES
-    const quotesStart = [
-        "15 minuten op de klok! Geen genade! Start!",
-        "Materiaal gereed? Vanaf nu wordt er gezweet! Go go go!"
-    ];
-    const quotesTrans = [
-        "Tijd om te wisselen! 20 seconden! Opschieten!",
-        "Wissel van oefening! Snel, we hebben geen hele dag!"
-    ];
-
-    function getRandomQuote(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-    
-    // OEFENINGEN ARSENAAL
-    const exercises = {
-        "Push-Ups": { d: "Lichaam recht als een plank. Borst naar grond.", a: "   O____\n  /|    |\n  / \\___|", eq: "Lichaamsgewicht" },
-        "Dips": { d: "Handen op stangen. Zak tot 90 graden.", a: "   O \n  /|\\\n  _|_", eq: "Dips / Lichaamsgewicht" },
-        "DB Chest Press": { d: "Lig op rug. Druk DB's recht omhoog.", a: "  [O]   [O]\n    \\   /\n     -O-", eq: "Dumbbells" },
-        "Chest Flyes": { d: "Armen wijd in boog. Boven borst samen.", a: "  [O] _  _ [O]\n     \\ (O) /", eq: "Dumbbells" },
-        "Barbell Rows": { d: "Rug recht, voorover gebogen. Trek halter.", a: "   O__\n  /|  [I]", eq: "Halter" },
-        "DB Rows": { d: "Voorover gebogen, rug recht. Trek DBs op.", a: "   O__\n  /|  [I]", eq: "Dumbbells" },
-        "DB Pull-overs": { d: "Lig op rug, laat DB achter hoofd zakken.", a: "  _O_\n   | \\ [O]", eq: "Dumbbell" },
-        "Barbell Squats": { d: "Halter in nek, voeten schouderbreedte.", a: "  [I]_[I]\n    O\n   /|\\\n  _/ \\_", eq: "Halter" },
-        "Med Ball Squats": { d: "Hou bal tegen borst. Zak diep door.", a: "   O\n  /|\\\n _/ \\_", eq: "12 kg Medicijnbal" },
-        "Lunges": { d: "Stap naar voren. Knie net niet op grond.", a: "   O\n  /|\n  / \\_", eq: "Dumbbells of Bodyweight" },
-        "Barbell Overhead Press": { d: "Core strak, halter uitstoten.", a: " [I]_[I]\n  \\ O /\n    |\n   / \\", eq: "Halter" },
-        "Lateral Raises": { d: "Armen wijd, focus op zijkant schouders.", a: " [O] O [O]\n  \\ /|\\ /\n    / \\", eq: "Dumbbells" },
-        "DB Front Raises": { d: "Hef DBs recht vooruit. Beheerst laten zakken.", a: "   O_ [O]\n  /|\\\n  / \\", eq: "Dumbbells" },
-        "Barbell Curls": { d: "Recht staan, ellebogen in de zij.", a: "   /|\\_\n  [I]_[I]", eq: "Halter" },
-        "Hammer Curls": { d: "Neutrale grip. Pomp die biceps op!", a: "   /|\\_\n  [||]_ [O]", eq: "Dumbbells" },
-        "Skullcrushers": { d: "Lig op rug. Alleen onderarmen bewegen.", a: "  [O]\n   |\n  /|\\", eq: "Dumbbells of Halter" },
-        
-        // CORE (Voor 5 minuten circuit)
-        "Russian Twists": { d: "Zit in V-vorm, tik bal links en rechts aan.", a: "   _O_\n  /  \\\n -^---", eq: "12 kg Medicijnbal" },
-        "Crunches": { d: "Span die core aan! Schouders van de vloer.", a: "    _O\n   /  \\__\n  -^-----", eq: "Lichaamsgewicht" },
-        "Plank": { d: "Span buik en billen aan. Hou vast!", a: "  O-------\n  ||    ||", eq: "Lichaamsgewicht" },
-        "Med Ball Slams": { d: "Smijt de bal met brute kracht op de grond!", a: "  \\O/\n   |\n  / \\  O", eq: "12 kg Medicijnbal" }
-    };
-    
-    // SCHEMA (1 spiergroep per sessie: 3 Oefeningen)
-    const schedule = { 
-        1: { AM: ["DB Chest Press", "Dips", "Chest Flyes"], PM: ["Barbell Rows", "DB Rows", "DB Pull-overs"] },
-        2: { AM: ["Barbell Squats", "Lunges", "Med Ball Squats"], PM: ["Barbell Overhead Press", "Lateral Raises", "DB Front Raises"] },
-        3: { AM: ["Barbell Curls", "Hammer Curls", "Skullcrushers"], PM: ["Push-Ups", "DB Chest Press", "Dips"] },
-        4: { AM: ["Barbell Rows", "DB Rows", "Med Ball Slams"], PM: ["Barbell Squats", "Lunges", "Med Ball Squats"] },
-        5: { AM: ["Barbell Overhead Press", "Lateral Raises", "DB Front Raises"], PM: ["Barbell Curls", "Hammer Curls", "Skullcrushers"] }
-    };
-
-    function speak(t) { 
-        window.speechSynthesis.cancel(); 
-        const m = new SpeechSynthesisUtterance(t); 
-        m.lang = 'nl-NL'; m.pitch = 0.8; m.rate = 1.1; 
-        window.speechSynthesis.speak(m); 
-    }
-    
-    function adj(t, v) { 
-        if(t==='w'){weight+=v; if(weight<0) weight=0; document.getElementById('val-w').innerText = weight+' kg';} 
-        else {reps+=v; if(reps<0) reps=0; document.getElementById('val-r').innerText = reps+' reps';} 
+(function () {
+    // Design-ui pages are single compositions, so the whole body is editable.
+    function markEditable() {
+        document.body.classList.add('artifact-editable');
     }
 
-    // LOKALE OPSLAG (Smart Memory)
-    function getHistory(ex) {
-        let data = localStorage.getItem('zap25_' + ex);
-        return data ? JSON.parse(data) : null;
-    }
-    function saveHistory(ex, w, r) {
-        localStorage.setItem('zap25_' + ex, JSON.stringify({w: w, r: r}));
+    // Credit badge with idle-fade. Hover devices only.
+    function initChromeUI() {
+        if (!matchMedia('(hover: hover)').matches) return;
+
+        var credit = document.createElement('div');
+        credit.className = 'design-ui-credit';
+        credit.setAttribute('aria-hidden', 'true');
+        credit.innerHTML = '\u{1F49C} by ClickUp Brain';
+        document.body.appendChild(credit);
+
+        var timer = null;
+        var fade = function (out) { credit.style.opacity = out ? '0' : ''; };
+        fade(true);
+        var show = function () {
+            fade(false);
+            clearTimeout(timer);
+            timer = setTimeout(function () { fade(true); }, 3000);
+        };
+        document.addEventListener('mousemove', show);
+        show();
     }
 
     function init() {
-        let day = new Date().getDay();
-        if (day === 0 || day === 6) day = 1; 
-
-        const hour = new Date().getHours();
-        const sessionTime = hour < 14 ? "AM" : "PM";
-        
-        let groups = {
-            1: { AM: "BORST", PM: "RUG" },
-            2: { AM: "BENEN", PM: "SCHOUDERS" },
-            3: { AM: "ARMEN", PM: "BORST" },
-            4: { AM: "RUG", PM: "BENEN" },
-            5: { AM: "SCHOUDERS", PM: "ARMEN" }
-        };
-
-        document.getElementById('status-label').innerText = `DAG ${day} ${sessionTime === "AM" ? "OCHTEND" : "AVOND"} - ${groups[day][sessionTime]} & CORE`;
-
-        mainExercises = schedule[day][sessionTime];
-        
-        let reqEq = [...new Set(mainExercises.map(ex => exercises[ex].eq))];
-        reqEq.push("12 kg Medicijnbal"); // Voor Core altijd nodig
-        
-        let prepHtml = `<div class="prep-eq-title">BENODIGD MATERIAAL: <br><span style="color:#fff; font-weight:normal;">${reqEq.join(" &bull; ")}</span></div>`;
-        prepHtml += `<hr style="border: 1px solid #334155; margin: 10px 0;">`;
-        
-        // Genereer de lijst met historie
-        mainExercises.forEach((ex, i) => {
-            let hist = getHistory(ex);
-            let histText = hist ? `Vorige: ${hist.w}kg, ${hist.r} reps` : `Nieuwe oefening`;
-            prepHtml += `<strong>${i+1}. ${ex}</strong> <span style="font-size:0.7rem; color:var(--gold);">[${exercises[ex].eq}]</span>
-                         <span class="history-text">${histText}</span>`;
-        });
-        
-        prepHtml += `<br><strong>CORE BLOCK:</strong> Russian Twists, Crunches, Plank`;
-        document.getElementById('prep-list').innerHTML = prepHtml;
-
-        // Genereer Core Circuit Queue (2 rondes van 3 oefeningen = 6 werkblokken, 5 transities)
-        coreExercises.forEach(ex => { coreCircuitQueue.push({ t: 'work', ex: ex, time: 40 }); coreCircuitQueue.push({ t: 'trans', ex: 'Wissel', time: 15 }); });
-        coreExercises.forEach(ex => { coreCircuitQueue.push({ t: 'work', ex: ex, time: 40 }); coreCircuitQueue.push({ t: 'trans', ex: 'Wissel', time: 15 }); });
-        coreCircuitQueue.pop(); // Laatste transitie weghalen
+        markEditable();
+        initChromeUI();
     }
 
-    function startApp() {
-        document.getElementById('startBtn').classList.add('hidden');
-        document.getElementById('prep-area').classList.add('hidden'); 
-        
-        document.getElementById('visual-card').style.display = 'flex';
-        document.getElementById('input-ui').classList.remove('hidden');
-        
-        speak(getRandomQuote(quotesStart));
-        
-        loadMainExercise(0);
-
-        // Centrale Master Tick Functie
-        globalTimerInterval = setInterval(() => {
-            if(timeLeft > 0) timeLeft--;
-            
-            // Format global clock
-            const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-
-            // Handel lokale sub-timers af
-            if(mode === 'REST' || mode === 'TRANS' || mode === 'CORE') {
-                localTimeRemaining--;
-                if(mode === 'REST' || mode === 'TRANS') {
-                    document.getElementById('rest-display').innerText = localTimeRemaining;
-                    if(localTimeRemaining <= 3 && localTimeRemaining > 0) speak(localTimeRemaining);
-                    if(localTimeRemaining <= 0) autoNextPhase();
-                } else if(mode === 'CORE') {
-                    document.getElementById('core-display').innerText = localTimeRemaining;
-                    if(localTimeRemaining <= 3 && localTimeRemaining > 0) speak(localTimeRemaining);
-                    if(localTimeRemaining <= 0) nextCoreStep();
-                }
-            }
-
-            if(timeLeft <= 0) finishSession(false);
-        }, 1000);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
-    
-    function loadMainExercise(index) {
-        mode = 'WORK';
-        const ex = mainExercises[index];
-        document.getElementById('ex-title').innerText = `${index + 1}/3: ${ex}`;
-        document.getElementById('ex-eq').innerText = `[ ${exercises[ex].eq.toUpperCase()} ]`;
-        document.getElementById('visualContent').innerText = exercises[ex].a;
-        document.getElementById('instruction').innerText = exercises[ex].d;
-        
-        // Haal historie op om steppers in te stellen
-        let hist = getHistory(ex);
-        weight = hist ? hist.w : 10;
-        reps = hist ? hist.r : 12;
-        adj('w', 0); adj('r', 0); // Update UI
-        
-        currentSet = 1;
-        document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
-        speak(`Missie: ${ex}. Drie sets. Aan de bak.`);
-    }
+})();
 
-    function logSet() {
-        if(mode !== 'WORK') return;
-        
-        // Sla gegevens op
-        saveHistory(mainExercises[currentMainIndex], weight, reps);
+</script>
+<!-- /skill:chrome -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Zapply v25 BEAST MODE</title>
+<style>
+:root { --primary: #ff4757; --bg: #050a14; --card: #1e293b; --accent: #1db954; --rest: #ffa502; --text: #f8fafc; --gold: #f1c40f; --core: #0984e3; --gain: #00e676; --loss: #ff5252; }
+body { font-family: 'Arial Black', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); touch-action: manipulation; overflow-x: hidden; }
+.container { max-width: 450px; margin: auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.spotify-link { background: #1db954; padding: 8px 15px; border-radius: 20px; text-decoration: none; color: black; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; font-weight: 900; }
+.dashboard { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; border-bottom: 5px solid var(--primary); transition: 0.3s; }
+.dashboard.resting { border-bottom-color: var(--rest); background: #2c3e50; }
+.dashboard.core-mode { border-bottom-color: var(--core); background: #062b4a; }
+.dashboard.plank-mode { border-bottom-color: #e056fd; background: #1a0a2e; }
+#timer { font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; }
 
-        if(currentSet < 3) { 
-            startSubTimer(30, 'REST', "RUST"); 
-        } else { 
-            // Oefening klaar!
-            currentMainIndex++;
-            if(currentMainIndex < mainExercises.length) {
-                // Er komen nog hoofdoefeningen, 20s wissel!
-                startSubTimer(20, 'TRANS', "WISSEL OEF."); 
-                speak(getRandomQuote(quotesTrans) + " Volgende is " + mainExercises[currentMainIndex]);
-            } else {
-                // Hoofdoefeningen klaar. Transitie naar Core.
-                startSubTimer(20, 'TRANS', "MAAK KLAAR VOOR CORE"); 
-                speak("Hoofdblok zit erop! Maak je klaar voor het Core Circuit! 20 seconden!");
-            }
-        }
-    }
+/* Selection Screen */
+#select-screen { background: #0f172a; padding: 15px; border-radius: 15px; margin: 15px 0; border: 2px solid var(--accent); }
+#select-screen h3 { color: var(--accent); font-size: 1rem; margin: 0 0 12px 0; text-align: center; }
+.select-grid { display: flex; flex-direction: column; gap: 8px; }
+.select-item { display: flex; align-items: center; gap: 10px; background: #1e293b; padding: 12px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: 0.15s; }
+.select-item.selected { border-color: var(--accent); background: #0d3320; }
+.select-item:active { transform: scale(0.98); }
+.select-check { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #475569; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.15s; }
+.select-item.selected .select-check { border-color: var(--accent); background: var(--accent); }
+.select-check::after { content: ''; display: none; width: 8px; height: 14px; border: solid #000; border-width: 0 3px 3px 0; transform: rotate(45deg); margin-top: -3px; }
+.select-item.selected .select-check::after { display: block; }
+.select-info { flex: 1; }
+.select-name { font-size: 0.9rem; font-weight: 900; color: #f1f5f9; }
+.select-eq { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+.select-hist { font-size: 0.7rem; color: var(--gold); margin-top: 2px; }
+.select-count { text-align: center; margin-top: 10px; font-size: 0.85rem; color: #94a3b8; }
+.select-count strong { color: var(--accent); }
 
-    function startSubTimer(seconds, timerMode, labelText) {
-        mode = timerMode;
-        localTimeRemaining = seconds;
-        currentSet++; // Voor de rest-cyclus
-        
-        document.getElementById('workout-controls').classList.add('hidden');
-        document.getElementById('db-panel').classList.add('resting');
-        
-        document.getElementById('rest-container').classList.remove('hidden');
-        document.getElementById('rest-label').innerText = labelText;
-        document.getElementById('rest-display').innerText = localTimeRemaining;
-        
-        if(timerMode === 'REST') speak("30 seconden rust.");
-    }
+/* Core choice */
+#core-choice { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 2px solid var(--core); text-align: center; }
+#core-choice h3 { color: var(--core); margin: 0 0 15px 0; font-size: 1.1rem; }
+.choice-btns { display: flex; flex-direction: column; gap: 10px; }
+.btn-choice { padding: 18px; border-radius: 15px; border: none; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.1s; }
+.btn-choice:active { transform: scale(0.97); }
+.btn-choice-core { background: var(--core); color: white; }
+.btn-choice-plank { background: #e056fd; color: white; }
 
-    function skipTimer() {
-        if(mode === 'REST' || mode === 'TRANS') {
-            localTimeRemaining = 0;
-            autoNextPhase();
-        }
-    }
+.visual-card { background: #0f172a; border-radius: 15px; padding: 12px; margin: 10px 0; border: 2px solid var(--primary); min-height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.visual-card.transitioning { border-color: var(--rest); }
+#svg-container { width: 120px; height: 120px; margin: 5px 0; }
+#svg-container svg { width: 100%; height: 100%; }
+#ex-title { font-size: 1.4rem; color: var(--accent); font-weight: 900; text-transform: uppercase; margin-bottom: 5px; text-align: center; }
+#ex-eq { font-size: 0.8rem; color: var(--gold); font-weight: bold; margin-bottom: 5px; }
+#instruction { font-size: 0.8rem; margin-top: 5px; text-align: center; color: #cbd5e1; }
 
-    function autoNextPhase() {
-        document.getElementById('rest-container').classList.add('hidden'); 
-        document.getElementById('db-panel').classList.remove('resting');
-        
-        if(currentMainIndex < mainExercises.length) {
-            // We zijn nog met hoofdoefeningen bezig
-            if(mode === 'REST') {
-                // Volgende set
-                mode = 'WORK';
-                document.getElementById('workout-controls').classList.remove('hidden');
-                document.getElementById('logBtn').innerText = `LOG SET ${currentSet}`;
-                speak("GO!");
-            } else if (mode === 'TRANS') {
-                // Volgende oefening laden
-                loadMainExercise(currentMainIndex);
-                document.getElementById('workout-controls').classList.remove('hidden');
-            }
-        } else {
-            // Tijd voor Core Circuit
-            startCoreCircuit();
-        }
-    }
+.stepper-group { display: flex; justify-content: space-around; align-items: center; background: #0f172a; padding: 10px; border-radius: 15px; margin-bottom: 10px; }
+.stepper-val { font-size: 1.8rem; font-weight: 900; min-width: 80px; text-align: center; }
+.btn-step { background: #334155; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; border: none; font-weight: 900; cursor: pointer; }
+.btn-step:active { background: #475569; transform: scale(0.95); }
+.btn-main { width: 100%; padding: 20px; border-radius: 15px; border: none; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 10px; transition: 0.1s; cursor: pointer; }
+.btn-log { background: var(--accent); color: white; box-shadow: 0 6px 0 #15833b; }
+.btn-log:active { box-shadow: 0 2px 0 #15833b; transform: translateY(4px); }
+.btn-skip { background: var(--rest); color: black; margin-top: 15px; font-size: 1.4rem; padding: 20px; box-shadow: 0 6px 0 #b37300; }
+.btn-skip:active { box-shadow: 0 2px 0 #b37300; transform: translateY(4px); }
 
-    // --- CORE CIRCUIT LOGICA ---
-    function startCoreCircuit() {
-        mode = 'CORE';
-        document.getElementById('db-panel').classList.add('core-mode');
-        document.getElementById('workout-controls').classList.add('hidden');
-        document.getElementById('rest-container').classList.add('hidden');
-        document.getElementById('core-container').classList.remove('hidden');
-        
-        speak("Core Circuit gestart! Geen pauzes meer, we knallen door!");
-        nextCoreStep();
-    }
+#rest-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid var(--rest); text-align: center; }
+#rest-label { font-size: 1.2rem; font-weight: bold; color: var(--rest); letter-spacing: 2px; }
+#rest-display { font-size: 6rem; font-weight: 900; color: var(--rest); line-height: 1; text-shadow: 0 0 15px rgba(255, 165, 2, 0.4); margin: 10px 0; }
 
-    function nextCoreStep() {
-        if(coreCircuitQueue.length === 0) {
-            finishSession(true);
-            return;
-        }
+#core-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid var(--core); text-align: center; }
+#core-label { font-size: 1.5rem; font-weight: 900; color: var(--core); letter-spacing: 1px; margin-bottom: 5px; }
+#core-display { font-size: 6rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 15px rgba(9, 132, 227, 0.5); margin: 10px 0; }
+#core-next { font-size: 0.9rem; color: #cbd5e1; margin-top: 10px; }
 
-        let step = coreCircuitQueue.shift();
-        localTimeRemaining = step.time;
-        
-        let nextEx = coreCircuitQueue.length > 0 ? coreCircuitQueue[0].ex : "Finish";
-        
-        if(step.t === 'work') {
-            document.getElementById('core-label').innerText = step.ex.toUpperCase();
-            document.getElementById('core-label').style.color = "var(--core)";
-            document.getElementById('core-next').innerText = `Hierna: ${nextEx}`;
-            document.getElementById('visualContent').innerText = exercises[step.ex].a;
-            document.getElementById('ex-title').innerText = "CORE CIRCUIT";
-            document.getElementById('ex-eq').innerText = `[ ${exercises[step.ex].eq.toUpperCase()} ]`;
-            speak(`Start ${step.ex}! 40 seconden.`);
-        } else {
-            document.getElementById('core-label').innerText = "KORTE WISSEL";
-            document.getElementById('core-label').style.color = "var(--rest)";
-            document.getElementById('core-next').innerText = `Maak klaar voor: ${nextEx}`;
-            speak(`15 seconden! Draai om voor ${nextEx}!`);
-        }
-        
-        document.getElementById('core-display').innerText = localTimeRemaining;
-    }
+#plank-container { background: #0f172a; padding: 20px; border-radius: 15px; margin: 10px 0; border: 3px solid #e056fd; text-align: center; }
+#plank-container h3 { color: #e056fd; font-size: 1.2rem; margin: 0 0 10px 0; }
+#plank-timer-display { font-size: 5rem; font-weight: 900; color: #e056fd; line-height: 1; margin: 10px 0; text-shadow: 0 0 10px rgba(224, 86, 253, 0.4); }
+#plank-set-info { font-size: 1rem; color: #cbd5e1; margin-bottom: 10px; }
+.btn-plank { background: #e056fd; color: white; box-shadow: 0 6px 0 #9b30b5; }
+.btn-plank:active { box-shadow: 0 2px 0 #9b30b5; transform: translateY(4px); }
+#plank-rest-info { font-size: 0.9rem; color: var(--rest); margin-top: 8px; font-weight: bold; }
 
-    function finishSession(isSuccess) {
-        clearInterval(globalTimerInterval);
-        document.getElementById('core-container').classList.add('hidden');
-        document.getElementById('rest-container').classList.add('hidden');
-        document.getElementById('workout-controls').classList.add('hidden');
+/* Progress */
+#progress-section { background: #0f172a; padding: 15px; border-radius: 15px; margin: 15px 0; border: 2px solid var(--gain); }
+#progress-section h3 { color: var(--gain); font-size: 1.1rem; margin: 0 0 12px 0; text-align: center; }
+.progress-tabs { display: flex; gap: 5px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+.progress-tab { background: #1e293b; color: #94a3b8; border: none; padding: 5px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 900; cursor: pointer; white-space: nowrap; }
+.progress-tab.active { background: var(--gain); color: #000; }
+.progress-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; }
+.progress-row:last-child { border-bottom: none; }
+.progress-ex-name { font-size: 0.75rem; font-weight: 900; color: #e2e8f0; max-width: 50%; }
+.progress-stats { display: flex; gap: 6px; align-items: center; }
+.progress-badge { font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 5px; }
+.badge-gain { background: rgba(0,230,118,0.15); color: var(--gain); }
+.badge-loss { background: rgba(255,82,82,0.15); color: var(--loss); }
+.badge-same { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.progress-current { font-size: 0.7rem; color: #cbd5e1; }
+.progress-empty { text-align: center; color: #475569; font-size: 0.85rem; padding: 15px; }
+.progress-summary { display: flex; justify-content: space-around; margin-bottom: 12px; padding: 8px; background: #0a1628; border-radius: 10px; }
+.summary-stat { text-align: center; }
+.summary-val { font-size: 1.3rem; font-weight: 900; color: var(--gain); }
+.summary-label { font-size: 0.6rem; color: #64748b; text-transform: uppercase; }
+#progress-list { max-height: 220px; overflow-y: auto; }
 
-        if(isSuccess) {
-            speak("Sessie voltooid! Brutaal gewerkt, soldaat! Rust uit.");
-            document.body.style.background = "var(--accent)";
-            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>MISSIE VOLTOOID!</h1><p style='text-align:center;'>Je gegevens zijn opgeslagen.</p>";
-            document.getElementById('visual-card').style.display = 'none';
-        } else {
-            speak("TIJD IS OM! Laat alles vallen! Je was te langzaam, maar goed gewerkt.");
-            document.body.style.background = "red";
-            document.getElementById('input-ui').innerHTML = "<h1 style='text-align:center; color:white;'>TIJD IS OM</h1>";
-            document.getElementById('visual-card').style.display = 'none';
-        }
-        timeLeft = 0;
-        document.getElementById('timer').innerText = "0:00";
-    }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div style="color: var(--primary); font-weight: 900;">ZAPPLY v25</div>
+<a href="spotify:open" class="spotify-link">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.508 17.302c-.218.358-.684.474-1.042.255-2.887-1.764-6.521-2.164-10.803-1.184-.41.094-.817-.164-.911-.574-.094-.41.164-.817.574-.911 4.69-1.071 8.706-.615 11.927 1.353.358.218.474.684.255 1.042zm1.472-3.262c-.274.446-.856.588-1.302.314-3.303-2.03-8.337-2.617-12.245-1.429-.502.153-1.03-.131-1.183-.633-.153-.502.131-1.03.633-1.183 4.47-1.358 10.02-.705 13.782 1.606.446.274.588.856.314 1.302zm.127-3.414c-3.963-2.353-10.517-2.57-14.321-1.415-.608.184-1.248-.162-1.432-.77-.184-.608.162-1.248.77-1.432 4.385-1.332 11.607-1.077 16.172 1.631.547.325.727 1.033.402 1.58-.325.547-1.033.727-1.58.402z"/></svg>
+SPOTIFY
+</a>
+</div>
 
-    init();
+<div class="dashboard" id="db-panel">
+<div id="status-label" style="font-size:0.9rem; font-weight: 900; color: var(--accent);">BEAST MODE READY</div>
+<div id="timer">15:00</div>
+
+<!-- Exercise Selection -->
+<div id="select-screen">
+<h3 id="select-title">KIES 3 OEFENINGEN</h3>
+<div class="select-grid" id="select-grid"></div>
+<div class="select-count" id="select-count">Geselecteerd: <strong>0</strong> / 3</div>
+<button class="btn-main" style="background:#fff; color:#000; margin-top:12px;" onclick="confirmSelection()" id="confirmBtn">START TRAINING</button>
+</div>
+
+<!-- Core choice (after main workout) -->
+<div id="core-choice" class="hidden">
+<h3>KIES JE AFSLUITING</h3>
+<div class="choice-btns">
+<button class="btn-choice btn-choice-core" onclick="startCoreCircuit()">BUIKSPIEREN (3 oefeningen)</button>
+<button class="btn-choice btn-choice-plank" onclick="startPlankMode()">PLANK TIMER (3 &times; 2 min)</button>
+</div>
+</div>
+
+<!-- Progress -->
+<div id="progress-section">
+<h3>&#x1F4C8; WEKELIJKSE GAINS</h3>
+<div class="progress-summary">
+<div class="summary-stat"><div class="summary-val" id="sum-sessions">0</div><div class="summary-label">Sessies</div></div>
+<div class="summary-stat"><div class="summary-val" id="sum-gains">0</div><div class="summary-label">Gains</div></div>
+<div class="summary-stat"><div class="summary-val" id="sum-volume">0</div><div class="summary-label">kg totaal</div></div>
+</div>
+<div class="progress-tabs" id="progress-tabs"></div>
+<div id="progress-list"></div>
+</div>
+</div>
+
+<!-- Visual Card -->
+<div class="visual-card" id="visual-card" style="display:none;">
+<div id="ex-title">OEFENING</div>
+<div id="ex-eq">MATERIAAL</div>
+<div id="svg-container"></div>
+<div id="instruction">...</div>
+</div>
+
+<div id="input-ui" class="hidden">
+<div id="workout-controls">
+<div class="stepper-group">
+<button class="btn-step" onclick="adj('w',-2)">-</button>
+<div class="stepper-val" id="val-w">10 kg</div>
+<button class="btn-step" onclick="adj('w',2)">+</button>
+</div>
+<div class="stepper-group">
+<button class="btn-step" onclick="adj('r',-1)">-</button>
+<div class="stepper-val" id="val-r">12 reps</div>
+<button class="btn-step" onclick="adj('r',1)">+</button>
+</div>
+<button class="btn-main btn-log" id="logBtn" onclick="logSet()">SLA SET OP</button>
+</div>
+
+<div id="rest-container" class="hidden">
+<div id="rest-label">HERSTEL</div>
+<div id="rest-display">30</div>
+<button class="btn-main btn-skip" id="skipBtn" onclick="skipTimer()">SKIP - GO!</button>
+</div>
+
+<div id="core-container" class="hidden">
+<div id="core-label">ACTIE</div>
+<div id="core-display">40</div>
+<div id="core-next">Maak je klaar...</div>
+</div>
+
+<div id="plank-container" class="hidden">
+<h3>PLANK HOLD</h3>
+<div id="plank-set-info">SET 1 / 3</div>
+<div id="plank-timer-display">2:00</div>
+<div id="plank-rest-info" class="hidden"></div>
+<button class="btn-main btn-plank" id="plankBtn" onclick="togglePlank()">START PLANK</button>
+</div>
+</div>
+</div>
+
+<script>
+// === SVG STICKFIGURES ===
+const svgFigures = {
+"Push-Ups": `<svg viewBox="0 0 120 80" fill="none"><circle cx="95" cy="30" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="87" y1="33" x2="45" y2="40" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="40" x2="25" y2="65" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="80" y1="38" x2="75" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="75" y1="55" x2="75" y2="65" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="42" x2="55" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="55" x2="55" y2="65" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+"Dips": `<svg viewBox="0 0 120 90" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="30" x2="40" y2="40" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="40" x2="35" y2="30" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="30" x2="80" y2="40" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="80" y1="40" x2="85" y2="30" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="50" y2="70" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="70" y2="70" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="25" y="28" width="10" height="4" rx="2" fill="#475569"/><rect x="85" y="28" width="10" height="4" rx="2" fill="#475569"/></svg>`,
+"DB Chest Press": `<svg viewBox="0 0 120 80" fill="none"><rect x="20" y="45" width="80" height="6" rx="3" fill="#334155"/><circle cx="60" cy="40" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="47" x2="60" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="40" y2="35" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="35" x2="38" y2="20" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="80" y2="35" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="80" y1="35" x2="82" y2="20" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="32" y="17" width="12" height="5" rx="2.5" fill="#ffa502"/><rect x="76" y="17" width="12" height="5" rx="2.5" fill="#ffa502"/></svg>`,
+"Chest Flyes": `<svg viewBox="0 0 120 80" fill="none"><rect x="25" y="45" width="70" height="6" rx="3" fill="#334155"/><circle cx="60" cy="40" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="47" x2="60" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="30" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="30" y1="42" x2="18" y2="30" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="90" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="90" y1="42" x2="102" y2="30" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="18" cy="28" r="4" fill="#ffa502"/><circle cx="102" cy="28" r="4" fill="#ffa502"/></svg>`,
+"Incline DB Press": `<svg viewBox="0 0 120 90" fill="none"><line x1="30" y1="75" x2="80" y2="40" stroke="#334155" stroke-width="6" stroke-linecap="round"/><circle cx="65" cy="38" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="65" y1="45" x2="55" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="65" y1="50" x2="50" y2="35" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="35" x2="45" y2="20" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="65" y1="50" x2="80" y2="35" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="80" y1="35" x2="85" y2="20" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="39" y="17" width="10" height="5" rx="2.5" fill="#ffa502"/><rect x="80" y="17" width="10" height="5" rx="2.5" fill="#ffa502"/></svg>`,
+"Decline DB Press": `<svg viewBox="0 0 120 90" fill="none"><line x1="30" y1="35" x2="85" y2="55" stroke="#334155" stroke-width="6" stroke-linecap="round"/><circle cx="45" cy="35" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="45" y1="42" x2="60" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="44" x2="35" y2="28" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="35" y1="28" x2="30" y2="15" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="44" x2="65" y2="28" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="65" y1="28" x2="70" y2="15" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="24" y="12" width="10" height="5" rx="2.5" fill="#ffa502"/><rect x="65" y="12" width="10" height="5" rx="2.5" fill="#ffa502"/></svg>`,
+"Barbell Rows": `<svg viewBox="0 0 120 90" fill="none"><circle cx="70" cy="20" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="65" y1="27" x2="55" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="55" x2="45" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="55" x2="70" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="45" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="50" x2="40" y2="58" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="30" y1="58" x2="90" y2="58" stroke="#ffa502" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="58" r="5" fill="#ffa502" opacity="0.7"/><circle cx="92" cy="58" r="5" fill="#ffa502" opacity="0.7"/></svg>`,
+"DB Rows": `<svg viewBox="0 0 120 90" fill="none"><circle cx="70" cy="22" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="65" y1="28" x2="55" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="50" x2="50" y2="70" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="50" x2="65" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="35" x2="78" y2="40" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="78" y1="40" x2="82" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="78" y="48" width="8" height="5" rx="2.5" fill="#ffa502"/><rect x="35" y="50" width="60" height="5" rx="2" fill="#334155"/></svg>`,
+"DB Pull-overs": `<svg viewBox="0 0 120 80" fill="none"><rect x="30" y="40" width="60" height="6" rx="3" fill="#334155"/><circle cx="60" cy="36" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="43" x2="60" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="46" x2="35" y2="30" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="35" y1="30" x2="25" y2="18" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="23" cy="15" r="5" fill="#ffa502"/></svg>`,
+"Reverse DB Flyes": `<svg viewBox="0 0 120 90" fill="none"><circle cx="60" cy="22" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="29" x2="60" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="55" x2="50" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="55" x2="70" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="30" y2="30" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="90" y2="30" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="28" cy="29" r="4" fill="#ffa502"/><circle cx="92" cy="29" r="4" fill="#ffa502"/></svg>`,
+"Renegade Rows": `<svg viewBox="0 0 120 80" fill="none"><circle cx="90" cy="25" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="83" y1="28" x2="45" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="38" x2="25" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="70" y1="33" x2="65" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="36" x2="50" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="83" y1="30" x2="95" y2="20" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="93" y="16" width="8" height="5" rx="2.5" fill="#ffa502"/></svg>`,
+"Superman Hold": `<svg viewBox="0 0 120 70" fill="none"><circle cx="85" cy="28" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="78" y1="30" x2="40" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="38" x2="20" y2="28" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="85" y1="35" x2="95" y2="25" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="38" x2="30" y2="48" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="30" y1="48" x2="20" y2="45" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><path d="M20 55 L100 55" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 4"/></svg>`,
+"Barbell Squats": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="55" x2="45" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="75" x2="42" y2="90" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="55" x2="75" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="75" y1="75" x2="78" y2="90" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="35" y1="10" x2="85" y2="10" stroke="#ffa502" stroke-width="3" stroke-linecap="round"/><circle cx="33" cy="10" r="4" fill="#ffa502" opacity="0.8"/><circle cx="87" cy="10" r="4" fill="#ffa502" opacity="0.8"/></svg>`,
+"Lunges": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="12" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="20" x2="60" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="40" y2="70" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="70" x2="35" y2="90" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="80" y2="70" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="80" y1="70" x2="85" y2="65" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+"Bulgarian Split Squats": `<svg viewBox="0 0 120 100" fill="none"><circle cx="50" cy="12" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="50" y1="20" x2="50" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="50" x2="35" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="35" y1="72" x2="32" y2="90" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="50" x2="75" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="75" y1="60" x2="88" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="82" y="52" width="20" height="8" rx="3" fill="#334155"/></svg>`,
+"Sumo Squats": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="12" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="20" x2="60" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="35" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="35" y1="72" x2="30" y2="90" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="50" x2="85" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="85" y1="72" x2="90" y2="90" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="60" cy="58" r="5" fill="#ffa502" opacity="0.8"/></svg>`,
+"Calf Raises": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="12" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="20" x2="60" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="55" x2="55" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="55" x2="65" y2="75" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="75" x2="55" y2="80" stroke="#1db954" stroke-width="3" stroke-linecap="round"/><line x1="65" y1="75" x2="65" y2="80" stroke="#1db954" stroke-width="3" stroke-linecap="round"/><rect x="40" y="82" width="40" height="5" rx="2" fill="#334155"/></svg>`,
+"Barbell Overhead Press": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="25" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="33" x2="60" y2="65" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="65" x2="50" y2="88" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="65" x2="70" y2="88" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="40" x2="42" y2="25" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="42" y1="25" x2="35" y2="12" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="40" x2="78" y2="25" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="78" y1="25" x2="85" y2="12" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="10" x2="95" y2="10" stroke="#ffa502" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="10" r="4" fill="#ffa502" opacity="0.8"/><circle cx="97" cy="10" r="4" fill="#ffa502" opacity="0.8"/></svg>`,
+"Lateral Raises": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="50" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="70" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="35" x2="30" y2="35" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="35" x2="90" y2="35" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="27" cy="35" r="4" fill="#ffa502"/><circle cx="93" cy="35" r="4" fill="#ffa502"/></svg>`,
+"DB Front Raises": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="50" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="70" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="45" y2="22" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="55" y2="22" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="43" cy="20" r="4" fill="#ffa502"/><circle cx="53" cy="20" r="4" fill="#ffa502"/></svg>`,
+"Arnold Press": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="22" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="30" x2="60" y2="62" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="62" x2="50" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="62" x2="70" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="40" x2="45" y2="28" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="28" x2="40" y2="12" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="40" x2="75" y2="28" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="75" y1="28" x2="80" y2="12" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="35" y="9" width="10" height="5" rx="2.5" fill="#ffa502"/><rect x="75" y="9" width="10" height="5" rx="2.5" fill="#ffa502"/></svg>`,
+"DB Shrugs": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="50" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="70" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="32" x2="42" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="32" x2="78" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="37" y="53" width="8" height="6" rx="3" fill="#ffa502"/><rect x="75" y="53" width="8" height="6" rx="3" fill="#ffa502"/></svg>`,
+"Barbell Curls": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="50" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="70" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="50" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="50" x2="48" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="70" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="70" y1="50" x2="72" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="36" x2="80" y2="36" stroke="#ffa502" stroke-width="3" stroke-linecap="round"/></svg>`,
+"Hammer Curls": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="50" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="70" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="48" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="48" y1="50" x2="45" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="72" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="72" y1="50" x2="75" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="42" y="34" width="5" height="8" rx="2" fill="#ffa502"/><rect x="73" y="34" width="5" height="8" rx="2" fill="#ffa502"/></svg>`,
+"Incline DB Curls": `<svg viewBox="0 0 120 90" fill="none"><line x1="30" y1="75" x2="75" y2="42" stroke="#334155" stroke-width="6" stroke-linecap="round"/><circle cx="62" cy="38" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="62" y1="45" x2="55" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="62" y1="48" x2="50" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="55" x2="48" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="62" y1="48" x2="74" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="74" y1="55" x2="76" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="47" cy="40" r="4" fill="#ffa502"/><circle cx="77" cy="40" r="4" fill="#ffa502"/></svg>`,
+"Concentration Curls": `<svg viewBox="0 0 120 100" fill="none"><circle cx="55" cy="25" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="55" y1="32" x2="55" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="55" x2="40" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="55" x2="70" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="40" x2="45" y2="52" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="52" x2="42" y2="40" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="40" cy="38" r="4" fill="#ffa502"/><rect x="35" y="68" width="45" height="5" rx="2" fill="#334155"/></svg>`,
+"Wide Grip Curls": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="15" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="23" x2="60" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="50" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="60" x2="70" y2="85" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="38" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="38" y1="50" x2="35" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="38" x2="82" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="82" y1="50" x2="85" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="36" x2="95" y2="36" stroke="#ffa502" stroke-width="3" stroke-linecap="round"/></svg>`,
+"Skullcrushers": `<svg viewBox="0 0 120 80" fill="none"><rect x="20" y="42" width="80" height="6" rx="3" fill="#334155"/><circle cx="60" cy="38" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="45" x2="60" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="48" x2="50" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="38" x2="55" y2="25" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="48" x2="70" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="70" y1="38" x2="65" y2="25" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="52" y="21" width="16" height="5" rx="2.5" fill="#ffa502"/></svg>`,
+"Overhead Tricep Extension": `<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="22" r="8" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="30" x2="60" y2="65" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="65" x2="50" y2="88" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="65" x2="70" y2="88" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="40" x2="52" y2="22" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="52" y1="22" x2="55" y2="10" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="40" x2="68" y2="22" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="68" y1="22" x2="65" y2="10" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><circle cx="60" cy="8" r="5" fill="#ffa502"/></svg>`,
+"Diamond Push-Ups": `<svg viewBox="0 0 120 80" fill="none"><circle cx="92" cy="28" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="85" y1="31" x2="45" y2="40" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="40" x2="28" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="70" y1="36" x2="62" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="62" y1="50" x2="62" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="38" x2="48" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="48" y1="50" x2="48" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><path d="M52 60 L55 55 L58 60 L55 65 Z" fill="#ffa502" opacity="0.8"/></svg>`,
+"Tricep Kickbacks": `<svg viewBox="0 0 120 90" fill="none"><circle cx="50" cy="22" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="50" y1="29" x2="50" y2="52" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="52" x2="40" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="52" x2="60" y2="72" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="38" x2="60" y2="45" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="45" x2="85" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><rect x="83" y="35" width="8" height="5" rx="2.5" fill="#ffa502"/></svg>`,
+"Close Grip Push-Ups": `<svg viewBox="0 0 120 80" fill="none"><circle cx="92" cy="28" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="85" y1="31" x2="45" y2="40" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="40" x2="28" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="68" y1="35" x2="60" y2="52" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="60" y1="52" x2="58" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="38" x2="52" y2="52" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="52" y1="52" x2="52" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+"Crunches": `<svg viewBox="0 0 120 70" fill="none"><circle cx="65" cy="22" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="27" x2="45" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="42" x2="30" y2="48" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="42" x2="40" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="55" x2="55" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="42" x2="50" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="55" x2="65" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><path d="M20 58 L100 58" stroke="#475569" stroke-width="1.5"/></svg>`,
+"Bicycle Crunches": `<svg viewBox="0 0 120 80" fill="none"><circle cx="65" cy="20" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="60" y1="25" x2="50" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="42" x2="35" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="42" x2="35" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="35" y1="55" x2="30" y2="62" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="42" x2="65" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="65" y1="55" x2="75" y2="48" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><path d="M20 65 L100 65" stroke="#475569" stroke-width="1.5"/></svg>`,
+"Leg Raises": `<svg viewBox="0 0 120 70" fill="none"><circle cx="30" cy="30" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="37" y1="32" x2="55" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="38" x2="85" y2="20" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="85" y1="20" x2="95" y2="18" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="45" y1="36" x2="40" y2="45" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><path d="M20 50 L100 50" stroke="#475569" stroke-width="1.5"/></svg>`,
+"Mountain Climbers": `<svg viewBox="0 0 120 80" fill="none"><circle cx="88" cy="25" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="81" y1="28" x2="50" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="38" x2="30" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="65" y1="34" x2="50" y2="55" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="50" y1="55" x2="48" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="55" y1="36" x2="70" y2="50" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="70" y1="50" x2="72" y2="60" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+"Plank": `<svg viewBox="0 0 120 60" fill="none"><circle cx="90" cy="22" r="7" stroke="#1db954" stroke-width="2.5"/><line x1="83" y1="25" x2="30" y2="32" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="75" y1="28" x2="72" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="31" x2="37" y2="42" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="30" y1="32" x2="25" y2="38" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><line x1="25" y1="38" x2="25" y2="45" stroke="#1db954" stroke-width="2.5" stroke-linecap="round"/><path d="M15 47 L105 47" stroke="#475569" stroke-width="1.5"/></svg>`
+};
+
+// === EXERCISE DATABASE ===
+const exercises = {
+"Push-Ups": { d: "Lichaam recht. Borst naar grond. Ellebogen 45 graden. Duw explosief omhoog.", eq: "Lichaamsgewicht", groep: "borst" },
+"Dips": { d: "Handen op stangen. Zak tot 90 graden. Leun licht voorover voor meer borst.", eq: "Dip-stangen", groep: "borst" },
+"DB Chest Press": { d: "Lig op bank. Druk DB's recht omhoog. Schouderbladen samen en naar beneden.", eq: "Dumbbells + Bank", groep: "borst" },
+"Chest Flyes": { d: "Armen wijd in boog. Boven borst samen. Lichte buiging in ellebogen houden.", eq: "Dumbbells + Bank", groep: "borst" },
+"Incline DB Press": { d: "Bank op 30-45 graden. Focus op bovenborst. Schouderbladen gepind.", eq: "DB + Verstelbare Bank", groep: "borst" },
+"Decline DB Press": { d: "Bank in decline. Focus op onderborst. Core aanspannen.", eq: "DB + Decline Bank", groep: "borst" },
+"Barbell Rows": { d: "Rug recht, 45 graden voorover. Trek halter naar navel. Squeeze bovenaan.", eq: "Halter", groep: "rug" },
+"DB Rows": { d: "Eén hand en knie op bank. Trek DB naar heup. Elleboog langs lichaam.", eq: "Dumbbells + Bank", groep: "rug" },
+"DB Pull-overs": { d: "Lig dwars op bank. Laat DB achter hoofd zakken. Rek in lats voelen.", eq: "Dumbbell + Bank", groep: "rug" },
+"Reverse DB Flyes": { d: "Voorover gebogen. Armen wijd opzij heffen. Schouderbladen samenknijpen.", eq: "Dumbbells", groep: "rug" },
+"Renegade Rows": { d: "Push-up positie met DB's. Afwisselend roeien. Heupen stil houden.", eq: "Dumbbells", groep: "rug" },
+"Superman Hold": { d: "Lig op buik. Armen en benen tegelijk optillen. 3 sec vasthouden bovenaan.", eq: "Lichaamsgewicht", groep: "rug" },
+"Barbell Squats": { d: "Halter in nek. Voeten schouderbreedte. Zak tot bovenbenen horizontaal.", eq: "Halter + Rack", groep: "benen" },
+"Lunges": { d: "Stap naar voren. Knie net niet op grond. Bovenlichaam recht houden.", eq: "Dumbbells", groep: "benen" },
+"Bulgarian Split Squats": { d: "Achtervoet op bank. Zak door voorste been. Killer voor quads en billen.", eq: "Dumbbells + Bank", groep: "benen" },
+"Sumo Squats": { d: "Brede stand, tenen naar buiten. DB tussen benen. Zak diep, knieën naar buiten.", eq: "Dumbbell", groep: "benen" },
+"Calf Raises": { d: "Op rand van verhoging. Langzaam omhoog op tenen. 2 sec vasthouden bovenaan.", eq: "Dumbbells + Verhoging", groep: "benen" },
+"Barbell Overhead Press": { d: "Voeten schouderbreedte, core strak. Halter recht boven hoofd uitstoten.", eq: "Halter", groep: "schouders" },
+"Lateral Raises": { d: "Armen wijd tot schouderhoogte. Pinkzijde licht omhoog. Geen momentum.", eq: "Dumbbells", groep: "schouders" },
+"DB Front Raises": { d: "Hef DB's recht vooruit tot schouderhoogte. Beheerst laten zakken.", eq: "Dumbbells", groep: "schouders" },
+"Arnold Press": { d: "Start palmen naar je toe. Draai naar buiten tijdens drukken. Volle ROM.", eq: "Dumbbells", groep: "schouders" },
+"DB Shrugs": { d: "Zware DB's langs lichaam. Schouders recht omhoog. 2 sec vasthouden bovenaan.", eq: "Dumbbells (zwaar)", groep: "schouders" },
+"DB Upright Rows": { d: "DB's dicht bij lichaam omhoog trekken. Ellebogen hoger dan handen.", eq: "Dumbbells", groep: "schouders" },
+"Barbell Curls": { d: "Recht staan. Ellebogen gefixeerd in de zij. Squeeze biceps bovenaan.", eq: "Halter", groep: "biceps" },
+"Hammer Curls": { d: "Neutrale grip (duimen omhoog). Focus op brachialis. Geen swing.", eq: "Dumbbells", groep: "biceps" },
+"Incline DB Curls": { d: "Bank op 45 graden. Armen hangen recht. Maximale stretch onderaan.", eq: "DB + Verstelbare Bank", groep: "biceps" },
+"Concentration Curls": { d: "Zittend, elleboog tegen binnenkant knie. Isoleer de biceps volledig.", eq: "Dumbbell + Bank", groep: "biceps" },
+"Wide Grip Curls": { d: "Brede grip op halter. Focus op korte kop biceps. Gecontroleerd.", eq: "Halter", groep: "biceps" },
+"Skullcrushers": { d: "Lig op bank. Alleen onderarmen buigen naar voorhoofd. Strek volledig.", eq: "DB of Halter + Bank", groep: "triceps" },
+"Overhead Tricep Extension": { d: "DB met beide handen boven hoofd. Laat zakken achter hoofd. Ellebogen stil.", eq: "Dumbbell", groep: "triceps" },
+"Diamond Push-Ups": { d: "Handen in diamantvorm onder borst. Ellebogen langs lichaam. Triceps killer.", eq: "Lichaamsgewicht", groep: "triceps" },
+"Tricep Kickbacks": { d: "Voorover gebogen. Strek onderarm naar achteren. Squeeze bovenaan.", eq: "Dumbbells", groep: "triceps" },
+"Close Grip Push-Ups": { d: "Handen dicht bij elkaar. Ellebogen langs lichaam. Focus op triceps.", eq: "Lichaamsgewicht", groep: "triceps" },
+"Crunches": { d: "Schouders van de vloer. Span core aan. Langzaam en gecontroleerd.", eq: "Lichaamsgewicht", groep: "core" },
+"Bicycle Crunches": { d: "Elleboog naar tegenovergestelde knie. Afwisselend. Schouders van de grond.", eq: "Lichaamsgewicht", groep: "core" },
+"Leg Raises": { d: "Lig op rug. Benen gestrekt omhoog. Langzaam laten zakken zonder grond te raken.", eq: "Lichaamsgewicht", groep: "core" },
+"Mountain Climbers": { d: "Push-up positie. Knieën afwisselend naar borst trekken. Snel tempo.", eq: "Lichaamsgewicht", groep: "core" }
+};
+
+// Schedule: welke spiergroep per dag/sessie
+const schedule = {
+1: { AM: "borst", PM: "rug" },
+2: { AM: "benen", PM: "schouders" },
+3: { AM: "biceps", PM: "triceps" },
+4: { AM: "rug", PM: "benen" },
+5: { AM: "schouders", PM: "borst" }
+};
+const groupLabels = { borst: "BORST", rug: "RUG", benen: "BENEN", schouders: "SCHOUDERS", biceps: "BICEPS", triceps: "TRICEPS" };
+
+// State
+let timeLeft = 900, globalTimerInterval, mode = 'IDLE', localTimeRemaining = 0;
+let currentMainIndex = 0, currentSet = 1, weight = 10, reps = 12;
+let mainExercises = [], coreCircuitQueue = [];
+let todayGroup = 'borst';
+let plankActive = false, plankInterval = null, plankTimeLeft = 120, plankCurrentSet = 1, plankResting = false, plankRestTime = 30;
+
+const quotesStart = ["15 minuten op de klok! Geen genade! Start!", "Materiaal gereed? Vanaf nu wordt er gezweet!"];
+const quotesTrans = ["Wissel! 20 seconden! Opschieten!", "Volgende oefening! Snel!"];
+function getRandomQuote(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function speak(t) { window.speechSynthesis.cancel(); const m=new SpeechSynthesisUtterance(t); m.lang='nl-NL'; m.pitch=0.8; m.rate=1.1; window.speechSynthesis.speak(m); }
+function adj(t,v) { if(t==='w'){weight+=v;if(weight<0)weight=0;document.getElementById('val-w').innerText=weight+' kg';}else{reps+=v;if(reps<0)reps=0;document.getElementById('val-r').innerText=reps+' reps';} }
+function showSvg(exName) { const c=document.getElementById('svg-container'); c.innerHTML=svgFigures[exName]||`<svg viewBox="0 0 120 100" fill="none"><circle cx="60" cy="40" r="20" stroke="#1db954" stroke-width="2"/><text x="60" y="45" text-anchor="middle" fill="#1db954" font-size="10">?</text></svg>`; }
+
+// Storage
+function getHistory(ex){let d=localStorage.getItem('zap25_'+ex);return d?JSON.parse(d):null;}
+function saveHistory(ex,w,r){localStorage.setItem('zap25_'+ex,JSON.stringify({w,r}));saveProgressEntry(ex,w,r);}
+function getProgressHistory(){let d=localStorage.getItem('zap25_progress');return d?JSON.parse(d):{};}
+function saveProgressEntry(ex,w,r){let h=getProgressHistory();if(!h[ex])h[ex]=[];const today=new Date().toISOString().split('T')[0];let te=h[ex].find(e=>e.date===today);if(te){if(w>te.w||(w===te.w&&r>te.r)){te.w=w;te.r=r;}}else{h[ex].push({date:today,w,r});}h[ex]=h[ex].filter(e=>(new Date()-new Date(e.date))/(1000*60*60*24)<=60);localStorage.setItem('zap25_progress',JSON.stringify(h));}
+function getWeekDates(wa){const n=new Date();const dow=n.getDay()===0?7:n.getDay();const mon=new Date(n);mon.setDate(n.getDate()-(dow-1)-(wa*7));mon.setHours(0,0,0,0);const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);return{start:mon,end:sun};}
+function getEntriesForWeek(entries,wa){const{start,end}=getWeekDates(wa);return entries.filter(e=>{const d=new Date(e.date);return d>=start&&d<=end;});}
+
+// Progress Tracker
+function renderProgress(fg){
+const h=getProgressHistory();const allEx=Object.keys(h).filter(ex=>{if(!fg||fg==='ALLES')return true;return exercises[ex]&&exercises[ex].groep===fg.toLowerCase();});
+let tg=0,tv=0,sw=new Set();const{start:ws,end:we}=getWeekDates(0);
+Object.entries(h).forEach(([ex,entries])=>{entries.forEach(e=>{const d=new Date(e.date);if(d>=ws&&d<=we){sw.add(e.date);tv+=(e.w*e.r*3);}});});
+allEx.forEach(ex=>{const entries=h[ex];const tw=getEntriesForWeek(entries,0);const lw=getEntriesForWeek(entries,1);if(tw.length>0&&lw.length>0){const bt=tw.reduce((a,b)=>a.w>b.w?a:b);const bl=lw.reduce((a,b)=>a.w>b.w?a:b);if(bt.w>bl.w||(bt.w===bl.w&&bt.r>bl.r))tg++;}});
+document.getElementById('sum-sessions').innerText=sw.size;document.getElementById('sum-gains').innerText=tg;document.getElementById('sum-volume').innerText=tv>999?Math.round(tv/1000)+'k':tv;
+const listEl=document.getElementById('progress-list');
+if(allEx.length===0){listEl.innerHTML='<div class="progress-empty">Nog geen data. Train een sessie!</div>';return;}
+let html='';allEx.sort().forEach(ex=>{const entries=h[ex];const tw=getEntriesForWeek(entries,0);const lw=getEntriesForWeek(entries,1);let badge='',cur='';
+if(tw.length>0){const bt=tw.reduce((a,b)=>a.w>b.w?a:b);cur=`<span class="progress-current">${bt.w}kg &times; ${bt.r}</span>`;if(lw.length>0){const bl=lw.reduce((a,b)=>a.w>b.w?a:b);const wd=bt.w-bl.w;const rd=bt.r-bl.r;if(wd>0)badge=`<span class="progress-badge badge-gain">+${wd}kg</span>`;else if(wd<0)badge=`<span class="progress-badge badge-loss">${wd}kg</span>`;else if(rd>0)badge=`<span class="progress-badge badge-gain">+${rd}r</span>`;else if(rd<0)badge=`<span class="progress-badge badge-loss">${rd}r</span>`;else badge=`<span class="progress-badge badge-same">=</span>`;}else badge=`<span class="progress-badge badge-gain">NIEUW</span>`;}
+else if(lw.length>0){const bl=lw.reduce((a,b)=>a.w>b.w?a:b);cur=`<span class="progress-current">${bl.w}kg &times; ${bl.r}</span>`;badge=`<span class="progress-badge badge-same">VORIG</span>`;}
+html+=`<div class="progress-row"><div class="progress-ex-name">${ex}</div><div class="progress-stats">${cur} ${badge}</div></div>`;});
+listEl.innerHTML=html;
+}
+function initProgressTabs(){const t=document.getElementById('progress-tabs');const g=['ALLES','BORST','RUG','BENEN','SCHOUDERS','BICEPS','TRICEPS','CORE'];let html='';g.forEach((x,i)=>{html+=`<button class="progress-tab ${i===0?'active':''}" onclick="switchPT(this,'${x}')">${x}</button>`;});t.innerHTML=html;}
+function switchPT(btn,g){document.querySelectorAll('.progress-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderProgress(g);}
+
+// === INIT: Build selection screen ===
+function init() {
+let day=new Date().getDay();if(day===0||day===6)day=1;
+const hour=new Date().getHours();const sess=hour<14?"AM":"PM";
+todayGroup=schedule[day][sess];
+document.getElementById('status-label').innerText=`DAG ${day} ${sess==="AM"?"OCHTEND":"AVOND"} - ${groupLabels[todayGroup]}`;
+document.getElementById('select-title').innerText=`KIES 3 OEFENINGEN - ${groupLabels[todayGroup]}`;
+
+// Get exercises for this group
+const available=Object.keys(exercises).filter(ex=>exercises[ex].groep===todayGroup);
+const grid=document.getElementById('select-grid');
+let html='';
+available.forEach(ex=>{
+const hist=getHistory(ex);
+const histText=hist?`Vorige: ${hist.w}kg x ${hist.r}`:'';
+html+=`<div class="select-item" data-ex="${ex}" onclick="toggleSelect(this)">
+<div class="select-check"></div>
+<div class="select-info">
+<div class="select-name">${ex}</div>
+<div class="select-eq">${exercises[ex].eq}</div>
+${histText?`<div class="select-hist">${histText}</div>`:''}
+</div></div>`;
+});
+grid.innerHTML=html;
+initProgressTabs();renderProgress('ALLES');
+}
+
+function toggleSelect(el) {
+const selected=document.querySelectorAll('.select-item.selected');
+if(el.classList.contains('selected')){el.classList.remove('selected');}
+else{if(selected.length>=3)return;el.classList.add('selected');}
+const count=document.querySelectorAll('.select-item.selected').length;
+document.getElementById('select-count').innerHTML=`Geselecteerd: <strong>${count}</strong> / 3`;
+}
+
+function confirmSelection() {
+const selected=document.querySelectorAll('.select-item.selected');
+if(selected.length<3){speak("Kies eerst 3 oefeningen!");return;}
+mainExercises=[];selected.forEach(el=>mainExercises.push(el.dataset.ex));
+document.getElementById('select-screen').classList.add('hidden');
+document.getElementById('progress-section').classList.add('hidden');
+document.getElementById('visual-card').style.display='flex';
+document.getElementById('input-ui').classList.remove('hidden');
+speak(getRandomQuote(quotesStart));
+loadMainExercise(0);
+globalTimerInterval=setInterval(()=>{
+if(timeLeft>0)timeLeft--;
+const m=Math.floor(timeLeft/60),s=timeLeft%60;
+document.getElementById('timer').innerText=`${m}:${s<10?'0':''}${s}`;
+if(mode==='REST'||mode==='TRANS'||mode==='CORE'){
+localTimeRemaining--;
+if(mode==='REST'||mode==='TRANS'){document.getElementById('rest-display').innerText=localTimeRemaining;if(localTimeRemaining<=3&&localTimeRemaining>0)speak(String(localTimeRemaining));if(localTimeRemaining<=0)autoNextPhase();}
+else if(mode==='CORE'){document.getElementById('core-display').innerText=localTimeRemaining;if(localTimeRemaining<=3&&localTimeRemaining>0)speak(String(localTimeRemaining));if(localTimeRemaining<=0)nextCoreStep();}
+}
+if(timeLeft<=0)finishSession(false);
+},1000);
+}
+
+function loadMainExercise(index){
+mode='WORK';const ex=mainExercises[index];
+document.getElementById('ex-title').innerText=`${index+1}/3: ${ex}`;
+document.getElementById('ex-eq').innerText=`[ ${exercises[ex].eq.toUpperCase()} ]`;
+document.getElementById('instruction').innerText=exercises[ex].d;
+showSvg(ex);document.getElementById('visual-card').classList.remove('transitioning');
+let hist=getHistory(ex);weight=hist?hist.w:10;reps=hist?hist.r:12;adj('w',0);adj('r',0);
+currentSet=1;document.getElementById('logBtn').innerText=`LOG SET ${currentSet}`;
+speak(`Missie: ${ex}. Drie sets. Ga!`);
+}
+
+function logSet(){
+if(mode!=='WORK')return;
+saveHistory(mainExercises[currentMainIndex],weight,reps);
+if(currentSet<3){startSubTimer(30,'REST',"RUST");}
+else{currentMainIndex++;
+if(currentMainIndex<mainExercises.length){startSubTimer(20,'TRANS',"WISSEL");speak(getRandomQuote(quotesTrans)+" Volgende: "+mainExercises[currentMainIndex]);}
+else{showCoreChoice();}
+}}
+
+function startSubTimer(sec,timerMode,label){
+mode=timerMode;localTimeRemaining=sec;currentSet++;
+document.getElementById('workout-controls').classList.add('hidden');
+document.getElementById('db-panel').classList.add('resting');
+document.getElementById('rest-container').classList.remove('hidden');
+document.getElementById('rest-label').innerText=label;
+document.getElementById('rest-display').innerText=localTimeRemaining;
+if(timerMode==='TRANS'){
+document.getElementById('visual-card').classList.add('transitioning');
+if(currentMainIndex<mainExercises.length){const nx=mainExercises[currentMainIndex];document.getElementById('ex-title').innerText=`VOLGENDE: ${nx}`;document.getElementById('ex-eq').innerText=`[ ${exercises[nx].eq.toUpperCase()} ]`;document.getElementById('instruction').innerText=exercises[nx].d;showSvg(nx);}
+}
+if(timerMode==='REST')speak("30 seconden rust.");
+}
+
+function skipTimer(){if(mode==='REST'||mode==='TRANS'){localTimeRemaining=0;autoNextPhase();}}
+function autoNextPhase(){
+document.getElementById('rest-container').classList.add('hidden');document.getElementById('db-panel').classList.remove('resting');
+if(currentMainIndex<mainExercises.length){if(mode==='REST'){mode='WORK';document.getElementById('workout-controls').classList.remove('hidden');document.getElementById('logBtn').innerText=`LOG SET ${currentSet}`;speak("GO!");}else if(mode==='TRANS'){loadMainExercise(currentMainIndex);document.getElementById('workout-controls').classList.remove('hidden');}}
+else{showCoreChoice();}
+}
+
+// === CORE CHOICE ===
+function showCoreChoice(){
+document.getElementById('workout-controls').classList.add('hidden');
+document.getElementById('visual-card').style.display='none';
+document.getElementById('core-choice').classList.remove('hidden');
+speak("Hoofdblok klaar! Kies: buikspieren of planken?");
+}
+
+// Core circuit (Crunches, Bicycle Crunches, Leg Raises, Mountain Climbers - pick 3)
+function startCoreCircuit(){
+document.getElementById('core-choice').classList.add('hidden');
+document.getElementById('visual-card').style.display='flex';
+document.getElementById('db-panel').classList.add('core-mode');
+document.getElementById('core-container').classList.remove('hidden');
+const coreExs=["Crunches","Bicycle Crunches","Leg Raises","Mountain Climbers"];
+coreCircuitQueue=[];
+coreExs.forEach(ex=>{coreCircuitQueue.push({t:'work',ex,time:40});coreCircuitQueue.push({t:'trans',ex:'Wissel',time:15});});
+coreExs.forEach(ex=>{coreCircuitQueue.push({t:'work',ex,time:40});coreCircuitQueue.push({t:'trans',ex:'Wissel',time:15});});
+coreCircuitQueue.pop();
+mode='CORE';speak("Core Circuit! Vier oefeningen, twee rondes. Geen excuses!");
+nextCoreStep();
+}
+
+function nextCoreStep(){
+if(coreCircuitQueue.length===0){finishSession(true);return;}
+let step=coreCircuitQueue.shift();localTimeRemaining=step.time;
+let nextEx=coreCircuitQueue.length>0?coreCircuitQueue[0].ex:"Finish";
+if(step.t==='work'){
+document.getElementById('core-label').innerText=step.ex.toUpperCase();document.getElementById('core-label').style.color="var(--core)";
+document.getElementById('core-next').innerText=`Hierna: ${nextEx}`;
+document.getElementById('ex-title').innerText="CORE";document.getElementById('ex-eq').innerText=`[ ${exercises[step.ex].eq.toUpperCase()} ]`;
+document.getElementById('instruction').innerText=exercises[step.ex].d;showSvg(step.ex);
+speak(`${step.ex}! 40 seconden!`);
+}else{
+document.getElementById('core-label').innerText="WISSEL";document.getElementById('core-label').style.color="var(--rest)";
+document.getElementById('core-next').innerText=`Volgende: ${nextEx}`;
+if(coreCircuitQueue.length>0&&coreCircuitQueue[0].t==='work'){const up=coreCircuitQueue[0].ex;document.getElementById('ex-title').innerText=`VOLGENDE: ${up}`;document.getElementById('instruction').innerText=exercises[up].d;showSvg(up);}
+speak(`15 seconden wissel!`);
+}
+document.getElementById('core-display').innerText=localTimeRemaining;
+}
+
+// === PLANK MODE ===
+function startPlankMode(){
+document.getElementById('core-choice').classList.add('hidden');
+document.getElementById('visual-card').style.display='flex';
+document.getElementById('db-panel').classList.add('plank-mode');
+document.getElementById('plank-container').classList.remove('hidden');
+document.getElementById('ex-title').innerText="PLANK HOLD";
+document.getElementById('ex-eq').innerText="[ LICHAAMSGEWICHT ]";
+document.getElementById('instruction').innerText="Onderarmen op grond. Lichaam recht. Span alles aan. Hou vol!";
+showSvg("Plank");
+mode='PLANK';
+speak("Plank challenge! 3 sets van 2 minuten. Start wanneer je klaar bent.");
+}
+
+function togglePlank(){
+if(!plankActive){startPlankTimer();}
+else{clearInterval(plankInterval);plankActive=false;document.getElementById('plankBtn').innerText="HERVAT";}
+}
+
+function startPlankTimer(){
+plankActive=true;plankResting=false;
+document.getElementById('plankBtn').innerText="PAUZE";
+document.getElementById('plank-rest-info').classList.add('hidden');
+speak(`Plank set ${plankCurrentSet}! Twee minuten!`);
+plankInterval=setInterval(()=>{
+if(plankResting){
+plankRestTime--;document.getElementById('plank-timer-display').innerText=`0:${plankRestTime<10?'0':''}${plankRestTime}`;
+if(plankRestTime<=3&&plankRestTime>0)speak(String(plankRestTime));
+if(plankRestTime<=0){clearInterval(plankInterval);plankResting=false;plankRestTime=30;document.getElementById('plank-rest-info').classList.add('hidden');document.getElementById('plank-timer-display').innerText="2:00";speak(`Set ${plankCurrentSet}! Go!`);startPlankTimer();}
+}else{
+plankTimeLeft--;const m=Math.floor(plankTimeLeft/60),s=plankTimeLeft%60;document.getElementById('plank-timer-display').innerText=`${m}:${s<10?'0':''}${s}`;
+if(plankTimeLeft<=5&&plankTimeLeft>0)speak(String(plankTimeLeft));
+if(plankTimeLeft<=0){clearInterval(plankInterval);plankActive=false;speak(`Set ${plankCurrentSet} klaar!`);
+if(plankCurrentSet<3){plankCurrentSet++;plankTimeLeft=120;document.getElementById('plank-set-info').innerText=`SET ${plankCurrentSet} / 3`;document.getElementById('plank-rest-info').classList.remove('hidden');document.getElementById('plank-rest-info').innerText="RUST: 30 SEC...";plankResting=true;plankRestTime=30;plankActive=true;document.getElementById('plankBtn').innerText="PAUZE";
+plankInterval=setInterval(()=>{plankRestTime--;document.getElementById('plank-timer-display').innerText=`0:${plankRestTime<10?'0':''}${plankRestTime}`;if(plankRestTime<=3&&plankRestTime>0)speak(String(plankRestTime));if(plankRestTime<=0){clearInterval(plankInterval);plankResting=false;plankRestTime=30;document.getElementById('plank-rest-info').classList.add('hidden');document.getElementById('plank-timer-display').innerText="2:00";speak(`Set ${plankCurrentSet}! Go!`);startPlankTimer();}},1000);
+}else{finishSession(true);}
+}}
+},1000);
+}
+
+function finishSession(ok){
+clearInterval(globalTimerInterval);clearInterval(plankInterval);
+document.getElementById('core-container').classList.add('hidden');document.getElementById('rest-container').classList.add('hidden');
+document.getElementById('workout-controls').classList.add('hidden');document.getElementById('plank-container').classList.add('hidden');
+if(ok){speak("Sessie voltooid! Beast mode!");document.body.style.background="var(--accent)";document.getElementById('input-ui').innerHTML="<h1 style='text-align:center;color:white;'>MISSIE VOLTOOID!</h1>";document.getElementById('visual-card').style.display='none';}
+else{speak("Tijd is om!");document.body.style.background="red";document.getElementById('input-ui').innerHTML="<h1 style='text-align:center;color:white;'>TIJD IS OM</h1>";document.getElementById('visual-card').style.display='none';}
+timeLeft=0;document.getElementById('timer').innerText="0:00";
+}
+
+init();
 </script>
 </body>
 </html>
