@@ -697,23 +697,53 @@ window.addEventListener('paste', async function(e) {
 });
 
 function verwerkGescandeTekst(ruweTekst) {
-  console.log("Rauwe OCR Tekst:", ruweTekst);
+  console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
 
-  // 1. Telefoonnummer invullen
-  let telMatch = ruweTekst.match(/(?:06|\+316)\s?\d{8}/);
-  if (telMatch) document.getElementById('telefoon').value = telMatch[0];
+  // 1. Ordernummer (Pakt de eerste reeks van 5 of 6 cijfers op een eigen regel)
+  let orderMatch = ruweTekst.match(/\n\s*(\d{5,6})\s+\d{2}-\d{2}-\d{4}/);
+  if (orderMatch) {
+    let veld = document.getElementById('ordernummer');
+    if (veld) veld.value = orderMatch[1];
+  }
 
-  // 2. Postcode invullen
-  let pcMatch = ruweTekst.match(/\b\d{4}\s?[A-Z]{2}\b/i);
-  if (pcMatch) document.getElementById('postcode').value = pcMatch[0].toUpperCase();
+  // 2. Telefoonnummer én Naam Klant (Staan samen op 1 regel, bijv: "0616244316 Manon...")
+  let telNaamMatch = ruweTekst.match(/(?:06|\+316)\s?\d{8}\s+(.*)/);
+  if (telNaamMatch) {
+    let telVeld = document.getElementById('telefoon');
+    if (telVeld) telVeld.value = telNaamMatch[0].split(' ')[0]; // Alleen de cijfers
 
-  // 3. Montageinstructies invullen in 'opmerkingenMontage'
-  let instructieMatch = ruweTekst.match(/Montageinstructie(.*?)(Jouw klantgegevens|Klantgegevens)/is);
+    let naamVeld = document.getElementById('naam');
+    if (naamVeld) naamVeld.value = telNaamMatch[1].trim(); // De rest is de naam
+  }
+
+  // 3. Postcode (Slimmer: we pakken nu altijd de LAATSTE postcode in de tekst om "1700 Op" te negeren)
+  let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
+  if (pcMatches && pcMatches.length > 0) {
+    let echtePostcode = pcMatches[pcMatches.length - 1]; 
+    let pcVeld = document.getElementById('postcode');
+    if (pcVeld) {
+      pcVeld.value = echtePostcode.toUpperCase();
+      // Simuleer een 'invoer' zodat je PDOK script snapt dat er iets is ingevuld
+      pcVeld.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  // 4. Huisnummer (Staat na het emailadres)
+  let adresMatch = ruweTekst.match(/@[^\s]+\s+[a-zA-Z\s]+\s(\d+[a-zA-Z]*)/);
+  if (adresMatch) {
+    let hnVeld = document.getElementById('huisnummer');
+    if (hnVeld) {
+      hnVeld.value = adresMatch[1];
+      hnVeld.dispatchEvent(new Event('input', { bubbles: true })); // Trigger PDOK
+    }
+  }
+
+  // 5. Bestellijst / Montageinstructies
+  let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)Jouw klantgegevens/i);
   if (instructieMatch && instructieMatch[1]) {
-    let schoneInstructie = instructieMatch[1].replace(/\n/g, ' ').trim();
-    document.getElementById('opmerkingenMontage').value = schoneInstructie;
-  } else {
-    document.getElementById('opmerkingenMontage').value = "Gescande tekst:\n" + ruweTekst.substring(0, 300);
+    let schoneInstructie = instructieMatch[1].trim();
+    let opmVeld = document.getElementById('opmerkingenMontage');
+    if (opmVeld) opmVeld.value = schoneInstructie;
   }
 }
 </script>
