@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -31,6 +32,11 @@
     <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100 mb-10">
         <form id="orderForm" class="space-y-8">
 
+            <!-- HET MAGIC PASTE VAK (Tailwind Styling) -->
+<div id="paste-zone" class="border-4 border-dashed border-blue-400 bg-blue-50 p-8 text-center rounded-xl cursor-pointer text-blue-700 font-bold transition-all hover:bg-blue-100 shadow-inner">
+  📸 Maak een printscreen van de order bij de leverancier en druk hier op CTRL+V (Plakken)
+  <div id="scanner-status" class="text-sm font-medium mt-3 text-blue-600"></div>
+</div>
             <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
                 <label class="block text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">1. Type Order & Afdeling</label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -663,5 +669,53 @@
             btn.classList.replace("opacity-75", "hover:-translate-y-1");
         }
     </script>
+
+    <script>
+window.addEventListener('paste', async function(e) {
+  let items = e.clipboardData.items;
+  let statusBox = document.getElementById('scanner-status');
+  
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf("image") !== -1) {
+      let imageBlob = items[i].getAsFile();
+      let imageUrl = URL.createObjectURL(imageBlob);
+      
+      statusBox.innerHTML = "⏳ Afbeelding scannen... een moment geduld aub.";
+      
+      Tesseract.recognize(
+        imageUrl,
+        'nld',
+        { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
+      ).then(({ data: { text } }) => {
+        statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
+        verwerkGescandeTekst(text);
+      }).catch(err => {
+        statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
+      });
+    }
+  }
+});
+
+function verwerkGescandeTekst(ruweTekst) {
+  console.log("Rauwe OCR Tekst:", ruweTekst);
+
+  // 1. Telefoonnummer invullen
+  let telMatch = ruweTekst.match(/(?:06|\+316)\s?\d{8}/);
+  if (telMatch) document.getElementById('telefoon').value = telMatch[0];
+
+  // 2. Postcode invullen
+  let pcMatch = ruweTekst.match(/\b\d{4}\s?[A-Z]{2}\b/i);
+  if (pcMatch) document.getElementById('postcode').value = pcMatch[0].toUpperCase();
+
+  // 3. Montageinstructies invullen in 'opmerkingenMontage'
+  let instructieMatch = ruweTekst.match(/Montageinstructie(.*?)(Jouw klantgegevens|Klantgegevens)/is);
+  if (instructieMatch && instructieMatch[1]) {
+    let schoneInstructie = instructieMatch[1].replace(/\n/g, ' ').trim();
+    document.getElementById('opmerkingenMontage').value = schoneInstructie;
+  } else {
+    document.getElementById('opmerkingenMontage').value = "Gescande tekst:\n" + ruweTekst.substring(0, 300);
+  }
+}
+</script>
 </body>
 </html>
