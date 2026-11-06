@@ -744,7 +744,23 @@ function verwerkGescandeTekst(ruweTekst) {
     let schoneInstructie = instructieMatch[1].trim();
     let opmVeld = document.getElementById('opmerkingenMontage');
     if (opmVeld) opmVeld.value = schoneInstructie;
-  }
+  }// 6. Maak de PDOK Postcodezoeker wakker nadat alle velden zijn gevuld
+  setTimeout(() => {
+    let pcVeld = document.getElementById('postcode');
+    let hnVeld = document.getElementById('huisnummer');
+    
+    // Controleer of postcode en huisnummer succesvol zijn ingevuld door de scanner
+    if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
+      // Roep jouw bestaande PDOK functie direct aan
+      if (typeof processAddressInput === "function") {
+        processAddressInput();
+      } else {
+        // Fallback: simuleer een fysieke muisklik/toetsaanslag in het huisnummer veld
+        hnVeld.dispatchEvent(new Event('change', { bubbles: true }));
+        hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+      }
+    }
+  }, 300); // Wacht 0,3 seconden zodat we zeker weten dat de velden vol staan
 }
 </script>
 </body>
