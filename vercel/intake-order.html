@@ -807,7 +807,7 @@ function verwerkGescandeTekst(ruweTekst) {
     });
   }
 
-  // 6. Start de automatische PDOK Postcodezoeker
+ // 6. Start de automatische PDOK Postcodezoeker
   setTimeout(() => {
     let pcVeld = document.getElementById('postcode');
     let hnVeld = document.getElementById('huisnummer');
@@ -820,8 +820,7 @@ function verwerkGescandeTekst(ruweTekst) {
         hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
       }
     }
-  }, 400); 
-}; // Wacht 0,4 seconden zodat we zeker weten dat de velden vol staan
+  }, 400); // Wacht 0,4 seconden zodat we zeker weten dat de velden vol staan
 }
 </script>
 </body>
