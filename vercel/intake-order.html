@@ -715,7 +715,7 @@ function verwerkGescandeTekst(ruweTekst) {
     if (naamVeld) naamVeld.value = telNaamMatch[1].trim(); 
   }
 
-  // 3. Postcode (Pakt altijd de LAATSTE postcode in de hele tekst)
+  // 3. Postcode
   let echtePostcode = "";
   let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
   if (pcMatches && pcMatches.length > 0) {
@@ -727,21 +727,20 @@ function verwerkGescandeTekst(ruweTekst) {
     }
   }
 
- // 4. Huisnummer (Pakt nummers, spaties, streepjes en letters zoals '905 h' of '12-B')
+  // 4. Huisnummer
   if (echtePostcode !== "") {
     let tekstTotPostcode = ruweTekst.substring(0, ruweTekst.lastIndexOf(echtePostcode)).trim();
-    // Zoekt naar cijfers, gevolgd door optionele spaties/streepjes en optionele letters
     let hnMatch = tekstTotPostcode.match(/(\d+[\s\-]*[a-zA-Z]*)\s*$/);
     if (hnMatch) {
       let hnVeld = document.getElementById('huisnummer');
       if (hnVeld) {
-        hnVeld.value = hnMatch[1].trim(); // .trim() haalt onzichtbare spaties weg
+        hnVeld.value = hnMatch[1].trim(); 
         hnVeld.dispatchEvent(new Event('input', { bubbles: true }));
       }
-        }
+    }
   }
 
-  // 5. Bestellijst / Montageinstructies
+  // 5. Montageinstructies (in de textarea)
   let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)Jouw klantgegevens/i);
   if (instructieMatch && instructieMatch[1]) {
     let schoneInstructie = instructieMatch[1].trim();
@@ -749,23 +748,80 @@ function verwerkGescandeTekst(ruweTekst) {
     if (opmVeld) opmVeld.value = schoneInstructie;
   }
 
-  // 6. Start de automatische PDOK Postcodezoeker!
+  // --- NIEUW: 5B. PRODUCTEN AUTOMATISCH AANKLIKKEN & BEREKENEN ---
+  // We zoeken naar elke regel tekst waar een productnaam in voorkomt
+  let productRegels = ruweTekst.split('\n').filter(regel => 
+    /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
+  );
+
+  if (productRegels.length > 0) {
+    let container = document.getElementById('montageTakenContainer');
+    
+    productRegels.forEach((regel, index) => {
+      let rijen = container.querySelectorAll('.montage-task');
+      
+      // Als er meer producten op de foto staan dan invoer-rijen, klikt hij op "Extra product toevoegen"
+      if (index >= rijen.length) {
+        document.getElementById('btnAddMontage').click();
+        rijen = container.querySelectorAll('.montage-task'); 
+      }
+      
+      let huidigeRij = rijen[index];
+      
+      // A. Welk product?
+      let prodSelect = huidigeRij.querySelector('.mntProduct');
+      if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
+      else if (/screen/i.test(regel)) prodSelect.value = 'screen';
+      else if (/knikarm/i.test(regel)) prodSelect.value = 'knikarm';
+      else if (/uitval/i.test(regel)) prodSelect.value = 'uitval';
+      else if (/markies/i.test(regel)) prodSelect.value = 'markies';
+      else if (/hor/i.test(regel)) prodSelect.value = 'hor';
+      else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
+      else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
+      
+      // B. Welke bediening?
+      let bedieningSelect = huidigeRij.querySelector('.mntBediening');
+      if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
+      else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
+      else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
+      else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
+      
+      // C. Welke ondergrond?
+      let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
+      if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
+      else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
+      
+      // D. Hoeveel stuks? (Hij zoekt het allerlaatste getal op de regel)
+      let aantalInput = huidigeRij.querySelector('.mntAantal');
+      let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
+      // We checken < 20 om te voorkomen dat hij per ongeluk een breedtemaat (1700) pakt
+      if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
+        aantalInput.value = aantalMatch[1];
+      }
+
+      // E. De Magic Touch: Vertel jouw reken-motor dat er iets is ingevuld!
+      prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      aantalInput.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+
+  // 6. Start de automatische PDOK Postcodezoeker
   setTimeout(() => {
     let pcVeld = document.getElementById('postcode');
     let hnVeld = document.getElementById('huisnummer');
     
-    // Check of scanner de velden succesvol heeft gevuld
     if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
-      // Roep direct jouw PDOK functie aan
       if (typeof processAddressInput === "function") {
         processAddressInput();
       } else {
-        // Fallback als de functie verborgen is
         hnVeld.dispatchEvent(new Event('change', { bubbles: true }));
         hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
       }
     }
-  }, 400); // Wacht 0,4 seconden zodat we zeker weten dat de velden vol staan
+  }, 400); 
+}; // Wacht 0,4 seconden zodat we zeker weten dat de velden vol staan
 }
 </script>
 </body>
