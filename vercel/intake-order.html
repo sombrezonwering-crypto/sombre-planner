@@ -669,12 +669,19 @@
             btn.classList.replace("opacity-75", "hover:-translate-y-1");
         }
     </script>
-
-    <script>
-window.addEventListener('paste', async function(e) {
+ window.addEventListener('paste', async function(e) {
   let items = e.clipboardData.items;
   let statusBox = document.getElementById('scanner-status');
+
+  // Check direct of je pure TEKST hebt gekopieerd
+  let pastedText = e.clipboardData.getData('text');
+  if (pastedText && pastedText.trim().length > 20) {
+    statusBox.innerHTML = "✅ Tekst direct herkend! Velden razendsnel invullen...";
+    verwerkGescandeTekst(pastedText);
+    return; 
+  }
   
+  // Zo niet, check of het een FOTO (printscreen) is
   for (let i = 0; i < items.length; i++) {
     if (items[i].type.indexOf("image") !== -1) {
       let imageBlob = items[i].getAsFile();
@@ -695,7 +702,6 @@ window.addEventListener('paste', async function(e) {
     }
   }
 });
-
 function verwerkGescandeTekst(ruweTekst) {
   console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
 
