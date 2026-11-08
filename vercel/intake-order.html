@@ -665,10 +665,12 @@
             AppState.isSubmitting = false;
             btn.innerHTML = "🚀 Order Opslaan & Inplannen";
             btn.disabled = false;
-            btn.classList.replace("bg-gray-400", "bg-blue-600");
+           btn.classList.replace("bg-gray-400", "bg-blue-600");
             btn.classList.replace("opacity-75", "hover:-translate-y-1");
-        }</script>
+        }
     </script>
+
+    <script>
  window.addEventListener('paste', async function(e) {
   let items = e.clipboardData.items;
   let statusBox = document.getElementById('scanner-status');
