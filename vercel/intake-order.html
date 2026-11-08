@@ -739,6 +739,41 @@ window.addEventListener('paste', async function(e) {
   }
 });
 
+<script>
+window.addEventListener('paste', async function(e) {
+  let items = e.clipboardData.items;
+  let statusBox = document.getElementById('scanner-status');
+
+  // Check direct of je pure TEKST hebt gekopieerd
+  let pastedText = e.clipboardData.getData('text');
+  if (pastedText && pastedText.trim().length > 20) {
+    statusBox.innerHTML = "✅ Tekst direct herkend! Velden razendsnel invullen...";
+    verwerkGescandeTekst(pastedText);
+    return; 
+  }
+  
+  // Zo niet, check of het een FOTO (printscreen) is
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf("image") !== -1) {
+      let imageBlob = items[i].getAsFile();
+      let imageUrl = URL.createObjectURL(imageBlob);
+      
+      statusBox.innerHTML = "⏳ Afbeelding scannen... een moment geduld aub.";
+      
+      Tesseract.recognize(
+        imageUrl,
+        'nld',
+        { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
+      ).then(({ data: { text } }) => {
+        statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
+        verwerkGescandeTekst(text);
+      }).catch(err => {
+        statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
+      });
+    }
+  }
+});
+
 function verwerkGescandeTekst(ruweTekst) {
   console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
 
@@ -875,8 +910,7 @@ function verwerkGescandeTekst(ruweTekst) {
     }
   }, 400); 
 }
- // Wacht 0,4 seconden zodat we zeker weten dat de velden vol staan
-}
+</script>
 </script>
 </body>
 </html>
