@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="nl">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Order Intake Enterprise | Sombre Planner Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .hidden { display: none !important; }
@@ -204,7 +204,6 @@
     <script>
         // --- 1. CONFIGURATION ---
         const APP_CONFIG = {
-            // FIX: De actuele, correcte URL ingevuld (exact gelijk aan de Magazijn App!)
             WEB_APP_URL: "https://script.google.com/macros/s/AKfycbw8XNAycvrJWLnKYxP5ulFmbCZUrLNtb0Etc9-HteUcsdtLU9P90QiKhqumPaKxaqc/exec",
             FETCH_TIMEOUT_MS: 40000,
             TIMES: {
@@ -665,81 +664,12 @@
             AppState.isSubmitting = false;
             btn.innerHTML = "🚀 Order Opslaan & Inplannen";
             btn.disabled = false;
-           btn.classList.replace("bg-gray-400", "bg-blue-600");
+            btn.classList.replace("bg-gray-400", "bg-blue-600");
             btn.classList.replace("opacity-75", "hover:-translate-y-1");
         }
     </script>
 
     <script>
- window.addEventListener('paste', async function(e) {
-  let items = e.clipboardData.items;
-  let statusBox = document.getElementById('scanner-status');
-
-  // Check direct of je pure TEKST hebt gekopieerd
-  let pastedText = e.clipboardData.getData('text');
-  if (pastedText && pastedText.trim().length > 20) {
-    statusBox.innerHTML = "✅ Tekst direct herkend! Velden razendsnel invullen...";
-    verwerkGescandeTekst(pastedText);
-    return; 
-  }
-  
-  // Zo niet, check of het een FOTO (printscreen) is
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf("image") !== -1) {
-      let imageBlob = items[i].getAsFile();
-      let imageUrl = URL.createObjectURL(imageBlob);
-      
-      statusBox.innerHTML = "⏳ Afbeelding scannen... een moment geduld aub.";
-      
-      Tesseract.recognize(
-        imageUrl,
-        'nld',
-        { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
-      ).then(({ data: { text } }) => {
-        statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
-        verwerkGescandeTekst(text);
-      }).catch(err => {
-        statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
-      });
-    }
-  }
-});
-<script>
-window.addEventListener('paste', async function(e) {
-  let items = e.clipboardData.items;
-  let statusBox = document.getElementById('scanner-status');
-
-  // Check direct of je pure TEKST hebt gekopieerd
-  let pastedText = e.clipboardData.getData('text');
-  if (pastedText && pastedText.trim().length > 20) {
-    statusBox.innerHTML = "✅ Tekst direct herkend! Velden razendsnel invullen...";
-    verwerkGescandeTekst(pastedText);
-    return; 
-  }
-  
-  // Zo niet, check of het een FOTO (printscreen) is
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf("image") !== -1) {
-      let imageBlob = items[i].getAsFile();
-      let imageUrl = URL.createObjectURL(imageBlob);
-      
-      statusBox.innerHTML = "⏳ Afbeelding scannen... een moment geduld aub.";
-      
-      Tesseract.recognize(
-        imageUrl,
-        'nld',
-        { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
-      ).then(({ data: { text } }) => {
-        statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
-        verwerkGescandeTekst(text);
-      }).catch(err => {
-        statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
-      });
-    }
-  }
-});
-
-<script>
     window.addEventListener('paste', async function(e) {
       let items = e.clipboardData.items;
       let statusBox = document.getElementById('scanner-status');
@@ -773,155 +703,141 @@ window.addEventListener('paste', async function(e) {
         }
       }
     });
-   function verwerkGescandeTekst(ruweTekst) {
-  console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
 
-  // 1. Ordernummer
-  let orderMatch = ruweTekst.match(/(\d{5,6})\s*\d{2}-\d{2}-\d{4}/);
-  if (orderMatch) {
-    let veld = document.getElementById('ordernummer');
-    if (veld) veld.value = orderMatch[1];
-  }
+    function verwerkGescandeTekst(ruweTekst) {
+      console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
 
-  // 2. Telefoonnummer én Naam Klant (Nu 100% robuust voor losgeknipte achternamen!)
-  let telMatch = ruweTekst.match(/(?:06|\+316)[\s\-]?\d{8}/);
-  if (telMatch) {
-    let telVeld = document.getElementById('telefoon');
-    if (telVeld) telVeld.value = telMatch[0].replace(/\s/g, ''); 
-    
-    // Pak alles NA het telefoonnummer
-    let restTekst = ruweTekst.substring(ruweTekst.indexOf(telMatch[0]) + telMatch[0].length);
-    // Knip het in regels
-    let regels = restTekst.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
-    
-    let verzameldeNaam = [];
-    for (let r of regels) {
-        // We blijven de naam verzamelen, maar stoppen DIRECT als we een email, huisnummer of de footer zien
-        if (r.includes('@') || /\d/.test(r) || /Jouw klant/i.test(r)) break;
-        verzameldeNaam.push(r);
-    }
-    
-    if (verzameldeNaam.length > 0) {
-      let naamVeld = document.getElementById('naam');
-      if (naamVeld) {
-        // Plak alle verzamelde delen (voornaam + achternaam) netjes aan elkaar met een spatie
-        naamVeld.value = verzameldeNaam.join(' ');
-      }
-    }
-  }
-
-  // 3. Postcode
-  let echtePostcode = "";
-  let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
-  if (pcMatches && pcMatches.length > 0) {
-    echtePostcode = pcMatches[pcMatches.length - 1]; 
-    let pcVeld = document.getElementById('postcode');
-    if (pcVeld) {
-      pcVeld.value = echtePostcode.toUpperCase();
-      pcVeld.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  }
-
-  // 4. Huisnummer
-  if (echtePostcode !== "") {
-    let tekstTotPostcode = ruweTekst.substring(0, ruweTekst.lastIndexOf(echtePostcode)).trim();
-    let hnMatch = tekstTotPostcode.match(/(\d+[\s\-]*[a-zA-Z]*)\s*$/);
-    if (hnMatch) {
-      let hnVeld = document.getElementById('huisnummer');
-      if (hnVeld) {
-        hnVeld.value = hnMatch[1].trim(); 
-        hnVeld.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    }
-  }
-
-  // 5. Montageinstructies
-  let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)(?:Jouw klant|Montageprijs|Order)/i);
-  if (instructieMatch && instructieMatch[1]) {
-    let schoneInstructie = instructieMatch[1].trim();
-    let opmVeld = document.getElementById('opmerkingenMontage');
-    if (opmVeld) opmVeld.value = schoneInstructie;
-  }
-
-  // 5B. PRODUCTEN ISOLEREN EN AANKLIKKEN (Nu robuust voor aan-elkaar-geplakte tekst)
-  let productSectie = ruweTekst;
-  // Isoleer alleen de tabel met de details (Tussen Aantal en Order ID)
-  let tabelMatch = ruweTekst.match(/Aantal(.*?)(?:Order ISP ID|Montageprijs|Jouw verkoopadviseur)/is);
-  if (tabelMatch && tabelMatch[1]) {
-    productSectie = tabelMatch[1];
-  }
-
-  // DE MAGIC FIX: Als de leverancier de tekst aan elkaar plakt (Solar2Solar Rolluik), forceren we hier een keiharde ENTER vóór elk product!
-  let opgedeeldeSectie = productSectie.replace(/(Solar Rolluik|Rolluik|Screen|Knikarmscherm|Knikarm|Uitvalscherm|Uitval|Markies|Horren|Hor|Overkapping|Veranda)/gi, '\n$1');
-
-  let productRegels = opgedeeldeSectie.split('\n').filter(regel => 
-    /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
-  );
-
-  if (productRegels.length > 0) {
-    let container = document.getElementById('montageTakenContainer');
-    
-    productRegels.forEach((regel, index) => {
-      let rijen = container.querySelectorAll('.montage-task');
-      
-      // Maak rijen bij als er meer producten zijn (b.v. 6 rolluiken)
-      if (index >= rijen.length) {
-        document.getElementById('btnAddMontage').click();
-        rijen = container.querySelectorAll('.montage-task'); 
-      }
-      
-      let huidigeRij = rijen[index];
-      
-      let prodSelect = huidigeRij.querySelector('.mntProduct');
-      if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
-      else if (/screen/i.test(regel)) prodSelect.value = 'screen';
-      else if (/knikarm/i.test(regel)) prodSelect.value = 'knikarm';
-      else if (/uitval/i.test(regel)) prodSelect.value = 'uitval';
-      else if (/markies/i.test(regel)) prodSelect.value = 'markies';
-      else if (/hor/i.test(regel)) prodSelect.value = 'hor';
-      else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
-      else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
-      
-      let bedieningSelect = huidigeRij.querySelector('.mntBediening');
-      if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
-      else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
-      else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
-      else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
-      
-      let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
-      if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
-      else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
-      
-      // Zoek het aantal (het laatste cijfer van deze losgeknipte string)
-      let aantalInput = huidigeRij.querySelector('.mntAantal');
-      let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
-      if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
-        aantalInput.value = aantalMatch[1];
+      // 1. Ordernummer
+      let orderMatch = ruweTekst.match(/(\d{5,6})\s*\d{2}-\d{2}-\d{4}/);
+      if (orderMatch) {
+        let veld = document.getElementById('ordernummer');
+        if (veld) veld.value = orderMatch[1];
       }
 
-      // Vuurt alles af voor je prijs/tijd calculator
-      prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      aantalInput.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-  }
-
-  // 6. Start de automatische PDOK Postcodezoeker
-  setTimeout(() => {
-    let pcVeld = document.getElementById('postcode');
-    let hnVeld = document.getElementById('huisnummer');
-    
-    if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
-      if (typeof processAddressInput === "function") {
-        processAddressInput();
-      } else {
-        hnVeld.dispatchEvent(new Event('change', { bubbles: true }));
-        hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+      // 2. Telefoonnummer én Naam Klant
+      let telMatch = ruweTekst.match(/(?:06|\+316)[\s\-]?\d{8}/);
+      if (telMatch) {
+        let telVeld = document.getElementById('telefoon');
+        if (telVeld) telVeld.value = telMatch[0].replace(/\s/g, ''); 
+        
+        let restTekst = ruweTekst.substring(ruweTekst.indexOf(telMatch[0]) + telMatch[0].length);
+        let naamMatch = restTekst.match(/^([\s\S]*?)(?=\n.*@|\n.*\d|@|\d)/);
+        
+        if (naamMatch && naamMatch[1]) {
+          let naamVeld = document.getElementById('naam');
+          if (naamVeld) {
+            naamVeld.value = naamMatch[1].replace(/\n/g, ' ').trim();
+          }
+        }
       }
+
+      // 3. Postcode
+      let echtePostcode = "";
+      let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
+      if (pcMatches && pcMatches.length > 0) {
+        echtePostcode = pcMatches[pcMatches.length - 1]; 
+        let pcVeld = document.getElementById('postcode');
+        if (pcVeld) {
+          pcVeld.value = echtePostcode.toUpperCase();
+          pcVeld.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+
+      // 4. Huisnummer
+      if (echtePostcode !== "") {
+        let tekstTotPostcode = ruweTekst.substring(0, ruweTekst.lastIndexOf(echtePostcode)).trim();
+        let hnMatch = tekstTotPostcode.match(/(\d+[\s\-]*[a-zA-Z]*)\s*$/);
+        if (hnMatch) {
+          let hnVeld = document.getElementById('huisnummer');
+          if (hnVeld) {
+            hnVeld.value = hnMatch[1].trim(); 
+            hnVeld.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
+      }
+
+      // 5. Montageinstructies
+      let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)Jouw klantgegevens/i);
+      if (instructieMatch && instructieMatch[1]) {
+        let schoneInstructie = instructieMatch[1].trim();
+        let opmVeld = document.getElementById('opmerkingenMontage');
+        if (opmVeld) opmVeld.value = schoneInstructie;
+      }
+
+      // 5B. PRODUCTEN ISOLEREN EN AANKLIKKEN
+      let productSectie = ruweTekst;
+      let tabelMatch = ruweTekst.match(/Aantal(.*?)Order ISP ID/is);
+      if (tabelMatch && tabelMatch[1]) {
+        productSectie = tabelMatch[1];
+      }
+
+      let opgedeeldeSectie = productSectie.replace(/(Solar Rolluik|Rolluik|Screen|Knikarmscherm|Knikarm|Uitvalscherm|Uitval|Markies|Horren|Hor|Overkapping|Veranda)/gi, '\n$1');
+
+      let productRegels = opgedeeldeSectie.split('\n').filter(regel => 
+        /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
+      );
+
+      if (productRegels.length > 0) {
+        let container = document.getElementById('montageTakenContainer');
+        
+        productRegels.forEach((regel, index) => {
+          let rijen = container.querySelectorAll('.montage-task');
+          
+          if (index >= rijen.length) {
+            document.getElementById('btnAddMontage').click();
+            rijen = container.querySelectorAll('.montage-task'); 
+          }
+          
+          let huidigeRij = rijen[index];
+          
+          let prodSelect = huidigeRij.querySelector('.mntProduct');
+          if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
+          else if (/screen/i.test(regel)) prodSelect.value = 'screen';
+          else if (/knikarm/i.test(regel)) prodSelect.value = 'knikarm';
+          else if (/uitval/i.test(regel)) prodSelect.value = 'uitval';
+          else if (/markies/i.test(regel)) prodSelect.value = 'markies';
+          else if (/hor/i.test(regel)) prodSelect.value = 'hor';
+          else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
+          else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
+          
+          let bedieningSelect = huidigeRij.querySelector('.mntBediening');
+          if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
+          else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
+          else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
+          else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
+          
+          let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
+          if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
+          else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
+          
+          let aantalInput = huidigeRij.querySelector('.mntAantal');
+          let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
+          if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
+            aantalInput.value = aantalMatch[1];
+          }
+
+          prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          aantalInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+
+      // 6. Start de automatische PDOK Postcodezoeker
+      setTimeout(() => {
+        let pcVeld = document.getElementById('postcode');
+        let hnVeld = document.getElementById('huisnummer');
+        
+        if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
+          if (typeof processAddressInput === "function") {
+            processAddressInput();
+          } else {
+            hnVeld.dispatchEvent(new Event('change', { bubbles: true }));
+            hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+          }
+        }
+      }, 400); 
     }
-  }, 400); 
-}
     </script>
 </body>
 </html>
