@@ -707,8 +707,8 @@
 function verwerkGescandeTekst(ruweTekst) {
   console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
 
-  // 1. Ordernummer
-  let orderMatch = ruweTekst.match(/\n\s*(\d{5,6})\s+\d{2}-\d{2}-\d{4}/);
+  // 1. Ordernummer (Nu slimmer: haalt het ordernummer uit aan elkaar geplakte tekst zoals 31458225-11-2026)
+  let orderMatch = ruweTekst.match(/(\d{5,6})\s*\d{2}-\d{2}-\d{4}/);
   if (orderMatch) {
     let veld = document.getElementById('ordernummer');
     if (veld) veld.value = orderMatch[1];
@@ -756,9 +756,17 @@ function verwerkGescandeTekst(ruweTekst) {
     if (opmVeld) opmVeld.value = schoneInstructie;
   }
 
-  // --- NIEUW: 5B. PRODUCTEN AUTOMATISCH AANKLIKKEN & BEREKENEN ---
-  // We zoeken naar elke regel tekst waar een productnaam in voorkomt
-  let productRegels = ruweTekst.split('\n').filter(regel => 
+  // --- NIEUW: 5B. PRODUCTEN ISOLEREN EN AANKLIKKEN ---
+  
+  // A. We knippen de samenvatting bovenaan eraf, we willen alleen de échte detail-tabel!
+  let productSectie = ruweTekst;
+  let tabelMatch = ruweTekst.match(/Aantal(.*?)Order ISP ID/is);
+  if (tabelMatch && tabelMatch[1]) {
+    productSectie = tabelMatch[1]; // We hebben nu puur de 6 echte orderregels vast
+  }
+
+  // B. Nu filteren we in die kleine sectie op de productnamen
+  let productRegels = productSectie.split('\n').filter(regel => 
     /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
   );
 
@@ -768,7 +776,7 @@ function verwerkGescandeTekst(ruweTekst) {
     productRegels.forEach((regel, index) => {
       let rijen = container.querySelectorAll('.montage-task');
       
-      // Als er meer producten op de foto staan dan invoer-rijen, klikt hij op "Extra product toevoegen"
+      // Voeg rijen toe als dat nodig is
       if (index >= rijen.length) {
         document.getElementById('btnAddMontage').click();
         rijen = container.querySelectorAll('.montage-task'); 
@@ -776,7 +784,7 @@ function verwerkGescandeTekst(ruweTekst) {
       
       let huidigeRij = rijen[index];
       
-      // A. Welk product?
+      // Product herkennen
       let prodSelect = huidigeRij.querySelector('.mntProduct');
       if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
       else if (/screen/i.test(regel)) prodSelect.value = 'screen';
@@ -787,27 +795,26 @@ function verwerkGescandeTekst(ruweTekst) {
       else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
       else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
       
-      // B. Welke bediening?
+      // Bediening herkennen
       let bedieningSelect = huidigeRij.querySelector('.mntBediening');
       if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
       else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
       else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
       else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
       
-      // C. Welke ondergrond?
+      // Ondergrond herkennen
       let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
       if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
       else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
       
-      // D. Hoeveel stuks? (Hij zoekt het allerlaatste getal op de regel)
+      // Aantal stuks (Het laatste getal op de regel, bijv. uit "Degalux Solar2")
       let aantalInput = huidigeRij.querySelector('.mntAantal');
       let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
-      // We checken < 20 om te voorkomen dat hij per ongeluk een breedtemaat (1700) pakt
       if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
         aantalInput.value = aantalMatch[1];
       }
 
-      // E. De Magic Touch: Vertel jouw reken-motor dat er iets is ingevuld!
+      // Vuurt de wijziging af zodat je montagetijd automatisch optelt
       prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
       bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
       ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -815,7 +822,7 @@ function verwerkGescandeTekst(ruweTekst) {
     });
   }
 
- // 6. Start de automatische PDOK Postcodezoeker
+  // 6. Start de automatische PDOK Postcodezoeker
   setTimeout(() => {
     let pcVeld = document.getElementById('postcode');
     let hnVeld = document.getElementById('huisnummer');
@@ -828,7 +835,8 @@ function verwerkGescandeTekst(ruweTekst) {
         hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
       }
     }
-  }, 400); // Wacht 0,4 seconden zodat we zeker weten dat de velden vol staan
+  }, 400); 
+}; // Wacht 0,4 seconden zodat we zeker weten dat de velden vol staan
 }
 </script>
 </body>
