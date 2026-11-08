@@ -740,176 +740,172 @@ window.addEventListener('paste', async function(e) {
 });
 
 <script>
-window.addEventListener('paste', async function(e) {
-  let items = e.clipboardData.items;
-  let statusBox = document.getElementById('scanner-status');
+    window.addEventListener('paste', async function(e) {
+      let items = e.clipboardData.items;
+      let statusBox = document.getElementById('scanner-status');
 
-  // Check direct of je pure TEKST hebt gekopieerd
-  let pastedText = e.clipboardData.getData('text');
-  if (pastedText && pastedText.trim().length > 20) {
-    statusBox.innerHTML = "✅ Tekst direct herkend! Velden razendsnel invullen...";
-    verwerkGescandeTekst(pastedText);
-    return; 
-  }
-  
-  // Zo niet, check of het een FOTO (printscreen) is
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf("image") !== -1) {
-      let imageBlob = items[i].getAsFile();
-      let imageUrl = URL.createObjectURL(imageBlob);
-      
-      statusBox.innerHTML = "⏳ Afbeelding scannen... een moment geduld aub.";
-      
-      Tesseract.recognize(
-        imageUrl,
-        'nld',
-        { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
-      ).then(({ data: { text } }) => {
-        statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
-        verwerkGescandeTekst(text);
-      }).catch(err => {
-        statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
-      });
-    }
-  }
-});
-
-function verwerkGescandeTekst(ruweTekst) {
-  console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
-
-  // 1. Ordernummer
-  let orderMatch = ruweTekst.match(/(\d{5,6})\s*\d{2}-\d{2}-\d{4}/);
-  if (orderMatch) {
-    let veld = document.getElementById('ordernummer');
-    if (veld) veld.value = orderMatch[1];
-  }
-
-  // 2. Telefoonnummer én Naam Klant (SUPER-FIX: leest namen over meerdere regels)
-  let telMatch = ruweTekst.match(/(?:06|\+316)[\s\-]?\d{8}/);
-  if (telMatch) {
-    let telVeld = document.getElementById('telefoon');
-    if (telVeld) telVeld.value = telMatch[0].replace(/\s/g, ''); 
-    
-    // We knippen de tekst af nà het telefoonnummer
-    let restTekst = ruweTekst.substring(ruweTekst.indexOf(telMatch[0]) + telMatch[0].length);
-    
-    // We pakken alle letters dwars door Enters heen, en we stoppen bij een @ of een cijfer
-    let naamMatch = restTekst.match(/^([\s\S]*?)(?=\n.*@|\n.*\d|@|\d)/);
-    
-    if (naamMatch && naamMatch[1]) {
-      let naamVeld = document.getElementById('naam');
-      if (naamVeld) {
-        // Plakt eventuele gebroken namen aan elkaar en haalt onnodige spaties weg
-        naamVeld.value = naamMatch[1].replace(/\n/g, ' ').trim();
-      }
-    }
-  }
-
-  // 3. Postcode
-  let echtePostcode = "";
-  let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
-  if (pcMatches && pcMatches.length > 0) {
-    echtePostcode = pcMatches[pcMatches.length - 1]; 
-    let pcVeld = document.getElementById('postcode');
-    if (pcVeld) {
-      pcVeld.value = echtePostcode.toUpperCase();
-      pcVeld.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  }
-
-  // 4. Huisnummer
-  if (echtePostcode !== "") {
-    let tekstTotPostcode = ruweTekst.substring(0, ruweTekst.lastIndexOf(echtePostcode)).trim();
-    let hnMatch = tekstTotPostcode.match(/(\d+[\s\-]*[a-zA-Z]*)\s*$/);
-    if (hnMatch) {
-      let hnVeld = document.getElementById('huisnummer');
-      if (hnVeld) {
-        hnVeld.value = hnMatch[1].trim(); 
-        hnVeld.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    }
-  }
-
-  // 5. Montageinstructies (in de textarea)
-  let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)Jouw klantgegevens/i);
-  if (instructieMatch && instructieMatch[1]) {
-    let schoneInstructie = instructieMatch[1].trim();
-    let opmVeld = document.getElementById('opmerkingenMontage');
-    if (opmVeld) opmVeld.value = schoneInstructie;
-  }
-
-  // 5B. PRODUCTEN ISOLEREN EN AANKLIKKEN
-  let productSectie = ruweTekst;
-  let tabelMatch = ruweTekst.match(/Aantal(.*?)Order ISP ID/is);
-  if (tabelMatch && tabelMatch[1]) {
-    productSectie = tabelMatch[1];
-  }
-
-  let productRegels = productSectie.split('\n').filter(regel => 
-    /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
-  );
-
-  if (productRegels.length > 0) {
-    let container = document.getElementById('montageTakenContainer');
-    
-    productRegels.forEach((regel, index) => {
-      let rijen = container.querySelectorAll('.montage-task');
-      
-      if (index >= rijen.length) {
-        document.getElementById('btnAddMontage').click();
-        rijen = container.querySelectorAll('.montage-task'); 
+      // Check direct of je pure TEKST hebt gekopieerd
+      let pastedText = e.clipboardData.getData('text');
+      if (pastedText && pastedText.trim().length > 20) {
+        statusBox.innerHTML = "✅ Tekst direct herkend! Velden razendsnel invullen...";
+        verwerkGescandeTekst(pastedText);
+        return; 
       }
       
-      let huidigeRij = rijen[index];
-      
-      let prodSelect = huidigeRij.querySelector('.mntProduct');
-      if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
-      else if (/screen/i.test(regel)) prodSelect.value = 'screen';
-      else if (/knikarm/i.test(regel)) prodSelect.value = 'knikarm';
-      else if (/uitval/i.test(regel)) prodSelect.value = 'uitval';
-      else if (/markies/i.test(regel)) prodSelect.value = 'markies';
-      else if (/hor/i.test(regel)) prodSelect.value = 'hor';
-      else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
-      else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
-      
-      let bedieningSelect = huidigeRij.querySelector('.mntBediening');
-      if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
-      else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
-      else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
-      else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
-      
-      let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
-      if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
-      else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
-      
-      let aantalInput = huidigeRij.querySelector('.mntAantal');
-      let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
-      if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
-        aantalInput.value = aantalMatch[1];
+      // Zo niet, check of het een FOTO (printscreen) is
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          let imageBlob = items[i].getAsFile();
+          let imageUrl = URL.createObjectURL(imageBlob);
+          
+          statusBox.innerHTML = "⏳ Afbeelding scannen... een moment geduld aub.";
+          
+          Tesseract.recognize(
+            imageUrl,
+            'nld',
+            { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
+          ).then(({ data: { text } }) => {
+            statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
+            verwerkGescandeTekst(text);
+          }).catch(err => {
+            statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
+          });
+        }
       }
-
-      prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      aantalInput.dispatchEvent(new Event('change', { bubbles: true }));
     });
-  }
 
-  // 6. Start de automatische PDOK Postcodezoeker
-  setTimeout(() => {
-    let pcVeld = document.getElementById('postcode');
-    let hnVeld = document.getElementById('huisnummer');
-    
-    if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
-      if (typeof processAddressInput === "function") {
-        processAddressInput();
-      } else {
-        hnVeld.dispatchEvent(new Event('change', { bubbles: true }));
-        hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+    function verwerkGescandeTekst(ruweTekst) {
+      console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
+
+      // 1. Ordernummer
+      let orderMatch = ruweTekst.match(/(\d{5,6})\s*\d{2}-\d{2}-\d{4}/);
+      if (orderMatch) {
+        let veld = document.getElementById('ordernummer');
+        if (veld) veld.value = orderMatch[1];
       }
+
+      // 2. Telefoonnummer én Naam Klant
+      let telMatch = ruweTekst.match(/(?:06|\+316)[\s\-]?\d{8}/);
+      if (telMatch) {
+        let telVeld = document.getElementById('telefoon');
+        if (telVeld) telVeld.value = telMatch[0].replace(/\s/g, ''); 
+        
+        let restTekst = ruweTekst.substring(ruweTekst.indexOf(telMatch[0]) + telMatch[0].length);
+        let naamMatch = restTekst.match(/^([\s\S]*?)(?=\n.*@|\n.*\d|@|\d)/);
+        
+        if (naamMatch && naamMatch[1]) {
+          let naamVeld = document.getElementById('naam');
+          if (naamVeld) {
+            naamVeld.value = naamMatch[1].replace(/\n/g, ' ').trim();
+          }
+        }
+      }
+
+      // 3. Postcode
+      let echtePostcode = "";
+      let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
+      if (pcMatches && pcMatches.length > 0) {
+        echtePostcode = pcMatches[pcMatches.length - 1]; 
+        let pcVeld = document.getElementById('postcode');
+        if (pcVeld) {
+          pcVeld.value = echtePostcode.toUpperCase();
+          pcVeld.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+
+      // 4. Huisnummer
+      if (echtePostcode !== "") {
+        let tekstTotPostcode = ruweTekst.substring(0, ruweTekst.lastIndexOf(echtePostcode)).trim();
+        let hnMatch = tekstTotPostcode.match(/(\d+[\s\-]*[a-zA-Z]*)\s*$/);
+        if (hnMatch) {
+          let hnVeld = document.getElementById('huisnummer');
+          if (hnVeld) {
+            hnVeld.value = hnMatch[1].trim(); 
+            hnVeld.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
+      }
+
+      // 5. Montageinstructies
+      let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)Jouw klantgegevens/i);
+      if (instructieMatch && instructieMatch[1]) {
+        let schoneInstructie = instructieMatch[1].trim();
+        let opmVeld = document.getElementById('opmerkingenMontage');
+        if (opmVeld) opmVeld.value = schoneInstructie;
+      }
+
+      // 5B. PRODUCTEN ISOLEREN EN AANKLIKKEN
+      let productSectie = ruweTekst;
+      let tabelMatch = ruweTekst.match(/Aantal(.*?)Order ISP ID/is);
+      if (tabelMatch && tabelMatch[1]) {
+        productSectie = tabelMatch[1];
+      }
+
+      let productRegels = productSectie.split('\n').filter(regel => 
+        /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
+      );
+
+      if (productRegels.length > 0) {
+        let container = document.getElementById('montageTakenContainer');
+        
+        productRegels.forEach((regel, index) => {
+          let rijen = container.querySelectorAll('.montage-task');
+          
+          if (index >= rijen.length) {
+            document.getElementById('btnAddMontage').click();
+            rijen = container.querySelectorAll('.montage-task'); 
+          }
+          
+          let huidigeRij = rijen[index];
+          
+          let prodSelect = huidigeRij.querySelector('.mntProduct');
+          if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
+          else if (/screen/i.test(regel)) prodSelect.value = 'screen';
+          else if (/knikarm/i.test(regel)) prodSelect.value = 'knikarm';
+          else if (/uitval/i.test(regel)) prodSelect.value = 'uitval';
+          else if (/markies/i.test(regel)) prodSelect.value = 'markies';
+          else if (/hor/i.test(regel)) prodSelect.value = 'hor';
+          else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
+          else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
+          
+          let bedieningSelect = huidigeRij.querySelector('.mntBediening');
+          if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
+          else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
+          else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
+          else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
+          
+          let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
+          if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
+          else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
+          
+          let aantalInput = huidigeRij.querySelector('.mntAantal');
+          let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
+          if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
+            aantalInput.value = aantalMatch[1];
+          }
+
+          prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          aantalInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+
+      // 6. Start de automatische PDOK Postcodezoeker
+      setTimeout(() => {
+        let pcVeld = document.getElementById('postcode');
+        let hnVeld = document.getElementById('huisnummer');
+        
+        if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
+          if (typeof processAddressInput === "function") {
+            processAddressInput();
+          } else {
+            hnVeld.dispatchEvent(new Event('change', { bubbles: true }));
+            hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+          }
+        }
+      }, 400); 
     }
-  }, 400); 
-}
-</script>
+    </script>
 </body>
 </html>
