@@ -727,10 +727,10 @@ function verwerkGescandeTekst(ruweTekst) {
       if (splitMatch.length > 0) klantSectie = splitMatch[0];
   }
 
-  let regels = klantSectie.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
+  let regelsKlant = klantSectie.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
   let naamDelen = [];
   
-  for (let regel of regels) {
+  for (let regel of regelsKlant) {
       if (/Jouw klant/i.test(regel)) continue;
 
       let restRegel = regel;
@@ -746,9 +746,7 @@ function verwerkGescandeTekst(ruweTekst) {
 
       if (restRegel === '') continue;
 
-      if (restRegel.includes('@') || /\d/.test(restRegel)) {
-          break;
-      }
+      if (restRegel.includes('@') || /\d/.test(restRegel)) break;
 
       let schoneNaamDeel = restRegel.replace(/^[\-\‘\'\"\.\_]+/g, '').trim();
       if (schoneNaamDeel.length > 1) {
@@ -768,31 +766,30 @@ function verwerkGescandeTekst(ruweTekst) {
     let pcVeld = document.getElementById('postcode');
     if (pcVeld) {
       pcVeld.value = echtePostcode.toUpperCase();
-      pcVeld.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
 
-  // 4. Huisnummer (SUPER-FIX: pakt altijd het laatste getal vóór de postcode)
+  // 4. Huisnummer (SUPER-FIX: kijkt uitsluitend naar de regel direct boven de postcode)
   if (echtePostcode !== "") {
     let pcIndex = ruweTekst.lastIndexOf(echtePostcode);
-    let brokVoorPC = ruweTekst.substring(0, pcIndex);
-
-    // Wis telefoonnummers uit deze brok zodat hij die nooit als huisnummer pakt
-    if (telVeld && telVeld.value) {
-        brokVoorPC = brokVoorPC.replace(telVeld.value, '');
-    }
-    brokVoorPC = brokVoorPC.replace(/(?:06|\+316)[\s\-]?\d{8}/g, '');
-
-    // Zoek naar álle getallen (evt. met letter erachter zoals 12a) in de tekst vóór de postcode
-    let hnMatches = brokVoorPC.match(/\b\d+[\s\-]*[a-zA-Z]{0,2}\b/g);
-
-    if (hnMatches && hnMatches.length > 0) {
-      let hnVeld = document.getElementById('huisnummer');
-      if (hnVeld) {
-        // We pakken steevast de allerlaatste uit de lijst!
-        hnVeld.value = hnMatches[hnMatches.length - 1].trim(); 
-        hnVeld.dispatchEvent(new Event('input', { bubbles: true }));
-      }
+    let textVoorPC = ruweTekst.substring(0, pcIndex).trim();
+    
+    // Splits de tekst vóór de postcode op in losse regels
+    let regelsAdres = textVoorPC.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
+    
+    if (regelsAdres.length > 0) {
+        // De regel nét voor de postcode is altijd de straatnaam met het huisnummer
+        let straatRegel = regelsAdres[regelsAdres.length - 1];
+        
+        // Pak de cijfers (en eventuele toevoeging) aan het einde van die straat-regel
+        let hnMatch = straatRegel.match(/(\d+)[a-zA-Z\s\-]*$/);
+        
+        if (hnMatch) {
+            let hnVeld = document.getElementById('huisnummer');
+            if (hnVeld) {
+                hnVeld.value = hnMatch[0].trim();
+            }
+        }
     }
   }
 
@@ -868,16 +865,15 @@ function verwerkGescandeTekst(ruweTekst) {
     let pcVeld = document.getElementById('postcode');
     let hnVeld = document.getElementById('huisnummer');
     
+    // Controleer of de velden succesvol zijn ingevuld
     if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
-      // Forceer een BLUR event, want daar luisteren jouw adres-velden naar!
-      pcVeld.dispatchEvent(new Event('blur', { bubbles: true }));
-      hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
       
+      // Eén zuivere, directe aanroep naar jouw eigen PDOK functie
       if (typeof processAddressInput === "function") {
         processAddressInput();
       }
     }
-  }, 500); 
+  }, 400); 
 }
     </script>
 </body>
