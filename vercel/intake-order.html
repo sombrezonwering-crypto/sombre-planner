@@ -714,17 +714,15 @@ function verwerkGescandeTekst(ruweTekst) {
     if (veld) veld.value = orderMatch[1];
   }
 
-  // 2. Telefoonnummer én Naam Klant (Slimme regel-lezer die álles pakt)
+  // 2. Telefoonnummer én Naam Klant
   let telVeld = document.getElementById('telefoon');
   let naamVeld = document.getElementById('naam');
   
-  // Zoek het specifieke blok met klantgegevens op
   let klantSectie = ruweTekst;
   let sectieMatch = ruweTekst.match(/Jouw klantgegevens\s+([\s\S]*?)(?:Product|Order|Montageopdracht|Jouw verkoopadviseur|$)/i);
   if (sectieMatch && sectieMatch[1]) {
       klantSectie = sectieMatch[1];
   } else {
-      // Fallback als "Jouw klantgegevens" ontbreekt
       let splitMatch = ruweTekst.split(/@|\b[1-9]\d{3}\s?[A-Z]{2}\b/i);
       if (splitMatch.length > 0) klantSectie = splitMatch[0];
   }
@@ -737,27 +735,21 @@ function verwerkGescandeTekst(ruweTekst) {
 
       let restRegel = regel;
       
-      // Zoek telefoonnummer (06, +31 of landlijn, inclusief spaties/streepjes)
       let telInRegel = restRegel.match(/(?:0|\+31)[\d\s\-]{8,14}/);
       if (telInRegel) {
           let cleanTel = telInRegel[0].replace(/[^\d+]/g, '');
           if (cleanTel.length >= 10 && telVeld && !telVeld.value) {
               telVeld.value = cleanTel;
           }
-          // Haal het telefoonnummer uit de tekst, de rest bewaren we
           restRegel = restRegel.replace(telInRegel[0], '').trim();
       }
 
-      if (restRegel === '') continue; // Regel is leeg na weghalen telefoon
+      if (restRegel === '') continue;
 
-      // Als we hier een '@' of een huisnummer-cijfer tegenkomen, zijn we bij het adres/email beland.
-      // We stoppen met het verzamelen van de naam.
       if (restRegel.includes('@') || /\d/.test(restRegel)) {
           break;
       }
 
-      // Wat overblijft is een naam! 
-      // We halen vage leestekens aan het begin weg (zoals - of ' ) en voegen het toe.
       let schoneNaamDeel = restRegel.replace(/^[\-\‘\'\"\.\_]+/g, '').trim();
       if (schoneNaamDeel.length > 1) {
            naamDelen.push(schoneNaamDeel);
@@ -765,7 +757,6 @@ function verwerkGescandeTekst(ruweTekst) {
   }
 
   if (naamDelen.length > 0 && naamVeld) {
-      // Plak alle verzamelde regels aan elkaar (Voornaam + Achternaam)
       naamVeld.value = naamDelen.join(' ');
   }
 
@@ -781,14 +772,25 @@ function verwerkGescandeTekst(ruweTekst) {
     }
   }
 
-  // 4. Huisnummer
+  // 4. Huisnummer (SUPER-FIX: pakt altijd het laatste getal vóór de postcode)
   if (echtePostcode !== "") {
-    let tekstTotPostcode = ruweTekst.substring(0, ruweTekst.lastIndexOf(echtePostcode)).trim();
-    let hnMatch = tekstTotPostcode.match(/(\d+[\s\-]*[a-zA-Z]*)\s*$/);
-    if (hnMatch) {
+    let pcIndex = ruweTekst.lastIndexOf(echtePostcode);
+    let brokVoorPC = ruweTekst.substring(0, pcIndex);
+
+    // Wis telefoonnummers uit deze brok zodat hij die nooit als huisnummer pakt
+    if (telVeld && telVeld.value) {
+        brokVoorPC = brokVoorPC.replace(telVeld.value, '');
+    }
+    brokVoorPC = brokVoorPC.replace(/(?:06|\+316)[\s\-]?\d{8}/g, '');
+
+    // Zoek naar álle getallen (evt. met letter erachter zoals 12a) in de tekst vóór de postcode
+    let hnMatches = brokVoorPC.match(/\b\d+[\s\-]*[a-zA-Z]{0,2}\b/g);
+
+    if (hnMatches && hnMatches.length > 0) {
       let hnVeld = document.getElementById('huisnummer');
       if (hnVeld) {
-        hnVeld.value = hnMatch[1].trim(); 
+        // We pakken steevast de allerlaatste uit de lijst!
+        hnVeld.value = hnMatches[hnMatches.length - 1].trim(); 
         hnVeld.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
@@ -867,14 +869,15 @@ function verwerkGescandeTekst(ruweTekst) {
     let hnVeld = document.getElementById('huisnummer');
     
     if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
+      // Forceer een BLUR event, want daar luisteren jouw adres-velden naar!
+      pcVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+      hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+      
       if (typeof processAddressInput === "function") {
         processAddressInput();
-      } else {
-        hnVeld.dispatchEvent(new Event('change', { bubbles: true }));
-        hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
       }
     }
-  }, 400); 
+  }, 500); 
 }
     </script>
 </body>
