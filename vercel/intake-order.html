@@ -236,6 +236,38 @@
             document.getElementById('orderForm').addEventListener('submit', handleFormSubmit);
 
             setMode(false);
+            // NIEUW: Live Order Check zodra het ordernummer is ingevuld
+            document.getElementById('ordernummer').addEventListener('blur', async function() {
+                const checkNr = this.value.trim();
+                if (checkNr.length < 3 || checkNr.includes('-EXTRA') || checkNr.includes('-SERVICE')) return;
+
+                const label = document.getElementById('ordernummerLabel');
+                const originalText = label.innerText;
+                label.innerText = "Ordernummer * (Zoeken naar klant...) ⏳";
+
+                try {
+                    const response = await fetch(`${APP_CONFIG.WEB_APP_URL}?action=checkOrder&ordernummer=${encodeURIComponent(checkNr)}`);
+                    const data = await response.json();
+
+                    if (data.found) {
+                        if (data.naam) document.getElementById('naam').value = data.naam;
+                        if (data.telefoon) document.getElementById('telefoon').value = data.telefoon;
+                        if (data.postcode) document.getElementById('postcode').value = data.postcode;
+                        if (data.huisnummer) document.getElementById('huisnummer').value = data.huisnummer;
+                        if (data.straat) document.getElementById('straatEnWoonplaats').value = data.straat;
+
+                        // Waarschuwing tonen en het nummer aanpassen voor extra werk
+                        alert(`⚠️ Bekende Klant Gevonden!\n\nOrdernummer ${checkNr} staat al in het systeem. De bekende gegevens zijn direct voor je ingevuld.\n\nHet ordernummer is automatisch gewijzigd naar '${checkNr}-EXTRA' zodat je deze nieuwe klus veilig kunt opslaan.`);
+                        this.value = checkNr + "-EXTRA";
+                        
+                        // Forceer de PDOK zoeker om de groene badge te activeren
+                        document.getElementById('huisnummer').dispatchEvent(new Event('blur', { bubbles: true }));
+                    }
+                } catch (e) {
+                    console.log("Klant nog niet bekend of ophalen mislukt.");
+                }
+                label.innerText = originalText;
+            });
         });
 
         // --- 4. UI LOGIC ---
