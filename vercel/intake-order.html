@@ -734,12 +734,14 @@
         // 1. Forceer het formulier onzichtbaar naar de Service-modus
         document.getElementById('btnService').click();
 
-        // 2. Naam (Staat bovenaan de titel, filter de labels eruit)
-        let eersteRegel = ruweTekst.split('\n')[0];
-        if (eersteRegel) {
-            let schoneNaam = eersteRegel
+        // 2. Naam (Staat vóór het kopje Eigenschappen)
+        let naamMatch = ruweTekst.split(/Eigenschappen/i)[0];
+        if (naamMatch) {
+            let schoneNaam = naamMatch
                 .replace(/De ZonweringFabriek|Degalux online|Zonweringfabriek|Dupro-Kozijnen|Elite-Gordijn|Sombre-zonwering/gi, '')
-                .replace(/Nieuwe klacht|In behandeling|Afgerond/gi, '')
+                .replace(/Nieuwe klacht|In behandeling|Afgerond|Delen/gi, '')
+                .replace(/\|\s*\d+/g, '') // Filtert het ID weg, bv. "| 65583"
+                .replace(/[\n\r]+/g, ' ') // Plakt alles netjes op 1 regel
                 .trim();
             document.getElementById('naam').value = schoneNaam;
         }
@@ -759,7 +761,7 @@
         let pcMatch = ruweTekst.match(/Postcode\s*([1-9]\d{3}\s?[A-Za-z]{2})/i);
         if (pcMatch) document.getElementById('postcode').value = pcMatch[1].toUpperCase();
 
-        // 6. Huisnummer (Pakt direct '20' uit 'Straatnaam + hui... Kweekhoeve 20')
+        // 6. Huisnummer
         let straatMatch = ruweTekst.match(/Straatnaam.*?(\d+[a-zA-Z\s\-]*)$/im);
         if (straatMatch) document.getElementById('huisnummer').value = straatMatch[1].trim();
 
@@ -776,12 +778,13 @@
             srvProduct.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
-        // 9. Klachtomschrijving (Pakt heel slim de complete tabel!)
+        // 9. Klachtomschrijving
         let klachtVeld = document.getElementById('klachtService');
         let tabelMatch = ruweTekst.split(/Klachtomschrijving\s*\(aanleveren/i);
         if (tabelMatch.length > 1 && klachtVeld) {
-            let klachtTekst = tabelMatch[1].replace(/vanuit[^\)]*\)/i, '') // Verwijdert restje van header
-                                           .replace(/Vraag\s*Antwoord\s*\(invullen Verplicht\)/gi, '') // Wist de tabel headers
+            let klachtTekst = tabelMatch[1].replace(/vanuit[^\)]*\)/i, '') 
+                                           .replace(/Vraag\s*Antwoord\s*\(invullen Verplicht\)/gi, '') 
+                                           .replace(/Werkbon\s*\(Verplicht\)/gi, '')
                                            .trim();
             klachtVeld.value = klachtTekst;
         }
