@@ -32,10 +32,9 @@
     <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100 mb-10">
         <form id="orderForm" class="space-y-8">
 
-            <!-- HET MAGIC PASTE VAK (Tailwind Styling) -->
-<div id="paste-zone" class="border-4 border-dashed border-blue-400 bg-blue-50 p-8 text-center rounded-xl cursor-pointer text-blue-700 font-bold transition-all hover:bg-blue-100 shadow-inner">
-  📸 Maak een printscreen van de order bij de leverancier en druk hier op CTRL+V (Plakken)
-  <div id="scanner-status" class="text-sm font-medium mt-3 text-blue-600"></div>
+          <!-- HET MAGIC PASTE VAK (NU EEN ECHT TEKSTVAK ZODAT RECHTER MUISKNOP WERKT!) -->
+            <textarea id="paste-zone" rows="4" class="w-full border-4 border-dashed border-blue-400 bg-blue-50 p-6 text-center rounded-xl cursor-text text-blue-700 font-bold transition-all hover:bg-blue-100 shadow-inner focus:outline-none focus:border-blue-500" placeholder="📸 Druk op CTRL+V (of gebruik de RECHTERMUISKNOP -> Plakken) om je Order of Notion Klacht hier te plakken!"></textarea>
+            <div id="scanner-status" class="text-sm font-bold mt-2 mb-4 text-blue-600 text-center">
 </div>
             <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
                 <label class="block text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">1. Type Order & Afdeling</label>
