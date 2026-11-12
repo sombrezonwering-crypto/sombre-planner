@@ -236,14 +236,25 @@
             document.getElementById('orderForm').addEventListener('submit', handleFormSubmit);
 
             setMode(false);
-            // NIEUW: Live Order Check zodra het ordernummer is ingevuld
-            document.getElementById('ordernummer').addEventListener('blur', async function() {
+            // NIEUW: Live Order Check zodra het ordernummer is ingevuld (Nu met ENTER-ondersteuning!)
+            const orderInput = document.getElementById('ordernummer');
+            
+            // 1. Luister naar de ENTER toets en blokkeer het direct opslaan!
+            orderInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Zorgt dat je géén "vul dit in" foutmelding krijgt
+                    this.blur(); // Forceert de checkfunctie hieronder
+                }
+            });
+
+            // 2. De echte zoekfunctie
+            orderInput.addEventListener('blur', async function() {
                 const checkNr = this.value.trim();
                 if (checkNr.length < 3 || checkNr.includes('-EXTRA') || checkNr.includes('-SERVICE')) return;
 
                 const label = document.getElementById('ordernummerLabel');
                 const originalText = label.innerText;
-                label.innerText = "Ordernummer * (Zoeken naar klant...) ⏳";
+                label.innerText = "Ordernummer (Zoeken...) ⏳";
 
                 try {
                     const response = await fetch(`${APP_CONFIG.WEB_APP_URL}?action=checkOrder&ordernummer=${encodeURIComponent(checkNr)}`);
@@ -257,14 +268,16 @@
                         if (data.straat) document.getElementById('straatEnWoonplaats').value = data.straat;
 
                         // Waarschuwing tonen en het nummer aanpassen voor extra werk
-                        alert(`⚠️ Bekende Klant Gevonden!\n\nOrdernummer ${checkNr} staat al in het systeem. De bekende gegevens zijn direct voor je ingevuld.\n\nHet ordernummer is automatisch gewijzigd naar '${checkNr}-EXTRA' zodat je deze nieuwe klus veilig kunt opslaan.`);
+                        alert(`⚠️ Bekende Klant Gevonden!\n\nOrdernummer ${checkNr} staat al in het systeem. De bekende gegevens zijn direct voor je ingevuld.\n\nHet ordernummer is automatisch gewijzigd naar '${checkNr}-EXTRA'.`);
                         this.value = checkNr + "-EXTRA";
                         
                         // Forceer de PDOK zoeker om de groene badge te activeren
                         document.getElementById('huisnummer').dispatchEvent(new Event('blur', { bubbles: true }));
                     }
                 } catch (e) {
-                    console.log("Klant nog niet bekend of ophalen mislukt.");
+                    console.log("Klant nog niet bekend of ophalen mislukt.", e);
+                    // Als Google weigert te praten (bijv. door een oude versie URL), krijg je nu een waarschuwing!
+                    alert("⚠️ Let op: De database kon niet bereikt worden. Heb je in Google Apps Script wel op 'Implementeren -> Nieuwe versie' geklikt?");
                 }
                 label.innerText = originalText;
             });
