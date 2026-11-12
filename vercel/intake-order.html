@@ -668,23 +668,29 @@
         }
     </script>
 
-    <script>
-    window.addEventListener('paste', async function(e) {
+  <script>
+    // We luisteren nu specifiek naar het nieuwe tekstvak!
+    document.getElementById('paste-zone').addEventListener('paste', async function(e) {
+      e.preventDefault(); // Zorgt dat je formulier niet uitrekt door 10 pagina's tekst
+      
       let items = e.clipboardData.items;
       let statusBox = document.getElementById('scanner-status');
+      let targetElement = e.target;
 
       // Check direct of je pure TEKST hebt gekopieerd
       let pastedText = e.clipboardData.getData('text');
       if (pastedText && pastedText.trim().length > 20) {
         
-        // AUTO-DETECT: Is dit een Notion klacht of een leveranciersorder?
-        if (/Eigenschappen/i.test(pastedText) && /Woonplaats/i.test(pastedText)) {
+        // AUTO-DETECT: We zoeken nu naar MEER Notion-woorden, zodat hij hem altijd herkent!
+        if (/Klachtomschrijving|Notificatie|actieplan|Opgestuurde onderdelen/i.test(pastedText)) {
             statusBox.innerHTML = "✅ Notion Service-ticket herkend! Service formulier invullen...";
             verwerkNotionTekst(pastedText);
         } else {
             statusBox.innerHTML = "✅ Leveranciers-order herkend! Montage formulier invullen...";
             verwerkGescandeTekst(pastedText);
         }
+        
+        targetElement.value = "✅ Tekst verwerkt! Je kunt hier direct weer iets nieuws plakken.";
         return; 
       }
       
@@ -695,27 +701,30 @@
           let imageUrl = URL.createObjectURL(imageBlob);
           
           statusBox.innerHTML = "⏳ Afbeelding scannen... een moment geduld aub.";
+          targetElement.value = "⏳ Bezig met scannen van afbeelding...";
           
           Tesseract.recognize(
             imageUrl,
             'nld',
             { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
           ).then(({ data: { text } }) => {
-            statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
             
-            // Ook met een foto werkt de Auto-Detectie!
-            if (/Eigenschappen/i.test(text) && /Woonplaats/i.test(text)) {
+            if (/Klachtomschrijving|Notificatie|actieplan|Opgestuurde onderdelen/i.test(text)) {
+                statusBox.innerHTML = "✅ Notion Service-ticket herkend! Service formulier invullen...";
                 verwerkNotionTekst(text);
             } else {
+                statusBox.innerHTML = "✅ Leveranciers-order herkend! Velden invullen...";
                 verwerkGescandeTekst(text);
             }
+            
+            targetElement.value = "✅ Afbeelding succesvol gescand en verwerkt!";
           }).catch(err => {
             statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
+            targetElement.value = "";
           });
         }
       }
     });
-
     // ==============================================================================
     // FUNCTIE 1: DE NOTION SERVICE-TICKET SCANNER
     // ==============================================================================
