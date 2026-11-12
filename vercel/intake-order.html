@@ -667,9 +667,7 @@
             btn.classList.replace("bg-gray-400", "bg-blue-600");
             btn.classList.replace("opacity-75", "hover:-translate-y-1");
         }
-    </script>
-
-    <script>
+   <script>
     window.addEventListener('paste', async function(e) {
       let items = e.clipboardData.items;
       let statusBox = document.getElementById('scanner-status');
@@ -677,8 +675,15 @@
       // Check direct of je pure TEKST hebt gekopieerd
       let pastedText = e.clipboardData.getData('text');
       if (pastedText && pastedText.trim().length > 20) {
-        statusBox.innerHTML = "✅ Tekst direct herkend! Velden razendsnel invullen...";
-        verwerkGescandeTekst(pastedText);
+        
+        // AUTO-DETECT: Is dit een Notion klacht of een leveranciersorder?
+        if (/Eigenschappen/i.test(pastedText) && /Woonplaats/i.test(pastedText)) {
+            statusBox.innerHTML = "✅ Notion Service-ticket herkend! Service formulier invullen...";
+            verwerkNotionTekst(pastedText);
+        } else {
+            statusBox.innerHTML = "✅ Leveranciers-order herkend! Montage formulier invullen...";
+            verwerkGescandeTekst(pastedText);
+        }
         return; 
       }
       
@@ -696,7 +701,13 @@
             { logger: m => { if(m.status === "recognizing text") statusBox.innerHTML = `⏳ Scannen: ${Math.round(m.progress * 100)}%`; } }
           ).then(({ data: { text } }) => {
             statusBox.innerHTML = "✅ Scan voltooid! Controleer de velden.";
-            verwerkGescandeTekst(text);
+            
+            // Ook met een foto werkt de Auto-Detectie!
+            if (/Eigenschappen/i.test(text) && /Woonplaats/i.test(text)) {
+                verwerkNotionTekst(text);
+            } else {
+                verwerkGescandeTekst(text);
+            }
           }).catch(err => {
             statusBox.innerHTML = "❌ Fout bij scannen van afbeelding.";
           });
@@ -704,177 +715,229 @@
       }
     });
 
-function verwerkGescandeTekst(ruweTekst) {
-  console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
+    // ==============================================================================
+    // FUNCTIE 1: DE NOTION SERVICE-TICKET SCANNER
+    // ==============================================================================
+    function verwerkNotionTekst(ruweTekst) {
+        console.log("Notion Tekst klaar voor verwerking:", ruweTekst);
 
-  // 1. Ordernummer
-  let orderMatch = ruweTekst.match(/(\d{5,6})\s*\d{2}-\d{2}-\d{4}/);
-  if (orderMatch) {
-    let veld = document.getElementById('ordernummer');
-    if (veld) veld.value = orderMatch[1];
-  }
+        // 1. Forceer het formulier onzichtbaar naar de Service-modus
+        document.getElementById('btnService').click();
 
-  // 2. Telefoonnummer én Naam Klant
-  let telVeld = document.getElementById('telefoon');
-  let naamVeld = document.getElementById('naam');
-  
-  let klantSectie = ruweTekst;
-  let sectieMatch = ruweTekst.match(/Jouw klantgegevens\s+([\s\S]*?)(?:Product|Order|Montageopdracht|Jouw verkoopadviseur|$)/i);
-  if (sectieMatch && sectieMatch[1]) {
-      klantSectie = sectieMatch[1];
-  } else {
-      let splitMatch = ruweTekst.split(/@|\b[1-9]\d{3}\s?[A-Z]{2}\b/i);
-      if (splitMatch.length > 0) klantSectie = splitMatch[0];
-  }
+        // 2. Naam (Staat bovenaan de titel, filter de labels eruit)
+        let eersteRegel = ruweTekst.split('\n')[0];
+        if (eersteRegel) {
+            let schoneNaam = eersteRegel
+                .replace(/De ZonweringFabriek|Degalux online|Zonweringfabriek|Dupro-Kozijnen|Elite-Gordijn|Sombre-zonwering/gi, '')
+                .replace(/Nieuwe klacht|In behandeling|Afgerond/gi, '')
+                .trim();
+            document.getElementById('naam').value = schoneNaam;
+        }
 
-  let regelsKlant = klantSectie.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
-  let naamDelen = [];
-  
-  for (let regel of regelsKlant) {
-      if (/Jouw klant/i.test(regel)) continue;
+        // 3. Afdeling Dropdown
+        let afdelingSelect = document.getElementById('afdelingSource');
+        if (/ZonweringFabriek/i.test(ruweTekst)) afdelingSelect.value = "Zonweringfabriek";
+        else if (/Degalux/i.test(ruweTekst)) afdelingSelect.value = "Degalux online";
+        else if (/Dupro/i.test(ruweTekst)) afdelingSelect.value = "Dupro-Kozijnen";
+        else if (/Elite/i.test(ruweTekst)) afdelingSelect.value = "Elite-Gordijn";
 
-      let restRegel = regel;
-      
-      let telInRegel = restRegel.match(/(?:0|\+31)[\d\s\-]{8,14}/);
-      if (telInRegel) {
-          let cleanTel = telInRegel[0].replace(/[^\d+]/g, '');
-          if (cleanTel.length >= 10 && telVeld && !telVeld.value) {
-              telVeld.value = cleanTel;
-          }
-          restRegel = restRegel.replace(telInRegel[0], '').trim();
-      }
+        // 4. Ordernummer
+        let orderMatch = ruweTekst.match(/Ordernummer\s*(\d{5,6})/i);
+        if (orderMatch) document.getElementById('ordernummer').value = orderMatch[1];
 
-      if (restRegel === '') continue;
+        // 5. Postcode
+        let pcMatch = ruweTekst.match(/Postcode\s*([1-9]\d{3}\s?[A-Za-z]{2})/i);
+        if (pcMatch) document.getElementById('postcode').value = pcMatch[1].toUpperCase();
 
-      if (restRegel.includes('@') || /\d/.test(restRegel)) break;
+        // 6. Huisnummer (Pakt direct '20' uit 'Straatnaam + hui... Kweekhoeve 20')
+        let straatMatch = ruweTekst.match(/Straatnaam.*?(\d+[a-zA-Z\s\-]*)$/im);
+        if (straatMatch) document.getElementById('huisnummer').value = straatMatch[1].trim();
 
-      let schoneNaamDeel = restRegel.replace(/^[\-\‘\'\"\.\_]+/g, '').trim();
-      if (schoneNaamDeel.length > 1) {
-           naamDelen.push(schoneNaamDeel);
-      }
-  }
+        // 7. Telefoonnummer
+        let telMatch = ruweTekst.match(/Telefoonnummer.*?((?:0|\+31)[\d\s\-]{8,12})/i);
+        if (telMatch) document.getElementById('telefoon').value = telMatch[1].replace(/[^\d+]/g, '');
 
-  if (naamDelen.length > 0 && naamVeld) {
-      naamVeld.value = naamDelen.join(' ');
-  }
+        // 8. Service Product
+        let srvProduct = document.querySelector('.srvProduct');
+        if (srvProduct) {
+            if (/screen|rolluik/i.test(ruweTekst)) srvProduct.value = 'screen_rolluik';
+            else if (/zonnescherm|knikarm/i.test(ruweTekst)) srvProduct.value = 'zonnescherm';
+            else if (/uitval/i.test(ruweTekst)) srvProduct.value = 'uitvalscherm';
+            srvProduct.dispatchEvent(new Event('change', { bubbles: true }));
+        }
 
-  // 3. Postcode
-  let echtePostcode = "";
-  let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
-  if (pcMatches && pcMatches.length > 0) {
-    echtePostcode = pcMatches[pcMatches.length - 1]; 
-    let pcVeld = document.getElementById('postcode');
-    if (pcVeld) {
-      pcVeld.value = echtePostcode.toUpperCase();
-    }
-  }
+        // 9. Klachtomschrijving (Pakt heel slim de complete tabel!)
+        let klachtVeld = document.getElementById('klachtService');
+        let tabelMatch = ruweTekst.split(/Klachtomschrijving\s*\(aanleveren/i);
+        if (tabelMatch.length > 1 && klachtVeld) {
+            let klachtTekst = tabelMatch[1].replace(/vanuit[^\)]*\)/i, '') // Verwijdert restje van header
+                                           .replace(/Vraag\s*Antwoord\s*\(invullen Verplicht\)/gi, '') // Wist de tabel headers
+                                           .trim();
+            klachtVeld.value = klachtTekst;
+        }
 
-  // 4. Huisnummer (SUPER-FIX: kijkt uitsluitend naar de regel direct boven de postcode)
-  if (echtePostcode !== "") {
-    let pcIndex = ruweTekst.lastIndexOf(echtePostcode);
-    let textVoorPC = ruweTekst.substring(0, pcIndex).trim();
-    
-    // Splits de tekst vóór de postcode op in losse regels
-    let regelsAdres = textVoorPC.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
-    
-    if (regelsAdres.length > 0) {
-        // De regel nét voor de postcode is altijd de straatnaam met het huisnummer
-        let straatRegel = regelsAdres[regelsAdres.length - 1];
-        
-        // Pak de cijfers (en eventuele toevoeging) aan het einde van die straat-regel
-        let hnMatch = straatRegel.match(/(\d+)[a-zA-Z\s\-]*$/);
-        
-        if (hnMatch) {
+        // 10. Start de automatische PDOK Postcodezoeker
+        setTimeout(() => {
+            let pcVeld = document.getElementById('postcode');
             let hnVeld = document.getElementById('huisnummer');
-            if (hnVeld) {
-                hnVeld.value = hnMatch[0].trim();
+            if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
+                pcVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+                hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+                if (typeof processAddressInput === "function") processAddressInput();
+            }
+        }, 500);
+    }
+
+    // ==============================================================================
+    // FUNCTIE 2: DE BESTAANDE MONTAGE-ORDER SCANNER (VERKOPER)
+    // ==============================================================================
+    function verwerkGescandeTekst(ruweTekst) {
+      console.log("Rauwe OCR Tekst klaar voor verwerking:", ruweTekst);
+
+      let orderMatch = ruweTekst.match(/(\d{5,6})\s*\d{2}-\d{2}-\d{4}/);
+      if (orderMatch) {
+        let veld = document.getElementById('ordernummer');
+        if (veld) veld.value = orderMatch[1];
+      }
+
+      let telVeld = document.getElementById('telefoon');
+      let naamVeld = document.getElementById('naam');
+      
+      let klantSectie = ruweTekst;
+      let sectieMatch = ruweTekst.match(/Jouw klantgegevens\s+([\s\S]*?)(?:Product|Order|Montageopdracht|Jouw verkoopadviseur|$)/i);
+      if (sectieMatch && sectieMatch[1]) {
+          klantSectie = sectieMatch[1];
+      } else {
+          let splitMatch = ruweTekst.split(/@|\b[1-9]\d{3}\s?[A-Z]{2}\b/i);
+          if (splitMatch.length > 0) klantSectie = splitMatch[0];
+      }
+
+      let regelsKlant = klantSectie.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
+      let naamDelen = [];
+      
+      for (let regel of regelsKlant) {
+          if (/Jouw klant/i.test(regel)) continue;
+          let restRegel = regel;
+          
+          let telInRegel = restRegel.match(/(?:0|\+31)[\d\s\-]{8,14}/);
+          if (telInRegel) {
+              let cleanTel = telInRegel[0].replace(/[^\d+]/g, '');
+              if (cleanTel.length >= 10 && telVeld && !telVeld.value) {
+                  telVeld.value = cleanTel;
+              }
+              restRegel = restRegel.replace(telInRegel[0], '').trim();
+          }
+
+          if (restRegel === '') continue;
+          if (restRegel.includes('@') || /\d/.test(restRegel)) break;
+
+          let schoneNaamDeel = restRegel.replace(/^[\-\‘\'\"\.\_]+/g, '').trim();
+          if (schoneNaamDeel.length > 1) {
+               naamDelen.push(schoneNaamDeel);
+          }
+      }
+
+      if (naamDelen.length > 0 && naamVeld) {
+          naamVeld.value = naamDelen.join(' ');
+      }
+
+      let echtePostcode = "";
+      let pcMatches = ruweTekst.match(/\b[1-9]\d{3}\s?[A-Za-z]{2}\b/g);
+      if (pcMatches && pcMatches.length > 0) {
+        echtePostcode = pcMatches[pcMatches.length - 1]; 
+        let pcVeld = document.getElementById('postcode');
+        if (pcVeld) pcVeld.value = echtePostcode.toUpperCase();
+      }
+
+      if (echtePostcode !== "") {
+        let pcIndex = ruweTekst.lastIndexOf(echtePostcode);
+        let textVoorPC = ruweTekst.substring(0, pcIndex).trim();
+        
+        let regelsAdres = textVoorPC.split(/\r?\n/).map(r => r.trim()).filter(r => r !== '');
+        if (regelsAdres.length > 0) {
+            let straatRegel = regelsAdres[regelsAdres.length - 1];
+            let hnMatch = straatRegel.match(/(\d+)[a-zA-Z\s\-]*$/);
+            if (hnMatch) {
+                let hnVeld = document.getElementById('huisnummer');
+                if (hnVeld) hnVeld.value = hnMatch[0].trim();
             }
         }
+      }
+
+      let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)(?:Jouw klant|Montageprijs|Order)/i);
+      if (instructieMatch && instructieMatch[1]) {
+        let schoneInstructie = instructieMatch[1].trim();
+        let opmVeld = document.getElementById('opmerkingenMontage');
+        if (opmVeld) opmVeld.value = schoneInstructie;
+      }
+
+      let productSectie = ruweTekst;
+      let tabelMatch = ruweTekst.match(/Aantal(.*?)(?:Order ISP ID|Montageprijs|Jouw verkoopadviseur)/is);
+      if (tabelMatch && tabelMatch[1]) {
+        productSectie = tabelMatch[1];
+      }
+
+      let opgedeeldeSectie = productSectie.replace(/(Solar Rolluik|Rolluik|Screen|Knikarmscherm|Knikarm|Uitvalscherm|Uitval|Markies|Horren|Hor|Overkapping|Veranda)/gi, '\n$1');
+
+      let productRegels = opgedeeldeSectie.split('\n').filter(regel => 
+        /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
+      );
+
+      if (productRegels.length > 0) {
+        let container = document.getElementById('montageTakenContainer');
+        
+        productRegels.forEach((regel, index) => {
+          let rijen = container.querySelectorAll('.montage-task');
+          if (index >= rijen.length) {
+            document.getElementById('btnAddMontage').click();
+            rijen = container.querySelectorAll('.montage-task'); 
+          }
+          
+          let huidigeRij = rijen[index];
+          let prodSelect = huidigeRij.querySelector('.mntProduct');
+          
+          if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
+          else if (/screen/i.test(regel)) prodSelect.value = 'screen';
+          else if (/knikarm/i.test(regel)) prodSelect.value = 'knikarm';
+          else if (/uitval/i.test(regel)) prodSelect.value = 'uitval';
+          else if (/markies/i.test(regel)) prodSelect.value = 'markies';
+          else if (/hor/i.test(regel)) prodSelect.value = 'hor';
+          else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
+          else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
+          
+          let bedieningSelect = huidigeRij.querySelector('.mntBediening');
+          if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
+          else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
+          else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
+          else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
+          
+          let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
+          if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
+          else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
+          
+          let aantalInput = huidigeRij.querySelector('.mntAantal');
+          let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
+          if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
+            aantalInput.value = aantalMatch[1];
+          }
+
+          prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          aantalInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+
+      setTimeout(() => {
+        let pcVeld = document.getElementById('postcode');
+        let hnVeld = document.getElementById('huisnummer');
+        if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
+          pcVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+          hnVeld.dispatchEvent(new Event('blur', { bubbles: true }));
+          if (typeof processAddressInput === "function") processAddressInput();
+        }
+      }, 500); 
     }
-  }
-
-  // 5. Montageinstructies
-  let instructieMatch = ruweTekst.match(/Montageinstructie\s*([\s\S]*?)(?:Jouw klant|Montageprijs|Order)/i);
-  if (instructieMatch && instructieMatch[1]) {
-    let schoneInstructie = instructieMatch[1].trim();
-    let opmVeld = document.getElementById('opmerkingenMontage');
-    if (opmVeld) opmVeld.value = schoneInstructie;
-  }
-
-  // 5B. PRODUCTEN ISOLEREN EN AANKLIKKEN
-  let productSectie = ruweTekst;
-  let tabelMatch = ruweTekst.match(/Aantal(.*?)(?:Order ISP ID|Montageprijs|Jouw verkoopadviseur)/is);
-  if (tabelMatch && tabelMatch[1]) {
-    productSectie = tabelMatch[1];
-  }
-
-  let opgedeeldeSectie = productSectie.replace(/(Solar Rolluik|Rolluik|Screen|Knikarmscherm|Knikarm|Uitvalscherm|Uitval|Markies|Horren|Hor|Overkapping|Veranda)/gi, '\n$1');
-
-  let productRegels = opgedeeldeSectie.split('\n').filter(regel => 
-    /(rolluik|screen|knikarm|uitval|markies|hor|overkapping|veranda)/i.test(regel)
-  );
-
-  if (productRegels.length > 0) {
-    let container = document.getElementById('montageTakenContainer');
-    
-    productRegels.forEach((regel, index) => {
-      let rijen = container.querySelectorAll('.montage-task');
-      
-      if (index >= rijen.length) {
-        document.getElementById('btnAddMontage').click();
-        rijen = container.querySelectorAll('.montage-task'); 
-      }
-      
-      let huidigeRij = rijen[index];
-      
-      let prodSelect = huidigeRij.querySelector('.mntProduct');
-      if (/rolluik/i.test(regel)) prodSelect.value = 'rolluik';
-      else if (/screen/i.test(regel)) prodSelect.value = 'screen';
-      else if (/knikarm/i.test(regel)) prodSelect.value = 'knikarm';
-      else if (/uitval/i.test(regel)) prodSelect.value = 'uitval';
-      else if (/markies/i.test(regel)) prodSelect.value = 'markies';
-      else if (/hor/i.test(regel)) prodSelect.value = 'hor';
-      else if (/overkapping/i.test(regel)) prodSelect.value = 'overkapping';
-      else if (/veranda/i.test(regel)) prodSelect.value = 'veranda';
-      
-      let bedieningSelect = huidigeRij.querySelector('.mntBediening');
-      if (/solar/i.test(regel)) bedieningSelect.value = 'solar';
-      else if (/afstandsbediening|somfy|io|rts/i.test(regel)) bedieningSelect.value = 'afstandsbediening';
-      else if (/schakelaar/i.test(regel)) bedieningSelect.value = 'schakelaar';
-      else if (/hand|band/i.test(regel)) bedieningSelect.value = 'handbediend';
-      
-      let ondergrondSelect = huidigeRij.querySelector('.mntOndergrond');
-      if (/muur/i.test(regel)) ondergrondSelect.value = 'muur';
-      else if (/kozijn/i.test(regel)) ondergrondSelect.value = 'kozijn';
-      
-      let aantalInput = huidigeRij.querySelector('.mntAantal');
-      let aantalMatch = regel.match(/(\d+)\s*[^a-zA-Z0-9]*$/);
-      if (aantalMatch && parseInt(aantalMatch[1]) > 0 && parseInt(aantalMatch[1]) < 20) {
-        aantalInput.value = aantalMatch[1];
-      }
-
-      prodSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      bedieningSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      ondergrondSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      aantalInput.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-  }
-
-  // 6. Start de automatische PDOK Postcodezoeker
-  setTimeout(() => {
-    let pcVeld = document.getElementById('postcode');
-    let hnVeld = document.getElementById('huisnummer');
-    
-    // Controleer of de velden succesvol zijn ingevuld
-    if (pcVeld && hnVeld && pcVeld.value !== "" && hnVeld.value !== "") {
-      
-      // Eén zuivere, directe aanroep naar jouw eigen PDOK functie
-      if (typeof processAddressInput === "function") {
-        processAddressInput();
-      }
-    }
-  }, 400); 
-}
     </script>
 </body>
 </html>
